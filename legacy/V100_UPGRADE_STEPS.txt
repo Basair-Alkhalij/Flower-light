@@ -1,0 +1,16 @@
+Flower Light v100 — خطوات الترقية
+
+1) لا توجد هجرة SQL مطلوبة لتقسيم المنتجات أو صور WebP. لا تشغّل SUPABASE_SETUP.sql مرة أخرى على قاعدة عاملة لهذا التحديث.
+   أضفنا فقط هجرة تصحيحية اختيارية `supabase/migrations/2026-10-05_product_pricing_columns.sql` لقواعد قديمة ينقصها price / wholesale_price / wholesale_min_qty / limited_offer. إذا سبق أن أضفت هذه الأعمدة (كما في قاعدة المشروع الحالية) فلا حاجة لتشغيلها؛ وهي آمنة/idempotent لو شغلتها.
+2) ارفع كل ملفات v100 أو استخدم Patch v100 مع التأكد من رفع الملفات الجديدة:
+   admin-media.js
+   admin-products.js
+   admin-product-form.js
+   admin-import.js
+   scripts/build.mjs
+   tests/products-modules.mjs
+   tests/thumbnails.mjs
+3) لا تحذف الصور القديمة من Supabase Storage. المنتجات القديمة تبقى متوافقة؛ فقط الصور المرفوعة من v100 فصاعدًا تحصل تلقائيًا على .l.webp + .s.webp.
+4) بعد الرفع انتظر GitHub Actions: validation + browser smoke + pages deployment + live-site smoke.
+5) اختبر ?admin=1: قائمة المنتجات، إضافة/تعديل، رفع صور، نسخ، حذف، استيراد Excel وZIP، ثم الصفحة العامة على الجوال.
+6) عند الحاجة لتحويل صورة قديمة إلى الزوج المحسن، افتح المنتج واستبدل/أعد رفع الصورة.

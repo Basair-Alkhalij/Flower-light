@@ -1,0 +1,22 @@
+بصائر الخليج — Flower Light v104
+================================
+
+1) GitHub Pages:
+   Settings > Pages > Source = GitHub Actions
+   لا تستخدم Deploy from a branch.
+
+2) قبل تطبيق حماية العملاء على قاعدة حية:
+   - أنشئ Cloudflare Turnstile.
+   - ضع Site key في config.js داخل turnstileSiteKey.
+   - خزّن TURNSTILE_SECRET_KEY و LEAD_RATE_LIMIT_PEPPER في Supabase Secrets.
+   - انشر Edge Function: submit-customer-lead.
+   - طبّق migration: supabase/migrations/2026-10-06_turnstile_customer_leads.sql
+
+3) Supabase Auth:
+   - عطّل Sign-ups العامة إذا كان الدخول للإدارة فقط.
+   - فعّل MFA/TOTP لحساب المالك.
+
+4) ارفع ملفات v104 إلى GitHub (لا ترفع dist ولا node_modules).
+   GitHub Actions سيبني dist ويصغّر JS/CSS ويستبدل رقم الإصدار آليًا.
+
+5) راجع README.md للتفاصيل الكاملة.

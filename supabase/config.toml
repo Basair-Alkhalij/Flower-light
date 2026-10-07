@@ -1,0 +1,5 @@
+# Function-specific deployment settings.
+# submit-customer-lead is intentionally public because visitors are anonymous;
+# Turnstile + origin/hostname validation + database rate limiting protect it.
+[functions.submit-customer-lead]
+verify_jwt = false

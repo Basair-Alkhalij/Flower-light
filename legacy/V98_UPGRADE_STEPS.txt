@@ -1,0 +1,22 @@
+Basair Gulf / Flower Light — v99 upgrade steps
+
+1) In Supabase -> SQL Editor, run this file once on the existing database:
+   supabase/migrations/2026-10-05_pwa_install_toggle.sql
+
+2) Confirm the result contains:
+   PWA_INSTALL_TOGGLE_OK
+
+3) Upload/replace the v98 files in GitHub, preserving the same paths.
+
+4) Wait for all GitHub Actions checks to become green.
+
+5) Open ?admin=1 -> Overview. A new Owner-only card appears:
+   "إظهار خيار تثبيت التطبيق للعملاء"
+   Turn it ON or OFF and save.
+
+6) Strict install behavior:
+   - ON: the in-site install notice is shown only on Samsung Internet running on a Samsung Android device, and only after the browser emits beforeinstallprompt.
+   - OFF: no customer sees the in-site install notice.
+   - Chrome/Edge/Firefox/Opera/Brave are intentionally excluded in strict mode because a web page cannot reliably know in advance whether Android will create a WebAPK or a browser-badged shortcut.
+
+7) Existing installed/shortcut icons on phones are not changed by this update. Remove old shortcuts before re-testing installation.

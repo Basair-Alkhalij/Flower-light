@@ -1,0 +1,42 @@
+v102 validation — 2026-10-05
+PASS npm run build; PASS npm run test:static (7 suites).
+PASS Chromium against dist: 14/14 tests, including owner editing, field visibility,
+all-fields hiding, tax value preservation and leading-zero phone preservation.
+Supabase responses are mocked; SQL/RLS has not been executed on a live database.
+Provided company values are seeded by UPGRADE_V102.sql, not embedded in public assets.
+Privacy data is now maintained in the owner panel; prior v101 privacy draft notes below
+are historical and superseded. No production deployment or automatic deletion performed.
+
+Historical v101 report:
+
+Flower Light v101 — validation performed 2026-10-05
+
+PASS: npm run test:static (7 suites, including duplicate success and rollback).
+PASS: npm run build (syntax checks, source budgets, actual esbuild minification).
+PASS: FL_TEST_DIST=1 npm run test:browser — 12 Chromium tests, 12 passed.
+Backend calls are mocked. These are real browser tests of locally served dist assets,
+not authenticated end-to-end tests against the production Supabase project.
+
+Browser coverage: lead gate, catalog/lightbox/actions, responsive dialog, datasheet
+barcode/footer, both admin entry routes and loaded modules, installation prompts,
+product duplication + opening editor, actual WebP resize/upload payloads, legacy
+migration success and RPC failure handling. Production Excel import and live DB
+create/delete operations still require the manual deployment checks in START_HERE.
+
+Bugs fixed: four missing duplicate imports; wrong editor function reference;
+MAX_PRODUCT_IMAGES initialization before exporting FL_ADMIN_CORE.
+
+app.js: 123798 source bytes -> 68435 minified bytes (44.7% reduction).
+Minified gzip measurement: 22171 bytes. Actual HTTP compression depends on hosting.
+See BUILD_SIZES.json for all measured JS/CSS sizes.
+
+Not executed: GitHub deployment, GitHub Actions runs, production SQL migrations,
+live image migration, live storage changes. SQL has not been run on a PostgreSQL
+instance in this session. No Supabase credentials beyond the provided public config
+were used. Original legacy image storage objects are retained by the migration tool.
+
+Privacy: still a draft until legalName, commercialRegistration, contact, retention
+are supplied in site-settings.json. No legal compliance claim or retention scheduler.
+Live URL: current default could not be confirmed. GitHub Actions builds canonical,
+sitemap and sharing metadata using configure-pages base_url; manual builds use
+site-settings.json / SITE_URL. The bundled dist uses the existing default URL.

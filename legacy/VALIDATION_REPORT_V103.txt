@@ -1,0 +1,39 @@
+v103 validation — 2026-10-06
+
+SOURCE BASE
+- basair-gulf-flower-light-v102-company-settings(2).zip
+- Changes were applied directly to that uploaded v102 source.
+
+STATIC / MODULE TESTS
+- npm run test:static: PASS
+  - FLOWER_LIGHT_FINAL_SMOKE_OK
+  - LEADS_MODULE_RUNTIME_OK
+  - PERMISSIONS_MODULE_RUNTIME_OK
+  - SETTINGS_MODULE_RUNTIME_OK
+  - PRODUCT_MODULES_RUNTIME_OK
+  - THUMBNAILS_OK
+  - DUPLICATE_PRODUCT_SUCCESS_AND_ROLLBACK_OK
+
+BUILD
+- npm run build:check: PASS
+- npm run build: PASS
+- dist rebuilt from v103 source.
+- This environment did not have the npm esbuild package installed. The build script now safely falls back to copying unminified JS/CSS; when esbuild is installed it still minifies as before.
+
+RESPONSIVE CHROMIUM CHECK
+- Chromium CSS/layout check: PASS at 1280x900, 768x900, 390x844, 360x800.
+- Price-tier row stayed inside product dialog.
+- Type/price/min/max/delete controls stayed inside dialog bounds.
+- Add-specification button stayed inside the product editor.
+- Price delete, specification delete, product drag handle and mini row buttons were >=44px high.
+- No horizontal overflow in the test layout.
+
+ADMIN ORGANIZATION
+- Overview contains stats and shortcuts, not all owner settings forms.
+- Owner-only pages: Site Settings, Company Data, Product Template.
+- Recovery-email settings moved to Login Credentials.
+- Navigation grouped into Content Management / Owner Settings / Accounts.
+
+NOTE ON ORIGINAL NODE PLAYWRIGHT SUITE
+- The project @playwright/test package was not installed in this execution environment, so npm run test:browser could not be run through the Node runner here.
+- Chromium itself was available and was used for the responsive checks above.
