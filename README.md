@@ -1,0 +1,119 @@
+# بصائر الخليج — مستودع منتجات فلور لايت
+
+إصدار المشروع: **v105** (`package.json` = `1.0.5`). هذه النسخة تجمع تحسينات الأمان والنشر والاستقرار وقابلية التوسع، وتعمل كموقع GitHub Pages ثابت مع Supabase للبيانات والمصادقة والتخزين وEdge Functions.
+
+## النشر المعتمد — GitHub Actions فقط
+
+لا تستخدم **Deploy from a branch / main / root**. عند الرفع لاحقًا اجعل **Settings → Pages → Source = GitHub Actions**. Workflow الموجود في `.github/workflows/pages.yml` يشغّل `npm ci` ثم الاختبارات ثم `npm run build` وينشر `dist`. مجلدات `dist/` و`node_modules/` وملف `BUILD_SIZES.json` مولدة محليًا وموجودة في `.gitignore` ولا ينبغي رفعها يدويًا.
+
+رقم الإصدار والكاش `?v=` واسم Cache في Service Worker تُولد من `package.json`. لا تعدل أرقام الإصدار يدويًا داخل HTML أو JavaScript. البناء يفشل صراحة إذا لم يتوفر `esbuild` بدل إنشاء dist غير مصغر بصمت.
+
+## الفحوصات المحلية
+
+```bash
+npm ci
+npm run build:check
+npm run test:static
+npm run build
+npm run test:browser
+```
+
+`build:check` لا يحتاج إلى تثبيت مكتبات المشروع، أما `build` وPlaywright فيحتاجان `npm ci`.
+
+
+### ملاحظة Windows / Node.js 24
+
+على Windows PowerShell يمكن استخدام `npm.cmd` و`npx.cmd` إذا كانت سياسة PowerShell تمنع `npm.ps1`. النسخة النهائية اختُبرت باستخدام Node.js 24، وملفات الفحص أصبحت متوافقة معه. بعد `npm ci` يمكن تشغيل:
+
+```powershell
+npm.cmd run build:check
+npm.cmd run test:static
+npm.cmd run build
+npx.cmd playwright install chromium
+$env:FL_TEST_DIST="1"
+npm.cmd run test:browser
+```
+
+النتيجة المرجعية لهذه النسخة: `14 passed` في Playwright على `dist`.
+
+## Supabase — مشروع جديد
+
+شغّل `SUPABASE_SETUP.sql` على مشروع Supabase الصحيح، ثم انشر `manage-admin-account` و`submit-customer-lead`. لا تضع `service_role` أو أي Secret داخل `config.js` أو ملفات الواجهة. قبل فتح الموقع للزوار أكمل Turnstile وضع Site key العام في `config.js` واحفظ Secret في Supabase Secrets.
+
+عطّل **Sign-ups** العامة إذا كانت حسابات Supabase مخصصة للمدير/الأدمن فقط، وفعّل **MFA/TOTP** لحساب المالك واختبر الاسترداد.
+
+## ترقية قاعدة موجودة من v103 إلى v105
+
+الترتيب الآمن هو:
+
+1. أنشئ Cloudflare Turnstile لنطاق الموقع وخذ **Site key** و**Secret key**.
+2. ضع Site key العام فقط في `config.js` داخل `turnstileSiteKey`.
+3. خزّن الأسرار في Supabase:
+
+```bash
+supabase secrets set TURNSTILE_SECRET_KEY="YOUR_SECRET"
+supabase secrets set LEAD_RATE_LIMIT_PEPPER="A_LONG_RANDOM_SECRET"
+```
+
+4. انشر `submit-customer-lead`. إعداد `supabase/config.toml` يجعل `verify_jwt = false` لهذه الوظيفة العامة فقط، لأن زوار الموقع غير مسجلين، بينما الحماية الفعلية تتم عبر Turnstile + فحص Origin/hostname/action + rate limit في قاعدة البيانات.
+5. بعد نجاح نشر الوظيفة شغّل **ملفًا واحدًا** من Supabase SQL Editor:
+
+```text
+supabase/UPGRADE_EXISTING_V105.sql
+```
+
+6. اختبر تسجيل عميل فعليًا ثم راجع لوحة العملاء.
+
+لا تستخدم `supabase db push` على قاعدة حالية بشكل تلقائي ما لم تكن `supabase_migrations.schema_migrations` متزامنة فعلًا مع ملفات المشروع. الملفات التاريخية أُنشئت خلال ترقيات يدوية متتابعة، ولذلك SQL Editor مع ملف الترقية المجمع هو المسار الأكثر أمانًا للقاعدة الحالية.
+
+## نموذج العملاء والأمان
+
+- Turnstile يُتحقق منه على الخادم عبر Siteverify، مع التحقق من `action=customer_lead` وhostname.
+- حد الإساءة هو 8 محاولات خلال 5 دقائق لكل معرف شبكة SHA-256 مملّح، وليس حدًا عالميًا لكل زوار الموقع.
+- عنوان IP الخام لا يُخزن في جدول rate limit. يتم الاعتماد على `cf-connecting-ip` ثم `x-real-ip` من بوابة Supabase، ولا يتم الوثوق بـ `X-Forwarded-For` المرسل من العميل.
+- Edge Function تقبل JSON فقط، ترفض الطلبات الكبيرة، وتعيد `Cache-Control: no-store`.
+- بعد تطبيق ترقية الحماية تُلغى صلاحية `anon insert` المباشرة على `customer_leads`.
+
+يوجد مسار توافق قديم في `public-sync.js` فقط لتسهيل الانتقال قبل تطبيق Migration. بعد تفعيل Site key وEdge Function ومسار SQL المحمي لن يستخدم المتصفح الإدخال المباشر.
+
+## مدة الاحتفاظ ببيانات العملاء
+
+القيمة الافتراضية هي **180 يومًا** ويمكن للمالك تعديلها أو إخفاء عرضها من لوحة المدير. v105 يجعل هذه القيمة تنفيذية وليست مجرد نص في سياسة الخصوصية:
+
+- `purge_expired_customer_leads()` يحذف السجلات الأقدم من `retention_days`.
+- عند توفر `pg_cron` تُجدول عملية تنظيف يومية.
+- توجد fallbacks عند تسجيل عميل جديد، وعند فتح لوحة العملاء، وعند تغيير مدة الاحتفاظ.
+
+## تحميل المنتجات وقابلية التوسع
+
+`public-sync.js` لم يعد يعتمد على استعلام واحد قد يتوقف عند حد صفوف PostgREST. التصنيفات والمنتجات وصور المعرض تُقرأ على دفعات 500 صف مع ترتيب ثابت حتى لا تختفي المنتجات بعد تجاوز أول 1000 صف. ما زال الكتالوج النهائي يُجمع في الذاكرة قبل العرض؛ إذا وصل المشروع مستقبلًا إلى عشرات الآلاف من المنتجات فالأفضل الانتقال إلى تحميل حسب القسم/عند الطلب بدل زيادة الحد فقط.
+
+## Service Worker وPWA
+
+- HTML/navigation يستخدم **network-first** لمنع خلط HTML قديم مع JavaScript جديد.
+- ملفات shell تستخدم stale-while-revalidate مع رقم Cache مولد آليًا من الإصدار.
+- `site-bootstrap.js` و`site-loader.js` و`business-info.js` أصبحت ضمن shell حتى يعمل الهيكل المخزن مؤقتًا بصورة متسقة.
+- إذا كان Service Worker مثبتًا من زيارة عامة ثم فُتحت لوحة المدير، فإنه يكتشف URL الخاص بالـclient ويتجاوز الكاش ويجلب أصول الإدارة من الشبكة.
+
+## المكتبات وCSP
+
+توجد CSP في الصفحات. v105 يولّد hash لـJSON-LD أثناء build حتى لا تحتاج الصفحة إلى `unsafe-inline` للسكربتات. SheetJS مثبتة على `0.20.3` من CDN الرسمي، وPDF.js/jsPDF/JSZip تستخدم نسخًا مثبتة مع SRI حيث يدعم التحميل ذلك. Supabase UMD ما زالت مثبتة على إصدار محدد من jsDelivr ومقيدة بـCSP لكنها بلا SRI؛ تحويلها إلى bundle محلي يبقى تحسينًا بنيويًا لاحقًا، وليس سببًا لتعطيل النسخة الحالية.
+
+روابط كتالوج PDF تقبل HTTPS فقط في الإنتاج؛ HTTP مسموح فقط على localhost لأغراض التطوير.
+
+## الخصوصية
+
+`privacy.html` تصف بيانات نموذج العملاء، Turnstile، rate limit، التخزين، المشاركة والحقوق. حذف بيانات العملاء مرتبط فعليًا بمدة الاحتفاظ القابلة للتعديل. النص تقني وتشغيلي ويجب أن يراجعه مختص مؤهل للتأكد من ملاءمته لنشاط المنشأة ومتطلبات نظام حماية البيانات الشخصية السعودي واللوائح ذات الصلة.
+
+## بنية المشروع
+
+- `index.html`, `style.css`, `app.js`: واجهة الموقع والكتالوج.
+- `site-bootstrap.js`, `site-loader.js`: تهيئة الصفحة وتحميل وحدات العام/الإدارة.
+- `public-sync.js`: بيانات Supabase العامة والمنتجات ونموذج العميل.
+- `admin*.js`: وحدات لوحة الإدارة.
+- `supabase/functions/`: Edge Functions.
+- `supabase/UPGRADE_EXISTING_V105.sql`: ترقية مجمعة لقاعدة موجودة وصلت إلى v103.
+- `supabase/migrations/`: ملفات التغييرات المنفصلة للمرجع والتطوير.
+- `scripts/build.mjs`: فحص وبناء وتصغير وتوليد رقم الإصدار وCSP hash.
+- `tests/`: اختبارات ثابتة ووحدات ومتصفح.
+- `legacy/`: تعليمات وتقارير ترقيات قديمة فقط.

@@ -1,0 +1,28 @@
+بصائر الخليج — Flower Light v105 — النسخة النهائية الموحدة
+=====================================================
+
+نتائج الفحص الفعلية:
+- npm audit: 0 vulnerabilities
+- BUILD_CHECK_OK v105
+- test:static: PASS بالكامل
+- BUILD_OK v105
+- Playwright على dist: 14/14 passed
+
+تتضمن هذه النسخة كل التصحيحات التي طُبقت أثناء الاختبار:
+- Turnstile Site Key
+- Playwright 1.55.1
+- توافق Node.js 24
+- توافق Windows في الاختبارات
+- اختبارات CSP بدون تخفيف CSP الحقيقي
+- اختبار كتالوج HTTPS
+
+لا يحتوي الملف على أي Secret.
+TURNSTILE_SECRET_KEY و LEAD_RATE_LIMIT_PEPPER يبقيان داخل Supabase Secrets فقط.
+
+لا ترفع إلى GitHub:
+- node_modules
+- dist
+- test-results
+- BUILD_SIZES.json
+
+عند النشر: GitHub Pages -> Source = GitHub Actions.

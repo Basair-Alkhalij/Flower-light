@@ -1,0 +1,18 @@
+{
+  "name": "basair-gulf-flower-light-site-checks",
+  "private": true,
+  "version": "1.0.5",
+  "devDependencies": {
+    "@playwright/test": "1.55.1",
+    "esbuild": "0.25.10"
+  },
+  "scripts": {
+    "test:browser": "playwright test --config=playwright.config.mjs",
+    "test:static": "node tests/smoke.mjs && node tests/leads-module.mjs && node tests/permissions-module.mjs && node tests/settings-module.mjs && node tests/products-modules.mjs && node tests/thumbnails.mjs && node tests/duplicate-product.mjs",
+    "build:check": "node scripts/build.mjs --check",
+    "build": "node scripts/build.mjs"
+  },
+  "allowScripts": {
+    "esbuild@0.25.10": true
+  }
+}

@@ -1,0 +1,60 @@
+بصائر الخليج — Flower Light v105
+================================
+
+هذه النسخة جاهزة محليًا فقط ولم تُرفع إلى GitHub.
+
+الترتيب الآمن عند التفعيل لاحقًا:
+
+1) Cloudflare Turnstile
+   - أنشئ Widget للنطاق: basair-alkhalij.github.io
+   - خذ Site key و Secret key.
+
+2) config.js
+   - ضع Site key العام فقط داخل turnstileSiteKey.
+   - لا تضع Secret key أو service_role في ملفات الموقع.
+
+3) Supabase Secrets
+   - TURNSTILE_SECRET_KEY
+   - LEAD_RATE_LIMIT_PEPPER
+
+4) Edge Function
+   - انشر supabase/functions/submit-customer-lead
+   - supabase/config.toml يضبط verify_jwt=false لهذه الوظيفة فقط.
+   - وظيفة manage-admin-account تبقى على التحقق الافتراضي.
+
+5) قاعدة البيانات
+   - إذا كانت قاعدة البيانات الحالية وصلت إلى v103: شغّل الملف الواحد
+     supabase/UPGRADE_EXISTING_V105.sql
+     من Supabase SQL Editor بعد نشر Edge Function ووضع Site key.
+   - إذا كانت قاعدة جديدة تمامًا: شغّل SUPABASE_SETUP.sql ثم أكمل إعداد
+     Turnstile/Edge Function قبل فتح الموقع للزوار.
+   - لا تستخدم supabase db push على قاعدة حالية إلا إذا كانت migration history
+     متزامنة فعليًا مع ملفات المشروع.
+
+6) Supabase Auth
+   - عطّل Sign-ups العامة إذا كانت الحسابات للإدارة فقط.
+   - فعّل MFA/TOTP لحساب المالك واختبر الاسترداد.
+
+7) GitHub Pages — عندما تقرر الرفع لاحقًا
+   - Settings > Pages > Source = GitHub Actions.
+   - لا تستخدم Deploy from a branch.
+   - لا ترفع dist أو node_modules أو BUILD_SIZES.json.
+
+8) بعد النشر
+   - اختبر الموقع العام.
+   - اختبر فتح المنتجات وتسجيل عميل.
+   - اختبر لوحة المدير ولوحة الأدمن من الجوال والكمبيوتر.
+   - راقب GitHub Actions حتى تنجح اختبارات build وPlaywright.
+
+أهم ما أضيف في v105:
+- تحميل المنتجات والصور على دفعات لمنع انقطاع النتائج عند حدود Supabase.
+- منع Service Worker من تقديم ملفات مخزنة مؤقتًا داخل لوحة المدير.
+- إدخال site-bootstrap/site-loader/business-info ضمن app-shell للاتصال دون شبكة.
+- CSP hash لـ JSON-LD يُولد تلقائيًا أثناء build.
+- حذف آلي لبيانات العملاء بعد مدة الاحتفاظ القابلة للتعديل (180 يوم افتراضيًا).
+- تنظيف مدة الاحتفاظ عبر pg_cron إن كان متاحًا، مع fallbacks من Edge Function ولوحة الإدارة.
+- تشديد عنوان الشبكة المستخدم في rate limit وعدم الثقة بـ X-Forwarded-For المرسل من العميل.
+- حد لحجم طلب Edge Function وفحص Content-Type وردود no-store.
+- ملف ترقية واحد واضح لقاعدة v103: supabase/UPGRADE_EXISTING_V105.sql.
+
+راجع README.md و VALIDATION_REPORT_V105.md للتفاصيل.

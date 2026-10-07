@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://basair-alkhalij.github.io/Flower-light/sitemap.xml
