@@ -1,0 +1,40 @@
+name: Flower Light validation
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: node --check app.js
+      - run: node --check admin.js
+      - run: node --check public-sync.js
+      - run: node --check pwa-install.js
+      - run: node --check config.js
+      - run: node --check site-bootstrap.js
+      - run: node --check site-loader.js
+      - run: node --check admin-analytics.js
+      - run: node --check admin-leads.js
+      - run: node --check admin-permissions.js
+      - run: node --check admin-settings.js
+      - run: node --check admin-business.js
+      - run: node --check business-info.js
+      - run: node --check admin-media.js
+      - run: node --check admin-products.js
+      - run: node --check admin-product-form.js
+      - run: node --check admin-import.js
+      - run: node --check catalog-search.js
+      - run: node --check sw.js
+      - run: node --check tests/browser-smoke.spec.mjs
+      - run: node --check tests/live-site-smoke.mjs
+      - run: node --experimental-strip-types --check supabase/functions/manage-admin-account/index.ts
+      - run: node --experimental-strip-types --check supabase/functions/submit-customer-lead/index.ts
+      - run: npm run build:check
+      - run: npm run test:static

@@ -1,0 +1,20 @@
+name: Live site smoke check
+
+on:
+  deployment_status:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */6 * * *'
+
+jobs:
+  live:
+    if: github.event_name != 'deployment_status' || github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: node tests/live-site-smoke.mjs
+        env:
+          FL_SITE_URL: ${{ github.event.deployment_status.target_url || vars.FL_SITE_URL }}
