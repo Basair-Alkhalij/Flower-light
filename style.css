@@ -1412,7 +1412,7 @@
 
 /* ===== polished product tools + persistent admin navigation ===== */
 .fl-cloud-top-tools{margin-bottom:12px}
-.fl-product-tools{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.fl-product-tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;align-items:stretch}
 .fl-product-tool{position:relative;display:grid;grid-template-columns:46px minmax(0,1fr);align-items:center;gap:10px;min-height:78px;padding:12px;border:1px solid #e3e8f0;border-radius:17px;background:#fff;color:#263248;font:inherit;text-align:right;cursor:pointer;box-shadow:0 8px 24px rgba(20,31,48,.05);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;overflow:hidden}
 .fl-product-tool::after{content:"";position:absolute;inset:auto -24px -38px auto;width:82px;height:82px;border-radius:50%;background:currentColor;opacity:.055;pointer-events:none}
 .fl-product-tool:hover{transform:translateY(-2px);box-shadow:0 13px 30px rgba(20,31,48,.09)}
@@ -1426,6 +1426,7 @@
 .fl-product-tool.import{color:#245f9d;border-color:#cfe0f3;background:linear-gradient(135deg,#fff,#f5f9fe)}.fl-product-tool.import .fl-product-tool-icon{background:#e6f1fc}
 .fl-product-tool.catalog{color:#a33030;border-color:#f0d0d0;background:linear-gradient(135deg,#fff,#fff7f7)}.fl-product-tool.catalog .fl-product-tool-icon{background:#ffeaea}
 .fl-product-tool.product{color:#a65b00;border-color:#ffdda8;background:linear-gradient(135deg,#fff,#fff8ec)}.fl-product-tool.product .fl-product-tool-icon{background:#fff0d8}
+.fl-product-tool.legacy{color:#6a4ab1;border-color:#ddd2f3;background:linear-gradient(135deg,#fff,#faf7ff)}.fl-product-tool.legacy .fl-product-tool-icon{background:#eee8fb}
 .fl-product-tool.loading{cursor:wait}.fl-product-tool.loading .fl-product-tool-icon{animation:flToolPulse 1s ease-in-out infinite alternate}@keyframes flToolPulse{to{transform:scale(.88);opacity:.65}}
 .fl-cloud-nav{scrollbar-width:none}.fl-cloud-nav::-webkit-scrollbar{display:none}
 
@@ -1951,3 +1952,123 @@ body.pwa-install-open{overflow:hidden}
 /* v104: Cloudflare Turnstile host inside the customer lead gate. */
 .fl-lead-turnstile{min-height:65px;display:flex;justify-content:center;align-items:center;margin-top:4px;overflow:hidden}
 .fl-lead-turnstile[hidden]{display:none!important}
+
+/* ===== v106 · Dynamic business information card ===== */
+.fl-business-info{
+  position:relative;
+  width:100%;
+  margin:18px 0 0;
+  padding:0;
+  overflow:hidden;
+  direction:rtl;
+  text-align:right;
+  background:linear-gradient(145deg,#fff 0%,#fffaf2 100%);
+  border:1px solid rgba(255,159,10,.22);
+  border-radius:24px;
+  box-shadow:0 16px 44px rgba(24,24,24,.07);
+}
+.fl-business-info::before{content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,#ff9f0a,#ffc45d 55%,rgba(255,159,10,.18))}
+.fl-business-info[hidden]{display:none!important}
+.fl-business-info-head{display:flex;align-items:center;gap:12px;padding:17px 18px 13px;border-bottom:1px solid rgba(236,231,223,.86)}
+.fl-business-info-icon{width:42px;height:42px;flex:0 0 42px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,#ffb438,#ff9500);color:#fff;box-shadow:0 8px 18px rgba(255,159,10,.22)}
+.fl-business-info-icon svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.fl-business-info-head strong{display:block;font-size:15px;color:#24201c;line-height:1.45}
+.fl-business-info-head small{display:block;margin-top:2px;font-size:11.5px;color:#8d8378}
+.fl-business-info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:14px}
+.fl-business-info-item{min-width:0;padding:12px 13px;border:1px solid #eee8de;border-radius:15px;background:rgba(255,255,255,.82);box-shadow:0 5px 14px rgba(31,26,20,.035)}
+.fl-business-info-item.is-primary{grid-column:1/-1;background:linear-gradient(135deg,#fff8ed,#fff);border-color:#f3d5a5}
+.fl-business-info-label{display:block;margin-bottom:4px;font-size:10.5px;font-weight:800;color:#9b7d5b;letter-spacing:.01em}
+.fl-business-info-value{display:block;min-width:0;font-size:13.5px;line-height:1.65;color:#25211d;overflow-wrap:anywhere;unicode-bidi:plaintext}
+
+.fl-business-settings-card>p{margin:0 0 14px;color:#667085;line-height:1.8;font-size:13px}
+.fl-business-settings-card fieldset{border:0;padding:0;margin:0;min-width:0}
+.fl-business-master-toggle{margin-bottom:16px}
+.fl-business-editor-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:18px 0 10px;padding-top:16px;border-top:1px solid #edf0f5}
+.fl-business-editor-head>div{display:grid;gap:3px}.fl-business-editor-head strong{font-size:14px}.fl-business-editor-head small{font-size:12px;color:#7d8799}
+.fl-business-editor-list{display:grid;gap:10px}
+.fl-business-editor-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:13px;border:1px solid #e4e9f1;border-radius:16px;background:#fbfcfe}
+.fl-business-editor-main{display:grid;grid-template-columns:minmax(150px,.72fr) minmax(210px,1.28fr);gap:10px;min-width:0}
+.fl-business-editor-controls{display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;gap:8px;min-width:150px}
+.fl-business-visible{min-height:38px;white-space:nowrap;font-size:12px;font-weight:800;color:#475467}
+.fl-business-order-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.fl-business-order-actions .fl-cloud-mini{min-width:38px}
+.fl-business-privacy-box{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.6fr);gap:12px 18px;align-items:end;margin-top:18px;padding:15px;border-radius:16px;background:#fffaf1;border:1px solid #f2d7a8}
+.fl-business-privacy-box>div{align-self:center}.fl-business-privacy-box>div strong{display:block;font-size:14px}.fl-business-privacy-box>div small{display:block;margin-top:4px;color:#7d6f5d;font-size:12px;line-height:1.65}.fl-business-privacy-box>.fl-cloud-check{grid-column:1/-1;min-height:34px}
+
+@media (max-width:520px){
+  .fl-business-info{border-radius:20px;margin-top:14px}.fl-business-info-grid{grid-template-columns:1fr;padding:11px}.fl-business-info-item.is-primary{grid-column:auto}.fl-business-info-head{padding:14px 14px 11px}.fl-business-info-item{padding:11px 12px}
+  .fl-business-editor-head{align-items:stretch;flex-direction:column}.fl-business-editor-head .fl-cloud-btn{width:100%}.fl-business-editor-row{grid-template-columns:1fr}.fl-business-editor-main{grid-template-columns:1fr}.fl-business-editor-controls{min-width:0;align-items:stretch;flex-direction:row}.fl-business-order-actions{justify-content:flex-start}.fl-business-privacy-box{grid-template-columns:1fr}.fl-business-privacy-box>.fl-cloud-check{grid-column:auto}
+}
+
+
+/* ===== v107 · inline company details + balanced legacy-image tool ===== */
+.fl-business-info.is-inline{
+  width:auto;
+  max-width:100%;
+  margin:5px 0 0;
+  padding:0 4px 2px;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  overflow:visible;
+  direction:rtl;
+  text-align:center;
+}
+.fl-business-info.is-inline::before{display:none}
+.fl-business-info-inline{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  justify-content:center;
+  gap:2px 12px;
+  width:100%;
+}
+.fl-business-info.is-inline .fl-business-info-item{
+  display:inline-flex;
+  align-items:baseline;
+  justify-content:center;
+  gap:4px;
+  min-width:0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+.fl-business-info.is-inline .fl-business-info-label{
+  display:inline;
+  margin:0;
+  color:#aaa39a;
+  font-size:9px;
+  font-weight:700;
+  line-height:1.55;
+  white-space:nowrap;
+}
+.fl-business-info.is-inline .fl-business-info-value{
+  display:inline;
+  min-width:0;
+  color:#716a62;
+  font-size:9.5px;
+  font-weight:800;
+  line-height:1.55;
+  overflow-wrap:anywhere;
+  unicode-bidi:plaintext;
+}
+
+/* ===== v109 · collapsible public bank accounts + bank account editor ===== */
+.fl-bank-accounts{margin:14px 0 8px;direction:rtl;text-align:right}
+.fl-bank-accounts[hidden]{display:none!important}
+.fl-bank-toggle{width:100%;min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border:1px solid #f1cf99;border-radius:16px;background:linear-gradient(135deg,#fffdf9,#fff9ef);color:inherit;font:inherit;text-align:inherit;cursor:pointer;transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}
+.fl-bank-toggle:hover{border-color:#ffb43c;box-shadow:0 10px 24px rgba(255,159,10,.10);transform:translateY(-1px)}
+.fl-bank-toggle:active{transform:translateY(0)}
+.fl-bank-toggle:focus-visible{outline:3px solid rgba(255,159,10,.22);outline-offset:2px}
+.fl-bank-toggle-left{display:flex;align-items:center;gap:11px;min-width:0}
+.fl-bank-public-icon{width:38px;height:38px;flex:0 0 38px;display:grid;place-items:center;border-radius:12px;background:#fff0d7;color:#c86d00}
+.fl-bank-public-icon svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.fl-bank-toggle-copy{display:block;min-width:0;line-height:1.2}.fl-bank-toggle-copy strong{display:block;font-size:14px;color:#27221d}.fl-bank-toggle-copy small{display:block;margin-top:3px;font-size:9.5px;color:#92887d;font-weight:700}
+.fl-bank-toggle-arrow{width:21px;height:21px;flex:0 0 auto;fill:none;stroke:#a19a91;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transform:rotate(180deg);transition:transform .2s ease}
+.fl-bank-accounts.is-open .fl-bank-toggle-arrow{transform:rotate(90deg)}
+.fl-bank-panel{padding:9px 2px 0}.fl-bank-panel[hidden]{display:none!important}.fl-bank-public-list{display:grid;gap:9px}
+.fl-bank-public-card{padding:12px;border:1px solid #ebe6df;border-radius:15px;background:#fff}.fl-bank-public-card.is-primary{border-color:#f2c57f;background:linear-gradient(135deg,#fff9ef,#fff)}.fl-bank-card-title{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:8px;border-bottom:1px solid #f1ede7}.fl-bank-card-title>strong{font-size:13.5px}.fl-bank-card-title>span{padding:3px 8px;border-radius:999px;background:#fff0d7;color:#a85b00;font-size:9px;font-weight:900}.fl-bank-beneficiary{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:9px 0 5px}.fl-bank-beneficiary span,.fl-bank-detail-label{font-size:9.5px;color:#94887a;font-weight:800}.fl-bank-beneficiary strong{font-size:11.5px;color:#342f2a;overflow-wrap:anywhere}.fl-bank-detail{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px dashed #eee8df}.fl-bank-detail-copy{min-width:0;display:grid;gap:2px}.fl-bank-detail-value{font-size:11px;color:#25211d;letter-spacing:.02em;overflow-wrap:anywhere;unicode-bidi:plaintext}.fl-bank-copy{flex:0 0 auto;min-width:54px;height:30px;padding:0 9px;border:1px solid #f0d7ad;border-radius:9px;background:#fff9ee;color:#a75d00;font:inherit;font-size:9.5px;font-weight:900;cursor:pointer}.fl-bank-copy.copied{background:#edf8f0;border-color:#c9e6d1;color:#26713c}.fl-bank-note{margin:7px 0 0;padding:8px 10px;border-radius:10px;background:#faf8f5;color:#766d63;font-size:10px;line-height:1.65}
+.fl-bank-admin-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin:10px 0}.fl-bank-admin-toolbar>div{display:grid;gap:3px}.fl-bank-admin-toolbar strong{font-size:14px}.fl-bank-admin-toolbar small{font-size:11px;color:#7d8799}.fl-bank-editor-list{display:grid;gap:12px}.fl-bank-editor-row{padding:14px;border:1px solid #e4e9f1;border-radius:17px;background:#fbfcfe}.fl-bank-editor-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px}.fl-bank-editor-head>div{display:grid;gap:2px}.fl-bank-editor-head strong{font-size:14px}.fl-bank-editor-head small{font-size:10.5px;color:#8791a1}.fl-bank-primary{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:#74531d}.fl-bank-editor-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}.fl-bank-wide{grid-column:1/-1}.fl-bank-editor-controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid #edf0f5}

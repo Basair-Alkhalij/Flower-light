@@ -34,6 +34,11 @@
     businessScript.async = false;
     document.body.appendChild(businessScript);
 
+    const banksScript = document.createElement('script');
+    banksScript.src = 'admin-banks.js?v=__FL_VERSION__';
+    banksScript.async = false;
+    document.body.appendChild(banksScript);
+
     // Module split part 4: Owner site-settings cards (lead gate, barcode, footer number).
     const settingsScript = document.createElement('script');
     settingsScript.src = 'admin-settings.js?v=__FL_VERSION__';

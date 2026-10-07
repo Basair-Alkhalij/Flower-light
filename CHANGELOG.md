@@ -1,4 +1,37 @@
+## v109 — 2026-10-07
+
+- Public bank accounts are now collapsed by default behind a single **الحسابات البنكية** row, matching the compact public-card controls.
+- Clicking the row expands/collapses the bank-account cards without changing copy actions or admin management.
+- Added accessible `aria-expanded` / `aria-controls` behavior and browser coverage for the accordion.
+
 # Changelog
+
+## v108
+
+- إضافة قسم مستقل للحسابات البنكية في لوحة المدير.
+- دعم عدة بنوك مع اسم البنك، اسم المستفيد، IBAN، رقم الحساب، SWIFT وملاحظة اختيارية.
+- تحديد حساب رئيسي واحد، ترتيب الحسابات، إظهار/إخفاء وحذف.
+- التحقق من IBAN قبل الحفظ، بما في ذلك طول IBAN السعودي وchecksum.
+- عرض الحسابات البنكية للزوار ببطاقات بسيطة مع أزرار نسخ مباشرة.
+- إضافة migration وملف ترقية مستقل `UPGRADE_EXISTING_V108.sql`.
+
+
+## v107
+
+- دمج بيانات المنشأة داخل بطاقة الموقع مباشرة أسفل عبارة `DIGITAL BUSINESS CARD` بدل عرضها كبطاقة مستقلة.
+- جعل بيانات المنشأة العامة بسيطة ومرنة كسطر/أسطر صغيرة متجاوبة مع الجوال، مع الإبقاء على الخانات الديناميكية من لوحة المدير.
+- الإبقاء على العرض التفصيلي لبيانات المنشأة داخل صفحة سياسة الخصوصية.
+- تحسين بطاقة **تحسين الصور القديمة** بإضافة أيقونة وهوية لونية ووصف مختصر متناسق مع بقية أدوات المنتجات.
+- جعل شبكة أدوات المنتجات تتوزع تلقائيًا حسب المساحة المتاحة مع الحفاظ على تخطيطات الجوال الحالية.
+
+## v106 — 2026-10-07
+- Redesigned the public business/company details as an integrated card aligned with the main site instead of detached footer lines.
+- Replaced fixed company display fields with owner-managed dynamic rows: add, rename, edit, show/hide, reorder and delete.
+- Kept customer-lead retention as a separate operational privacy setting while optionally showing it on the privacy page.
+- Added `business_public_fields` with owner-only RLS and a filtered public RPC payload.
+- Added `UPGRADE_EXISTING_V106.sql` and migration seeding existing company name/CR/VAT/contact into dynamic rows once.
+- Included a catch-up definition of `replace_legacy_product_image_for_owner` so legacy WebP conversion works even on databases that missed the older v101 migration.
+- Improved the legacy-image tool copy and shows the number of old images eligible for optimization.
 
 ## v105 — 2026-10-06
 - Added paged public loading for categories, products and product gallery rows to avoid PostgREST row-limit truncation.

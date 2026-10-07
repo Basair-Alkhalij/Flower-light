@@ -21,6 +21,7 @@ const SHELL_URLS = [
   './site-bootstrap.js?v=__FL_VERSION__',
   './site-loader.js?v=__FL_VERSION__',
   './business-info.js?v=__FL_VERSION__',
+  './bank-info.js?v=__FL_VERSION__',
   './pwa-install.js?v=__FL_VERSION__',
   './config.js?v=__FL_VERSION__',
   './public-sync.js?v=__FL_VERSION__',
@@ -67,6 +68,7 @@ function isShellRequest(url) {
     path.endsWith('/site-bootstrap.js') ||
     path.endsWith('/site-loader.js') ||
     path.endsWith('/business-info.js') ||
+    path.endsWith('/bank-info.js') ||
     path.endsWith('/pwa-install.js') ||
     path.endsWith('/config.js') ||
     path.endsWith('/public-sync.js') ||

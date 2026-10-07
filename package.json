@@ -1,7 +1,7 @@
 {
   "name": "basair-gulf-flower-light-site-checks",
   "private": true,
-  "version": "1.0.5",
+  "version": "1.0.9",
   "devDependencies": {
     "@playwright/test": "1.55.1",
     "esbuild": "0.25.10"

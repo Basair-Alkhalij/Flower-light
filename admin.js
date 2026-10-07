@@ -917,6 +917,7 @@
   const ownerSettingsViewItems = [
     ['site-settings','إعدادات الموقع'],
     ['business-settings','بيانات الشركة'],
+    ['bank-settings','الحسابات البنكية'],
     ['template-settings','قالب المنتجات']
   ];
   const validPermissionKeys = new Set(adminViewItems.map(([key])=>key));
@@ -1182,7 +1183,8 @@
       loadProfileAdminData(),
       loadContactsAdminData(),
       whenModule('FL_ADMIN_LEADS').then(m=>m?m.loadLeadsPage({reset:true}):null),
-      whenModule('FL_ADMIN_SETTINGS').then(m=>m?m.load():null)
+      whenModule('FL_ADMIN_SETTINGS').then(m=>m?m.load():null),
+      whenModule('FL_ADMIN_BANKS').then(m=>m?m.load():null)
     ]);
   }
 
@@ -1381,6 +1383,7 @@
     else if(view==='leads') renderSplitSection('FL_ADMIN_LEADS','renderLeads');
     else if(view==='site-settings' && isPrimaryAdmin) renderOwnerSettingsPage('site');
     else if(view==='business-settings' && isPrimaryAdmin) renderOwnerSettingsPage('business');
+    else if(view==='bank-settings' && isPrimaryAdmin) renderOwnerSettingsPage('banks');
     else if(view==='template-settings' && isPrimaryAdmin) renderOwnerSettingsPage('template');
     else if(view==='credentials' && isPrimaryAdmin) renderCredentials();
     else if(view==='permissions' && isPrimaryAdmin) renderSplitSection('FL_ADMIN_PERMISSIONS','renderPermissions');
@@ -1395,12 +1398,14 @@
     const config={
       site:{title:'إعدادات الموقع',description:'إعدادات دخول العملاء وتثبيت تطبيق الموقع.',view:'site-settings'},
       business:{title:'بيانات الشركة',description:'البيانات التجارية وسياسة الخصوصية وما يظهر منها للزوار.',view:'business-settings'},
+      banks:{title:'الحسابات البنكية',description:'بيانات استقبال الحوالات التي تظهر للعملاء مع أزرار نسخ مباشرة.',view:'bank-settings'},
       template:{title:'قالب المنتجات',description:'الباركود الرئيسي ورقم التذييل المستخدمان في تصاميم المنتجات.',view:'template-settings'}
     }[scope];
     if(!config){view='overview';renderOverview();return;}
-    const cards=window.FL_ADMIN_SETTINGS?.cardsHtml(scope)||'<div class="fl-cloud-note bad">تعذر تحميل إعدادات الموقع. حدّث الصفحة وحاول مرة أخرى.</div>';
-    layout(`<div class="fl-cloud-head"><div><h2>${config.title}</h2><p>${config.description}</p></div></div>${cards}`);
-    window.FL_ADMIN_SETTINGS?.bind(()=>renderOwnerSettingsPage(scope));
+    const module=scope==='banks'?window.FL_ADMIN_BANKS:window.FL_ADMIN_SETTINGS;
+    const cards=scope==='banks'?module?.cardsHtml():module?.cardsHtml(scope);
+    layout(`<div class="fl-cloud-head"><div><h2>${config.title}</h2><p>${config.description}</p></div></div>${cards||'<div class="fl-cloud-note bad">تعذر تحميل الإعدادات. حدّث الصفحة وحاول مرة أخرى.</div>'}`);
+    module?.bind(()=>renderOwnerSettingsPage(scope));
   }
 
   function renderOverview(){
@@ -1416,7 +1421,7 @@
     if(allowed.has('leads'))statCards.push([window.FL_ADMIN_LEADS?.totalForStats()||0,'جهات اتصال العملاء']);
     const statsHtml=statCards.length?`<div class="fl-cloud-stats">${statCards.map(([value,label])=>`<div class="fl-cloud-stat"><strong>${value}</strong><span>${label}</span></div>`).join('')}</div>`:'';
     const contentShortcuts=adminViewItems.filter(([key])=>allowed.has(key)).map(([key,label])=>ownerShortcutButton(key,label,'فتح القسم وإدارته')).join('');
-    const ownerShortcuts=isPrimaryAdmin?`${ownerShortcutButton('site-settings','إعدادات الموقع','دخول العملاء وتثبيت التطبيق')}${ownerShortcutButton('business-settings','بيانات الشركة','السجل والضريبة والتواصل والخصوصية')}${ownerShortcutButton('template-settings','قالب المنتجات','الباركود ورقم التذييل')}${ownerShortcutButton('credentials','بيانات تسجيل الدخول','حسابات المدير والأدمن والاستعادة')}${ownerShortcutButton('permissions','صلاحيات الأدمن','تحديد ما يستطيع الأدمن الوصول إليه')}`:'';
+    const ownerShortcuts=isPrimaryAdmin?`${ownerShortcutButton('site-settings','إعدادات الموقع','دخول العملاء وتثبيت التطبيق')}${ownerShortcutButton('business-settings','بيانات الشركة','خانات مرنة لبيانات المنشأة وإعدادات الخصوصية')}${ownerShortcutButton('bank-settings','الحسابات البنكية','إدارة حسابات التحويل ونسخ IBAN')}${ownerShortcutButton('template-settings','قالب المنتجات','الباركود ورقم التذييل')}${ownerShortcutButton('credentials','بيانات تسجيل الدخول','حسابات المدير والأدمن والاستعادة')}${ownerShortcutButton('permissions','صلاحيات الأدمن','تحديد ما يستطيع الأدمن الوصول إليه')}`:'';
     layout(`<div class="fl-cloud-head"><div><h2>${isPrimaryAdmin?'الرئيسية':'لوحة الأدمن'}</h2><p>${isPrimaryAdmin?'ملخص سريع للموقع. كل نوع من الإعدادات أصبح في صفحته الخاصة لتبقى اللوحة مرتبة وواضحة.':'الأقسام المتاحة لحسابك حسب الصلاحيات المحددة.'}</p></div></div>
       ${statsHtml}
       ${contentShortcuts?`<section class="fl-overview-section"><div class="fl-overview-section-head"><h3>إدارة المحتوى</h3><p>الأقسام التشغيلية للموقع.</p></div><div class="fl-overview-shortcuts">${contentShortcuts}</div></section>`:''}
