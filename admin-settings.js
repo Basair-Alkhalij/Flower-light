@@ -120,7 +120,7 @@
         <span class="fl-permission-check" aria-hidden="true">✓</span>
       </label>
       <div class="fl-cloud-actions"><button class="fl-cloud-btn primary" id="flPwaInstallSettingsSave" type="submit" ${pwaInstallSettingError?'disabled':''}>حفظ الإعداد</button></div>
-    </form>:'';
+    </form>`:'';
     const quoteListCard=isPrimaryAdmin?`<form id="flQuoteListSettingsForm" class="fl-cloud-card fl-quote-list-settings-card">
       <div class="fl-credentials-card-head"><div><span class="fl-account-badge owner">طلبات الأسعار</span><h3>إظهار قائمة طلب عرض السعر للزوار</h3></div></div>
       <p>تحكم في ظهور زر «أضف لقائمة الطلب» والشريط العائم ونافذة طلب عرض السعر داخل الموقع العام. إخفاء الميزة لا يحذف القوائم المحفوظة في أجهزة الزوار.</p>
