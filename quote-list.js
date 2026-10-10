@@ -15,6 +15,8 @@
   const isEnabled = () => window.FLOWER_LIGHT_SITE_SETTINGS?.quote_list_enabled !== false;
   const clampQty = value => Math.max(1, Math.min(MAX_QTY, Math.trunc(Number(value) || 1)));
   const cleanText = (value, max) => Array.from(String(value ?? '').trim()).slice(0, max).join('');
+  const AVAILABILITY_LABELS = Object.freeze({ available: 'متوفر', out_of_stock: 'نفد', coming_soon: 'قريبًا' });
+  const normalizeAvailability = value => Object.hasOwn(AVAILABILITY_LABELS, String(value || '').trim()) ? String(value).trim() : 'available';
   const cleanItem = (item, qty = 1) => {
     const id = cleanText(item?.id || item?.model || item?.name || '', 120);
     if (!id) return null;
@@ -22,6 +24,7 @@
       id,
       name: cleanText(item?.name || item?.caption || item?.alt || 'منتج', MAX_NAME) || 'منتج',
       model: cleanText(item?.model || '', 80),
+      availability: normalizeAvailability(item?.availability),
       qty: clampQty(qty)
     };
   };
@@ -113,6 +116,10 @@
     if (!isEnabled()) return false;
     const clean = cleanItem(item, qty);
     if (!clean) return false;
+    if (clean.availability !== 'available') {
+      toast(`هذا المنتج ${AVAILABILITY_LABELS[clean.availability]} ولا يمكن إضافته لقائمة الطلب حاليًا`);
+      return false;
+    }
     const current = state.get(clean.id);
     if (!current && state.size >= MAX_ITEMS) {
       toast(`الحد الأقصى ${MAX_ITEMS} صنفًا في قائمة الطلب`);
@@ -209,6 +216,20 @@
     if (!enabled) return;
     const item = control._quoteItem;
     const current = state.get(String(id || ''));
+    const availability = normalizeAvailability(item?.availability);
+    if (availability !== 'available') {
+      if (current) {
+        state.delete(current.id);
+        safeSave();
+        renderFloatingBar();
+        if (doc?.getElementById('flQuoteModal')?.classList.contains('open')) renderModalList();
+      }
+      const unavailable = createButton('quote-list-add-button is-unavailable', `${item?.name || 'المنتج'} غير متاح للطلب`, AVAILABILITY_LABELS[availability]);
+      unavailable.disabled = true;
+      unavailable.dataset.availability = availability;
+      control.append(unavailable);
+      return;
+    }
     if (!current) {
       const addButton = createButton('quote-list-add-button', `أضف ${item?.name || 'المنتج'} لقائمة الطلب`, 'أضف لقائمة الطلب');
       addButton.setAttribute('aria-pressed', 'false');

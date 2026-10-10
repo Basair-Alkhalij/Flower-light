@@ -17,6 +17,8 @@
   const categories=liveArray('categories');
   const siteCatalogs=liveArray('siteCatalogs');
   const { WHATSAPP_META_SHOW_DESCRIPTION,WHATSAPP_META_SHOW_SPECS,productWhatsAppOption,pricingMetaRow,esc,notify,layout,body,imageUrl,isStoragePath,bucket,MAX_PRODUCT_IMAGES,syncPublicProductsFromAdminCache,loadCatalogAdminData,normalizeSpecifications,productPricingTiers,PRICE_TIER_TYPE_MAP,catalogAdminCard,openCatalogForm,deleteCatalog,productThumbnailPath,productStoragePairPaths,storagePathUsedByOtherProduct }=core;
+  const AVAILABILITY_LABELS=Object.freeze({available:'متوفر',out_of_stock:'نفد',coming_soon:'قريبًا'});
+  const productAvailability=value=>Object.hasOwn(AVAILABILITY_LABELS,String(value||''))?String(value):'available';
   function adminGalleryRows(prod){
     if(!prod?.id) return [];
     let rows=productImages.filter(row=>row.product_id===prod.id && row.image_path).slice().sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0));
@@ -160,6 +162,7 @@
         price:source.price==null?null:Number(source.price),
         wholesale_price:source.wholesale_price==null?null:Number(source.wholesale_price),
         wholesale_min_qty:source.wholesale_min_qty==null?null:Number(source.wholesale_min_qty),
+        availability:productAvailability(source.availability),
         limited_offer:source.limited_offer===true,
         sort_order:(Number(source.sort_order)||0)+1,
         is_visible:false
@@ -217,6 +220,8 @@
       const specCount=normalizeSpecifications(p.specifications).length;
       const gallery=adminGalleryRows(p);
       const imagePath=gallery[0]?.image_path||p.image_path||p.image_url||'';
+      const availability=productAvailability(p.availability);
+      const availabilityLabel=AVAILABILITY_LABELS[availability];
       const pricingSummary=productPricingTiers(p.specifications,p).map(tier=>{
         const label=PRICE_TIER_TYPE_MAP.get(tier.type)?.label||'سعر';
         const price=`${Number(tier.price).toLocaleString('en-US',{maximumFractionDigits:2})} ر.س`;
@@ -226,7 +231,7 @@
       return `<article class="fl-cloud-product" data-product-id="${p.id}">
         <button class="fl-product-drag-handle" type="button" aria-label="اسحب لتغيير ترتيب ${esc(p.name||'المنتج')}" title="اسحب لتغيير الترتيب"><span>⋮⋮</span><small>${index+1}</small></button>
         <div class="fl-cloud-product-image-wrap"><img src="${esc(imageUrl(productThumbnailPath(imagePath)))}" alt="${esc(p.name||'منتج')}" loading="lazy" decoding="async"><span class="fl-admin-gallery-count">${gallery.length} / ${MAX_PRODUCT_IMAGES} صور</span></div>
-        <div class="fl-cloud-product-body"><strong>${esc(p.name||'منتج بدون اسم')}</strong><small>${esc(p.model?`الكود ${p.model}`:'بدون كود')} · ${p.is_visible===false?'مخفي':'ظاهر'}${specCount?` · ${specCount} معلومات`:''}${pricingSummary?` · ${esc(pricingSummary)}`:''}${p.limited_offer===true?' · عرض محدود':''}</small>
+        <div class="fl-cloud-product-body"><strong>${esc(p.name||'منتج بدون اسم')}</strong><small>${esc(p.model?`الكود ${p.model}`:'بدون كود')} · ${availabilityLabel} · ${p.is_visible===false?'مخفي':'ظاهر'}${specCount?` · ${specCount} معلومات`:''}${pricingSummary?` · ${esc(pricingSummary)}`:''}${p.limited_offer===true?' · عرض محدود':''}</small>
         <div class="fl-cloud-product-actions"><button class="fl-cloud-mini" data-prod-edit="${p.id}" type="button">تعديل</button><button class="fl-cloud-mini" data-prod-copy="${p.id}" type="button">نسخ</button><button class="fl-cloud-mini red" data-prod-delete="${p.id}" type="button">حذف</button></div></div></article>`;
     }).join('');
 

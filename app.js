@@ -29,6 +29,15 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     return item?.name || item?.caption || item?.alt || 'منتج';
   }
 
+  const PRODUCT_AVAILABILITY_LABELS = Object.freeze({ available: 'متوفر', out_of_stock: 'نفد', coming_soon: 'قريبًا' });
+  function normalizeProductAvailability(value) {
+    const key = String(value || '').trim();
+    return Object.hasOwn(PRODUCT_AVAILABILITY_LABELS, key) ? key : 'available';
+  }
+  function productAvailabilityLabel(value) {
+    return PRODUCT_AVAILABILITY_LABELS[normalizeProductAvailability(value)];
+  }
+
   const PRICING_META_KEY = '__pricing_tiers_v2';
   const PRICE_TIER_LABELS = {
     retail: 'سعر المفرق',
@@ -709,6 +718,13 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     thumb.className = `${type}-thumb`;
 
     const imageButton = createZoomButton(item, 'lazy', collection, index);
+    const availability = normalizeProductAvailability(item?.availability);
+    figure.dataset.availability = availability;
+    const availabilityBadge = document.createElement('span');
+    availabilityBadge.className = `product-availability-badge is-${availability}`;
+    availabilityBadge.textContent = productAvailabilityLabel(availability);
+    availabilityBadge.setAttribute('aria-label', `حالة التوفر: ${productAvailabilityLabel(availability)}`);
+    imageButton.appendChild(availabilityBadge);
     thumb.appendChild(imageButton);
     attachProductCardGalleryNavigation(thumb, imageButton, item);
     figure.appendChild(thumb);

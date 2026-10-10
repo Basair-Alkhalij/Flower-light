@@ -1,3 +1,13 @@
+## v111H — 2026-10-10 — product availability states
+
+- Added `products.availability` with allowed values `available`, `out_of_stock`, and `coming_soon`.
+- Added Owner/Admin product-form selection and a visible availability label in the admin product list.
+- Public product cards now show متوفر / نفد / قريبًا badges.
+- Quote-list additions are disabled for out-of-stock and coming-soon products; stale unavailable items are removed when their current card is rendered.
+- Excel import/export and product duplication preserve availability.
+- Added idempotent migration/upgrade SQL plus static, module, duplicate and browser coverage.
+- PDF/JPG exports intentionally remain unchanged.
+
 ## v111G — 2026-10-10 — stable WhatsApp quantity order
 
 - Kept the v111F direct-edit quantity inputs on cards and in the quote dialog.

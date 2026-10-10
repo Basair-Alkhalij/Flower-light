@@ -502,4 +502,22 @@ assert.match(quoteList,/input\.max = String\(MAX_QTY\)/);
 assert.match(quoteList,/input\.addEventListener\('change'/);
 assert.match(read('styles/products.css'),/\.fl-quote-item-qty-input/);
 
+
+// v111H: product availability states.
+const availabilityMigration=read('supabase/migrations/20261010150500_product_availability.sql');
+const productForm=read('admin-product-form.js');
+const productAdmin=read('admin-products.js');
+const productImport=read('admin-import.js');
+assert.match(sql,/availability text not null default 'available'/i);
+assert.match(sql,/products_availability_check/i);
+assert.match(v111Upgrade,/availability text not null default 'available'/i);
+assert.match(availabilityMigration,/PRODUCT_AVAILABILITY_V111H_OK/);
+assert.match(publicSync,/availability:\['available','out_of_stock','coming_soon'\]/);
+assert.match(app,/product-availability-badge/);
+assert.match(productForm,/flProdAvailability/);
+assert.match(productAdmin,/AVAILABILITY_LABELS/);
+assert.match(productImport,/حالة التوفر/);
+assert.match(quoteList,/availability !== 'available'/);
+assert.match(read('styles/products.css'),/\.product-availability-badge\.is-out_of_stock/);
+
 console.log('FLOWER_LIGHT_FINAL_SMOKE_OK');

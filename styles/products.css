@@ -398,6 +398,7 @@
 .fl-limited-offer-check small{color:#8b7c67;font-size:11px;font-weight:600;line-height:1.5}
 
 .product-image-button{position:relative;overflow:hidden}
+.product-availability-badge{position:absolute;left:10px;bottom:10px;z-index:5;padding:5px 9px;border-radius:999px;background:#e9f8ef;color:#176a42;font-size:11px;font-weight:900;pointer-events:none}.product-availability-badge.is-out_of_stock{background:#fff0f0;color:#a83232}.product-availability-badge.is-coming_soon{background:#fff6df;color:#8b5a00}
 .product-limited-offer-badge{
   position:absolute;
   top:12px;
@@ -911,6 +912,7 @@
 }
 .quote-list-add-button{padding:9px 11px;cursor:pointer;transition:transform .18s ease,background .18s ease,border-color .18s ease}
 .quote-list-add-button:hover{background:#ffefc8;border-color:#f0af32;transform:translateY(-1px)}
+.quote-list-add-button.is-unavailable,.quote-list-add-button:disabled{cursor:not-allowed;opacity:.72;background:#f3f4f6;border-color:#d9dde4;color:#667085;transform:none}
 .quote-list-add-button:focus-visible,.quote-list-qty-button:focus-visible,.fl-quote-bar:focus-visible,.fl-quote-dialog button:focus-visible,.fl-quote-dialog input:focus-visible,.fl-quote-dialog textarea:focus-visible{outline:3px solid rgba(255,159,10,.28);outline-offset:2px}
 .quote-list-qty-control{padding:4px 6px;justify-content:space-between}
 .quote-list-qty-button{width:34px;height:34px;border:0;border-radius:10px;background:#ffb126;color:#2e210d;font:inherit;font-size:20px;font-weight:900;cursor:pointer}

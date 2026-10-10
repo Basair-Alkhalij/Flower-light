@@ -1,15 +1,5 @@
--- Flower Light / Basair Gulf
--- Upgrade path for v111D-v111H additions.
--- Run this AFTER UPGRADE_EXISTING_V110.sql on an existing v105+ database.
-
+-- Flower Light v111H — product availability states
 begin;
-
-alter table public.site_settings
-  add column if not exists quote_list_enabled boolean not null default true;
-
-update public.site_settings
-set quote_list_enabled=true
-where id=1 and quote_list_enabled is null;
 
 alter table public.products
   add column if not exists availability text not null default 'available';
@@ -36,13 +26,9 @@ comment on column public.products.availability is
 
 commit;
 
-select id, quote_list_enabled, updated_at
-from public.site_settings
-where id=1;
-
 select availability, count(*) as products
 from public.products
 group by availability
 order by availability;
 
-select 'UPGRADE_EXISTING_V111_OK' as status;
+select 'PRODUCT_AVAILABILITY_V111H_OK' as status;
