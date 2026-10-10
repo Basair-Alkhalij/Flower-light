@@ -214,8 +214,13 @@ test('quote list keeps quantities after reload and sends two products to WhatsAp
 
   await page.locator('.quote-list-product-control[data-quote-control-id="prod-test"] .quote-list-add-button').click();
   await page.locator('.quote-list-product-control[data-quote-control-id="prod-two"] .quote-list-add-button').click();
-  await page.locator('.quote-list-product-control[data-quote-control-id="prod-test"] .quote-list-qty-button').nth(1).click();
-  await expect(page.locator('.quote-list-product-control[data-quote-control-id="prod-test"] .quote-list-qty-value')).toHaveText('2');
+  const cardQty=page.locator('.quote-list-product-control[data-quote-control-id="prod-test"] .quote-list-qty-value');
+  await expect(cardQty).toHaveAttribute('type','number');
+  await expect(cardQty).toHaveAttribute('min','1');
+  await expect(cardQty).toHaveAttribute('max','9999');
+  await cardQty.fill('25');
+  await cardQty.press('Enter');
+  await expect(page.locator('.quote-list-product-control[data-quote-control-id="prod-test"] .quote-list-qty-value')).toHaveValue('25');
   await expect(page.locator('#flQuoteBar')).toBeVisible();
   await expect(page.locator('#flQuoteCount')).toHaveText('2');
 
@@ -226,6 +231,11 @@ test('quote list keeps quantities after reload and sends two products to WhatsAp
   await page.locator('#flQuoteBar').click();
   await expect(page.locator('#flQuoteModal')).toHaveClass(/open/);
   await expect(page.locator('#flQuoteItems .fl-quote-item')).toHaveCount(2);
+  await expect(page.locator('#flQuoteItems .fl-quote-item').nth(0).locator('.fl-quote-item-qty-input')).toHaveValue('25');
+  const modalQty=page.locator('#flQuoteItems .fl-quote-item').nth(1).locator('.fl-quote-item-qty-input');
+  await modalQty.fill('7');
+  await modalQty.press('Enter');
+  await expect(page.locator('#flQuoteItems .fl-quote-item').nth(1).locator('.fl-quote-item-qty-input')).toHaveValue('7');
   await page.locator('#flQuoteName').fill('محمد');
   await page.locator('#flQuoteNotes').fill('فضلاً إرسال أفضل سعر');
   await page.locator('#flQuoteSend').click();
@@ -238,8 +248,8 @@ test('quote list keeps quantities after reload and sends two products to WhatsAp
   expect(url.origin).toBe('https://wa.me');
   expect(url.pathname).toBe('/966570372763');
   const message=url.searchParams.get('text');
-  expect(message).toContain('1) جداري تجريبي — WL-TEST × 2');
-  expect(message).toContain('2) منتج ثان — WL-TWO × 1');
+  expect(message).toContain('1) جداري تجريبي — WL-TEST × 25');
+  expect(message).toContain('2) منتج ثان — WL-TWO × 7');
   expect(message).toContain('الاسم: محمد');
   expect(message).toContain('ملاحظات: فضلاً إرسال أفضل سعر');
 });

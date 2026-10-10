@@ -914,7 +914,13 @@
 .quote-list-add-button:focus-visible,.quote-list-qty-button:focus-visible,.fl-quote-bar:focus-visible,.fl-quote-dialog button:focus-visible,.fl-quote-dialog input:focus-visible,.fl-quote-dialog textarea:focus-visible{outline:3px solid rgba(255,159,10,.28);outline-offset:2px}
 .quote-list-qty-control{padding:4px 6px;justify-content:space-between}
 .quote-list-qty-button{width:34px;height:34px;border:0;border-radius:10px;background:#ffb126;color:#2e210d;font:inherit;font-size:20px;font-weight:900;cursor:pointer}
-.quote-list-qty-value{min-width:28px;text-align:center;font-weight:900;color:#3c3020}
+.quote-list-qty-value{
+  width:54px;min-width:54px;height:34px;box-sizing:border-box;text-align:center;font:inherit;font-weight:900;color:#3c3020;
+  border:1px solid #edc46e;border-radius:9px;background:#fff;padding:0 5px;direction:ltr;
+}
+.quote-list-qty-value:focus{outline:none;border-color:#f0a51e;box-shadow:0 0 0 3px rgba(255,159,10,.14)}
+.quote-list-qty-value::-webkit-outer-spin-button,.quote-list-qty-value::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.quote-list-qty-value[type=number]{-moz-appearance:textfield}
 .fl-quote-bar{
   position:fixed;z-index:14500;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);
   min-width:min(360px,calc(100vw - 24px));min-height:52px;padding:10px 16px;border:1px solid #f0b951;border-radius:17px;
@@ -936,7 +942,14 @@ body.fl-quote-open{overflow:hidden}
 .fl-quote-items{display:grid;gap:9px;margin-bottom:14px}
 .fl-quote-item{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:11px;border:1px solid #eee7dc;border-radius:14px;background:#fffaf2}
 .fl-quote-item-copy{min-width:0;display:grid;gap:3px}.fl-quote-item-copy strong{overflow-wrap:anywhere;color:#2b251e}.fl-quote-item-copy small{color:#8b7d70}
-.fl-quote-item-qty{display:flex;align-items:center;gap:7px}.fl-quote-item-qty span{min-width:24px;text-align:center;font-weight:900}
+.fl-quote-item-qty{display:flex;align-items:center;gap:7px}
+.fl-quote-item-qty-input{
+  width:58px;height:32px;box-sizing:border-box;text-align:center;border:1px solid #decaa4;border-radius:9px;background:#fff;
+  color:#3c3020;font:inherit;font-weight:900;padding:0 5px;direction:ltr;
+}
+.fl-quote-item-qty-input:focus{outline:none;border-color:#f0a51e;box-shadow:0 0 0 3px rgba(255,159,10,.14)}
+.fl-quote-item-qty-input::-webkit-outer-spin-button,.fl-quote-item-qty-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.fl-quote-item-qty-input[type=number]{-moz-appearance:textfield}
 .fl-quote-mini{width:32px;height:32px;border:0;border-radius:9px;background:#ffe1a2;color:#704300;font:inherit;font-size:18px;font-weight:900;cursor:pointer}
 .fl-quote-remove{min-height:32px;border:1px solid #efc7c7;border-radius:9px;background:#fff3f3;color:#9a3535;font:inherit;font-size:11px;font-weight:900;cursor:pointer;padding:5px 9px}
 .fl-quote-field{display:grid;gap:6px;margin-top:10px}.fl-quote-field>span{font-size:12px;font-weight:900;color:#40372f}.fl-quote-field small{font-weight:600;color:#938678}

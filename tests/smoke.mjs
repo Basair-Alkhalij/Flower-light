@@ -138,7 +138,7 @@ assert.match(manageAdmin, /https:\/\/basair-alkhalij\.github\.io/);
 assert.match(manageAdmin, /Origin not allowed/);
 assert.doesNotMatch(manageAdmin, /Access-Control-Allow-Origin': '\*'/);
 
-for (const file of ['app.js','admin.js','admin-media.js','admin-products.js','admin-product-form.js','admin-import.js','public-sync.js','site-bootstrap.js','site-loader.js']) {
+for (const file of ['app.js','quote-list.js','admin.js','admin-media.js','admin-products.js','admin-product-form.js','admin-import.js','public-sync.js','site-bootstrap.js','site-loader.js']) {
   execFileSync(process.execPath, ['--check', file], { cwd: root, stdio: 'ignore' });
 }
 for (const file of ['supabase/functions/manage-admin-account/index.ts','supabase/functions/submit-customer-lead/index.ts']) {
@@ -495,5 +495,11 @@ assert.match(publicSync,/flowerlight:site-settings/);
 assert.match(quoteList,/quote_list_enabled/);
 assert.match(quoteList,/flowerlight:site-settings/);
 assert.match(quoteList,/isEnabled/);
+assert.match(quoteList,/createQuantityInput/);
+assert.match(quoteList,/input\.type = 'number'/);
+assert.match(quoteList,/input\.min = '1'/);
+assert.match(quoteList,/input\.max = String\(MAX_QTY\)/);
+assert.match(quoteList,/input\.addEventListener\('change'/);
+assert.match(read('styles/products.css'),/\.fl-quote-item-qty-input/);
 
 console.log('FLOWER_LIGHT_FINAL_SMOKE_OK');
