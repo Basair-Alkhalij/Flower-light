@@ -12,6 +12,7 @@
   let lastFocus = null;
 
   const doc = typeof document !== 'undefined' ? document : null;
+  const isEnabled = () => window.FLOWER_LIGHT_SITE_SETTINGS?.quote_list_enabled !== false;
   const clampQty = value => Math.max(1, Math.min(MAX_QTY, Math.trunc(Number(value) || 1)));
   const cleanText = (value, max) => Array.from(String(value ?? '').trim()).slice(0, max).join('');
   const cleanItem = (item, qty = 1) => {
@@ -107,6 +108,7 @@
   }
 
   function add(item, qty = 1) {
+    if (!isEnabled()) return false;
     const clean = cleanItem(item, qty);
     if (!clean) return false;
     const current = state.get(clean.id);
@@ -162,9 +164,12 @@
 
   function renderProductControl(control, id) {
     if (!control || !doc) return;
+    const enabled = isEnabled();
+    control.hidden = !enabled;
+    control.replaceChildren();
+    if (!enabled) return;
     const item = control._quoteItem;
     const current = state.get(String(id || ''));
-    control.replaceChildren();
     if (!current) {
       const addButton = createButton('quote-list-add-button', `أضف ${item?.name || 'المنتج'} لقائمة الطلب`, 'أضف لقائمة الطلب');
       addButton.setAttribute('aria-pressed', 'false');
@@ -257,10 +262,11 @@
     const bar = doc?.getElementById('flQuoteBar');
     if (!bar) return;
     const count = state.size;
-    bar.hidden = count === 0;
+    const enabled = isEnabled();
+    bar.hidden = !enabled || count === 0;
     const badge = doc.getElementById('flQuoteCount');
     if (badge) badge.textContent = String(count);
-    doc.body?.classList.toggle('fl-has-quote-bar', count > 0);
+    doc.body?.classList.toggle('fl-has-quote-bar', enabled && count > 0);
   }
 
   function renderModalList() {
@@ -295,7 +301,7 @@
 
   function openModal() {
     ensureUi();
-    if (!state.size) return;
+    if (!isEnabled() || !state.size) return;
     const modal = doc?.getElementById('flQuoteModal');
     if (!modal) return;
     lastFocus = doc.activeElement;
@@ -316,6 +322,7 @@
   }
 
   function sendToWhatsApp() {
+    if (!isEnabled()) return false;
     const items = currentItems();
     if (!items.length) return false;
     const number = primaryWhatsAppNumber();
@@ -336,10 +343,20 @@
     return true;
   }
 
+  function applyVisibility() {
+    if (!doc) return;
+    const enabled = isEnabled();
+    if (!enabled) closeModal();
+    syncProductControls();
+    renderFloatingBar();
+    doc.getElementById('flQuoteModal')?.toggleAttribute('data-quote-disabled', !enabled);
+  }
+
   safeLoad();
   if (doc) {
-    if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', ensureUi, { once: true });
-    else ensureUi();
+    if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', () => { ensureUi(); applyVisibility(); }, { once: true });
+    else { ensureUi(); applyVisibility(); }
+    window.addEventListener('flowerlight:site-settings', applyVisibility);
   }
 
   window.FL_QUOTE_LIST = Object.freeze({
@@ -351,6 +368,8 @@
     remove,
     clear,
     createAddControl,
+    isEnabled,
+    applyVisibility,
     open: openModal,
     close: closeModal,
     quoteListWhatsAppMessage,
