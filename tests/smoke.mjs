@@ -529,7 +529,7 @@ assert.match(app,/dataset\.productName/);
 assert.match(app,/dataset\.productModel/);
 assert.match(catalogSearch,/querySelectorAll\('\.extra-section-panel'\)/);
 assert.match(catalogSearch,/catalog-search-section-label/);
-assert.match(catalogSearch,/لا توجد نتائج مطابقة في جميع الأقسام/);
+assert.match(catalogSearch,/لا توجد نتائج مطابقة للبحث والفلاتر/);
 assert.match(catalogSearch,/site-catalog-tab/);
 
 
