@@ -34,25 +34,36 @@ assert.doesNotMatch(html,/[?&]admin=/i);
 assert.match(html,/share-image\.jpg/i);
 assert.doesNotMatch(html,/https:\/\/basairalkhalij\.github\.io/i);
 
-const assets={
+const publicAssets={
   app:quotedAsset(html,'app.js'),
   pwa:quotedAsset(html,'pwa-install.js'),
-  admin:quotedAsset(html,'admin.js'),
-  media:quotedAsset(html,'admin-media.js'),
-  products:quotedAsset(html,'admin-products.js'),
-  form:quotedAsset(html,'admin-product-form.js'),
-  import:quotedAsset(html,'admin-import.js'),
+  loader:quotedAsset(html,'site-loader.js'),
   css:quotedAsset(html,'style.css'),
   manifest:quotedAsset(html,'manifest.webmanifest'),
 };
-console.log('Detected live assets',assets);
+console.log('Detected live public assets',publicAssets);
 
-const responses=await Promise.all(Object.values(assets).map(path=>get(path)));
-const texts=await Promise.all(responses.map(response=>response.text()));
-const [app,pwa,admin,media,products,form,importJs,css,manifestText]=texts;
+const publicResponses=await Promise.all(Object.values(publicAssets).map(path=>get(path)));
+const publicTexts=await Promise.all(publicResponses.map(response=>response.text()));
+const [app,pwa,loader,css,manifestText]=publicTexts;
+
+const adminAssets={
+  admin:quotedAsset(loader,'admin.js'),
+  media:quotedAsset(loader,'admin-media.js'),
+  products:quotedAsset(loader,'admin-products.js'),
+  form:quotedAsset(loader,'admin-product-form.js'),
+  import:quotedAsset(loader,'admin-import.js'),
+};
+console.log('Detected live admin assets',adminAssets);
+
+const adminResponses=await Promise.all(Object.values(adminAssets).map(path=>get(path)));
+const adminTexts=await Promise.all(adminResponses.map(response=>response.text()));
+const [admin,media,products,form,importJs]=adminTexts;
 
 assert.ok(app.length>1000);
 assert.match(pwa,/beforeinstallprompt/);
+assert.match(loader,/isAdminPage/);
+assert.match(loader,/admin\.js/);
 assert.match(admin,/FL_ADMIN_CORE/);
 assert.match(admin,/createClient/);
 assert.doesNotMatch(admin,/const XLSX_IMPORT_CDN/);
