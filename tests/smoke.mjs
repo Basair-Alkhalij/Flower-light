@@ -138,7 +138,7 @@ assert.match(manageAdmin, /https:\/\/basair-alkhalij\.github\.io/);
 assert.match(manageAdmin, /Origin not allowed/);
 assert.doesNotMatch(manageAdmin, /Access-Control-Allow-Origin': '\*'/);
 
-for (const file of ['app.js','admin.js','admin-media.js','admin-products.js','admin-product-form.js','admin-import.js','public-sync.js','site-bootstrap.js','site-loader.js']) {
+for (const file of ['app.js','quote-list.js','admin.js','admin-media.js','admin-products.js','admin-product-form.js','admin-import.js','public-sync.js','site-bootstrap.js','site-loader.js']) {
   execFileSync(process.execPath, ['--check', file], { cwd: root, stdio: 'ignore' });
 }
 for (const file of ['supabase/functions/manage-admin-account/index.ts','supabase/functions/submit-customer-lead/index.ts']) {
