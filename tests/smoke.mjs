@@ -10,11 +10,13 @@ const root = fileURLToPath(new URL('..', import.meta.url));
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const index = read('index.html');
 const app = read('app.js');
+const catalogPdfViewer = read('catalog-pdf-viewer.js');
 const admin = read('admin.js');
 const adminMedia = read('admin-media.js');
 const adminProducts = read('admin-products.js');
 const adminProductForm = read('admin-product-form.js');
 const adminImport = read('admin-import.js');
+const adminDatasheet = read('admin-datasheet.js');
 const adminProductBundle = [admin,adminMedia,adminProducts,adminProductForm,adminImport].join('\n');
 const sync = read('public-sync.js');
 const siteBootstrap = read('site-bootstrap.js');
@@ -23,7 +25,8 @@ const submitLead = read('supabase/functions/submit-customer-lead/index.ts');
 const turnstileMigration = read('supabase/migrations/2026-10-06_turnstile_customer_leads.sql');
 // Owner site-settings cards moved to admin-settings.js (module split part 4); their UI strings are checked across both files.
 const adminWithSettings = `${admin}\n${read('admin-settings.js')}`;
-const css = read('style.css');
+const cssEntry = read('style.css');
+const css = ['styles/core.css','styles/products.css','styles/responsive.css','styles/admin.css','styles/business-bank.css'].map(read).join('\n');
 const manageAdmin = read('supabase/functions/manage-admin-account/index.ts');
 const sql = read('SUPABASE_SETUP.sql');
 
@@ -66,8 +69,8 @@ assert.deepEqual(evaluateSeo('?admin=2'), {
   title: 'لوحة الأدمن | بصائر الخليج',
   robots: 'noindex,nofollow',
 });
-assert.match(admin, /createAdminDatasheetExport/);
-assert.match(admin, /flDatasheetDesignerForm.*createAdminDatasheetExport/);
+assert.match(adminDatasheet, /createAdminDatasheetExport/);
+assert.match(adminDatasheet, /flDatasheetDesignerForm[\s\S]*createAdminDatasheetExport/);
 assert.doesNotMatch(admin, /createAdminDatasheetPdf/);
 assert.doesNotMatch(app, /requestAnimationFrame\(\(\)=>renderSiteCatalogPages/);
 assert.doesNotMatch(`${index}\n${app}\n${admin}\n${sync}`, /quote_service_visible|quoteModal|paperQuote|عرض عرض سعر|طلب عرض سعر|flSubmitImageQuoteRequest|quoteBucket/i);
@@ -84,6 +87,7 @@ assert.deepEqual(responsiveQueries, [
   '(prefers-reduced-motion:reduce)',
   '(max-width: 760px)',
   '(max-width: 520px)',
+  '(max-width:520px)',
 ]);
 assert.match(css, /Consolidated responsive architecture/);
 assert.match(admin, /ownerSettingsViewItems/);
@@ -104,6 +108,25 @@ assert.match(css, /\.product-card-actions \.product-whatsapp-button\{[\s\S]*?gri
 assert.match(css, /\.image-lightbox-actions \.image-lightbox-whatsapp\{[\s\S]*?grid-column:1\/-1!important;/);
 assert.match(index, /imageLightboxDownloadPdf[\s\S]*imageLightboxShare[\s\S]*imageLightboxWhatsApp/);
 assert.ok(fs.statSync(path.join(root, 'share-image.jpg')).size > 1000, 'share image is missing or empty');
+const jpegDimensions=file=>{
+  const data=fs.readFileSync(path.join(root,file));
+  if(data[0]!==0xff||data[1]!==0xd8) throw new Error(`${file} is not a JPEG`);
+  let offset=2;
+  while(offset+9<data.length){
+    if(data[offset]!==0xff){offset++;continue;}
+    const marker=data[offset+1];
+    offset+=2;
+    if(marker===0xd8||marker===0xd9) continue;
+    const length=data.readUInt16BE(offset);
+    if(length<2||offset+length>data.length) break;
+    if([0xc0,0xc1,0xc2,0xc3,0xc5,0xc6,0xc7,0xc9,0xca,0xcb,0xcd,0xce,0xcf].includes(marker)){
+      return {height:data.readUInt16BE(offset+3),width:data.readUInt16BE(offset+5)};
+    }
+    offset+=length;
+  }
+  throw new Error(`Unable to read JPEG dimensions for ${file}`);
+};
+assert.deepEqual(jpegDimensions('share-image.jpg'),{width:1200,height:630});
 assert.ok(fs.existsSync(path.join(root, 'supabase/functions/manage-admin-account/index.ts')));
 assert.doesNotMatch(manageAdmin, /['"]quotes['"]|['"]services['"]/i);
 
@@ -148,7 +171,8 @@ assert.match(adminProductBundle, /data-price-tier-min/);
 assert.match(adminProductBundle, /data-price-tier-max/);
 assert.match(app, /سعر جملة الجملة/);
 assert.match(app, /priceTierRangeNote/);
-assert.match(app, /url\.searchParams\.set\('v', '87'\)/);
+assert.doesNotMatch(app, /url\.searchParams\.set\('v', '87'\)/);
+assert.match(app, /\['admin','category','product','v'\]\.forEach\(key => url\.searchParams\.delete\(key\)\)/);
 assert.match(index, /flLeadWebsite/);
 assert.match(sync, /leadSubmitCooldownMs=30000/);
 assert.match(admin, /leadSubmitCooldownMs=30000/);
@@ -208,7 +232,7 @@ assert.match(hardening,/where a\.role='subadmin'/);
 // STAGE88: every local static reference resolves to a real release file.
 const refs=[];
 for(const match of index.matchAll(/(?:src|href)=["']([^"']+)["']/g)) refs.push(match[1]);
-for(const match of css.matchAll(/url\((?:["']?)([^)"']+)(?:["']?)\)/g)) refs.push(match[1]);
+for(const match of (cssEntry+'\n'+css).matchAll(/url\((?:["']?)([^)"']+)(?:["']?)\)/g)) refs.push(match[1]);
 for(const raw of refs){
   const value=String(raw||'').trim();
   if(!value || /^(?:https?:|data:|blob:|mailto:|tel:|#)/i.test(value)) continue;
@@ -216,7 +240,7 @@ for(const raw of refs){
   if(!clean || clean.startsWith('/')) continue;
   assert.ok(fs.existsSync(path.join(root,clean)),`missing local asset: ${clean}`);
 }
-for(const asset of ['app.js','site-bootstrap.js','site-loader.js','admin.js','admin-media.js','admin-products.js','admin-product-form.js','admin-import.js','public-sync.js','style.css','company-logo.png','favicon-32.png','favicon-192.png','apple-touch-icon.png','favicon.ico','share-image.jpg']){
+for(const asset of ['analytics.js','catalog-pdf-viewer.js','app.js','site-bootstrap.js','site-loader.js','admin.js','admin-datasheet.js','admin-media.js','admin-products.js','admin-product-form.js','admin-import.js','public-sync.js','style.css' ,'company-logo.png','favicon-32.png','favicon-192.png','apple-touch-icon.png','favicon.ico','share-image.jpg']){
   assert.ok(fs.existsSync(path.join(root,asset)),`required release asset missing: ${asset}`);
 }
 
@@ -237,6 +261,10 @@ assert.doesNotMatch(textBundle,/STAGE(?:7[0-9]|8[0-6])|FINAL_SQL_STAGE(?:7[0-9]|
 // Final polish: shared config, PWA icons, 404/privacy pages, no stale personal-name examples.
 const configJs=read('config.js');
 assert.match(configJs,/window\.FLOWER_LIGHT_SUPABASE/);
+assert.match(configJs,/window\.FLOWER_LIGHT_ANALYTICS_CONFIG/);
+assert.doesNotMatch(read('analytics.js'),/G-XXXXXXXXXX/);
+assert.match(read('privacy.html'),/Google Analytics 4/);
+assert.match(submitLead,/allowedTurnstileHosts[\s\S]*basair-alkhalij\.github\.io/);
 assert.doesNotMatch(admin,/window\.FLOWER_LIGHT_SUPABASE\s*=/);
 assert.doesNotMatch(sync,/window\.FLOWER_LIGHT_SUPABASE\s*=/);
 assert.match(index,/config\.js\?v=__FL_VERSION__[\s\S]*app\.js\?v=__FL_VERSION__/);
@@ -323,7 +351,7 @@ assert.equal(pwaManifest.display,'standalone');
 assert.deepEqual(pwaManifest.display_override,['standalone']);
 assert.equal(pwaManifest.prefer_related_applications,false);
 
-// v104/v105: deployment, versioning, security and scalability hardening.
+// v104-v106: deployment, versioning, security and scalability hardening.
 assert.match(index, /Content-Security-Policy/);
 assert.match(index, /__FL_JSONLD_CSP_HASH__/);
 assert.match(index, /site-bootstrap\.js\?v=__FL_VERSION__/);
@@ -332,7 +360,7 @@ assert.match(siteLoader, /admin-import\.js\?v=__FL_VERSION__/);
 assert.match(read('admin-import.js'), /xlsx-0\.20\.3/);
 assert.match(read('admin-import.js'), /integrity/);
 assert.match(app, /JSPDF_SRI/);
-assert.match(app, /PDFJS_SRI/);
+assert.match(catalogPdfViewer, /PDFJS_SRI/);
 assert.match(app, /parsed\.protocol==='https:'/);
 assert.match(app, /localhost','127\.0\.0\.1/);
 assert.match(sync, /challenges\.cloudflare\.com\/turnstile/);
@@ -360,6 +388,35 @@ const v105Upgrade=read('supabase/UPGRADE_EXISTING_V105.sql');
 assert.match(v105Upgrade, /TURNSTILE_CUSTOMER_LEADS_V104_OK/);
 assert.match(v105Upgrade, /CUSTOMER_LEAD_RETENTION_V105_OK/);
 assert.match(read('admin-leads.js'), /purge_expired_customer_leads/);
+const v106Migration=read('supabase/migrations/20261007153000_dynamic_business_fields.sql');
+assert.match(v106Migration, /business_public_fields/);
+assert.match(v106Migration, /get_public_business_privacy/);
+assert.match(v106Migration, /replace_legacy_product_image_for_owner/);
+const v110Upgrade=read('supabase/UPGRADE_EXISTING_V110.sql');
+assert.match(v110Upgrade, /BUSINESS_DYNAMIC_FIELDS_V106_OK/);
+const businessAdmin=read('admin-business.js');
+assert.match(businessAdmin, /flBusinessAddField/);
+assert.match(businessAdmin, /business_public_fields/);
+assert.match(businessAdmin, /data-business-action=\"delete\"/);
+const businessInfo=read('business-info.js');
+assert.match(businessInfo, /Array\.isArray\(data\?\.fields\)/);
+assert.match(businessInfo, /fl-business-info-grid/);
+
+const bankMigration=read('supabase/migrations/20261007170000_bank_accounts.sql');
+assert.match(bankMigration,/business_bank_accounts/);
+assert.match(bankMigration,/get_public_bank_accounts/);
+assert.match(bankMigration,/BANK_ACCOUNTS_V108_OK/);
+assert.match(v110Upgrade,/BANK_ACCOUNTS_V108_OK/);
+assert.match(v110Upgrade,/UPGRADE_EXISTING_V110_OK/);
+const bankAdmin=read('admin-banks.js');
+assert.match(bankAdmin,/flBankAdd/);
+assert.match(bankAdmin,/validIban/);
+assert.match(bankAdmin,/business_bank_accounts/);
+const bankInfo=read('bank-info.js');
+assert.match(bankInfo,/get_public_bank_accounts/);
+assert.match(bankInfo,/fl-bank-copy/);
+assert.match(sw,/bank-info\.js\?v=__FL_VERSION__/);
+
 assert.match(turnstileMigration, /updated_at < v_now - interval '7 days'/);
 assert.match(sw, /isNavigation[\s\S]*fetch\(request\)/);
 assert.match(sw, /clients\.get\(event\.clientId\)/);
@@ -374,5 +431,25 @@ assert.match(sql,/add column if not exists wholesale_min_qty integer/i);
 assert.match(sql,/add column if not exists limited_offer boolean not null default false/i);
 const pricingMigration=read('supabase/migrations/2026-10-05_product_pricing_columns.sql');
 assert.match(pricingMigration,/PRODUCT_PRICING_COLUMNS_OK/);
+
+
+// v111B: static SEO/share pages are generated at build time and are never service-worker shell routes.
+const staticGenerator=read('scripts/generate-static-pages.mjs');
+assert.match(staticGenerator,/export async function generateStaticPages/);
+assert.match(staticGenerator,/table: 'categories'/);
+assert.match(staticGenerator,/table: 'products'/);
+assert.match(staticGenerator,/table: 'product_images'/);
+assert.match(staticGenerator,/is_visible', 'eq\.true'/);
+assert.match(staticGenerator,/twitter:card/);
+assert.match(staticGenerator,/application\/ld\+json/);
+assert.match(staticGenerator,/sitemap\.xml/);
+assert.match(read('scripts/build.mjs'),/generateStaticPages/);
+assert.match(read('scripts/build.mjs'),/FL_SKIP_STATIC_PAGES/);
+assert.ok(sw.includes("/(?:p|c)/") || sw.includes("(?:p|c)"));
+assert.match(app,/new URL\(`p\/\$\{encodeURIComponent\(id\)\}\/`/);
+assert.match(app,/new URL\(`c\/\$\{encodeURIComponent\(key\)\}\/`/);
+const pagesWorkflow=read('.github/workflows/pages.yml');
+assert.match(pagesWorkflow,/cron: '0 \*\/6 \* \* \*'/);
+assert.match(pagesWorkflow,/workflow_dispatch:/);
 
 console.log('FLOWER_LIGHT_FINAL_SMOKE_OK');

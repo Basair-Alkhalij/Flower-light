@@ -41,7 +41,9 @@ window.supabase={createClient(){
 }};`;
 
 async function installSupabaseMock(page){
-  await page.route('https://cdn.jsdelivr.net/npm/@supabase/**',route=>route.fulfill({status:200,contentType:'application/javascript',body:supabaseMockScript}));
+  const fulfill=route=>route.fulfill({status:200,contentType:'application/javascript',body:supabaseMockScript});
+  await page.route('https://cdn.jsdelivr.net/npm/@supabase/**',fulfill);
+  await page.route('**/supabase-vendor.js*',fulfill);
 }
 
 async function injectCatalogFixtures(page){
@@ -127,6 +129,46 @@ test('main catalog, product actions, lightbox navigation and catalog tab work',a
 
   await page.locator('#closeProducts').click();
   await expect(page.locator('#catalogModal')).not.toHaveClass(/open/);
+});
+
+
+test('public product and category share URLs use static SEO paths',async({page})=>{
+  await page.addInitScript(()=>{
+    window.__flSharedPayloads=[];
+    Object.defineProperty(navigator,'share',{configurable:true,value:async payload=>{window.__flSharedPayloads.push(payload);}});
+  });
+  await installSupabaseMock(page);
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await injectCatalogFixtures(page);
+  await page.locator('#openProducts').click();
+  await expect(page.locator('#catalogModal')).toHaveClass(/open/);
+
+  await page.locator('.product-share-button').click();
+  const productPayload=await page.evaluate(()=>window.__flSharedPayloads.at(-1));
+  const productUrl=new URL(productPayload.url);
+  expect(productUrl.pathname).toMatch(/\/p\/prod-test\/$/);
+  expect(productUrl.search).toBe('');
+
+  await page.locator('.category-share-button').first().click();
+  const categoryPayload=await page.evaluate(()=>window.__flSharedPayloads.at(-1));
+  const categoryUrl=new URL(categoryPayload.url);
+  expect(categoryUrl.pathname).toMatch(/\/c\/wall-lights\/$/);
+  expect(categoryUrl.search).toBe('');
+});
+
+test('legacy query deep links still open product and category targets',async({page})=>{
+  await installSupabaseMock(page);
+  await page.goto(`${base}?product=prod-test`,{waitUntil:'domcontentloaded'});
+  await injectCatalogFixtures(page);
+  await expect(page.locator('#catalogModal')).toHaveClass(/open/);
+  await expect(page.locator('#imageLightbox')).toHaveClass(/open/);
+  await page.locator('#closeImageLightbox').click();
+  await page.locator('#closeProducts').click();
+
+  await page.goto(`${base}?category=wall-lights`,{waitUntil:'domcontentloaded'});
+  await injectCatalogFixtures(page);
+  await expect(page.locator('#catalogModal')).toHaveClass(/open/);
+  await expect(page.locator('.extra-section-tab').filter({hasText:'جداريات'})).toHaveClass(/active/);
 });
 
 
@@ -366,45 +408,126 @@ for(const rpcFails of [false,true]){
   });
 }
 
-test('business privacy shows current values and honors individual/all hiding',async({page})=>{
-  let data={legal_name:'شركة بصائر الخليج',commercial_registration:'1010230086',tax_number:'311199840200003',contact_phone:'0560933353',retention_days:180};
+test('business privacy renders dynamic fields and honors all hiding',async({page})=>{
+  let data={fields:[
+    {id:'legal',label:'الاسم التجاري',value:'شركة بصائر الخليج',sort_order:0},
+    {id:'cr',label:'السجل التجاري',value:'1010230086',sort_order:1},
+    {id:'tax',label:'الرقم الضريبي',value:'311199840200003',sort_order:2},
+    {id:'contact',label:'للتواصل',value:'0560933353',sort_order:3}
+  ],retention_days:180};
   await page.route('**/rest/v1/rpc/get_public_business_privacy',route=>route.fulfill({contentType:'application/json',body:JSON.stringify(data)}));
   await page.goto(new URL('privacy.html',base).href);
-  await expect(page.locator('[data-business-field="legal_name"]')).toContainText('شركة بصائر الخليج');
-  await expect(page.locator('[data-business-field="contact_phone"]')).toContainText('0560933353');
+  await expect(page.locator('[data-business-field="legal"]')).toContainText('شركة بصائر الخليج');
+  await expect(page.locator('[data-business-field="contact"]')).toContainText('0560933353');
   await expect(page.locator('[data-business-field="retention_days"]')).toContainText('180 يوم');
-  data={...data,legal_name:'شركة معدلة'};delete data.tax_number;
+  await expect(page.locator('.fl-business-info-head')).toContainText('بيانات المنشأة');
+  data={fields:[{id:'legal',label:'الاسم الرسمي',value:'شركة معدلة',sort_order:0}],retention_days:90};
   await page.reload();
-  await expect(page.locator('[data-business-field="legal_name"]')).toContainText('شركة معدلة');
-  await expect(page.locator('[data-business-field="tax_number"]')).toHaveCount(0);
+  await expect(page.locator('[data-business-field="legal"]')).toContainText('الاسم الرسمي');
+  await expect(page.locator('[data-business-field="legal"]')).toContainText('شركة معدلة');
+  await expect(page.locator('[data-business-field="tax"]')).toHaveCount(0);
   data={};await page.reload();
   await expect(page.locator('#flBusinessStatus')).toBeHidden();
   await expect(page.locator('#flBusinessInfo')).toBeHidden();
   await expect(page.locator('body')).not.toContainText('311199840200003');
 });
 
-test('owner can edit company settings and hide fields without losing values',async({page})=>{
+test('owner can add rename reorder hide and delete flexible business fields',async({page})=>{
   await installSupabaseMock(page);await page.goto(base);
   await page.evaluate(()=>{
-    window.__businessSaved=null;
-    window.FL_ADMIN_CORE={isPrimaryAdmin:true,esc:s=>String(s??'').replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;'),notify(){},db:{from:()=>({
-      select:()=>({eq:()=>({maybeSingle:async()=>({data:{id:1,legal_name:'شركة بصائر الخليج',commercial_registration:'1010230086',tax_number:'311199840200003',contact_phone:'0560933353',retention_days:180,show_all:true,show_legal_name:true,show_commercial_registration:true,show_tax_number:true,show_contact_phone:true,show_retention_days:true},error:null})})}),
-      upsert:async row=>{window.__businessSaved=row;return {error:null};}
-    })}};
+    window.__businessSaved=null;window.__businessFieldsSaved=null;window.__businessDeleted=[];
+    const privacy={id:1,retention_days:180,show_all:true,show_retention_days:true};
+    const fields=[
+      {id:'11111111-1111-4111-8111-111111111111',label:'الاسم التجاري',value:'شركة بصائر الخليج',is_visible:true,sort_order:0},
+      {id:'22222222-2222-4222-8222-222222222222',label:'السجل التجاري',value:'1010230086',is_visible:true,sort_order:1}
+    ];
+    function table(name){
+      if(name==='business_privacy_settings')return {
+        select:()=>({eq:()=>({maybeSingle:async()=>({data:privacy,error:null})})}),
+        upsert:async row=>{window.__businessSaved=row;Object.assign(privacy,row);return {error:null};}
+      };
+      if(name==='business_public_fields')return {
+        select:()=>({order:async()=>({data:fields,error:null})}),
+        upsert:async rows=>{window.__businessFieldsSaved=rows;return {error:null};},
+        delete:()=>({in:async (column,ids)=>{window.__businessDeleted=ids;return {error:null};}})
+      };
+      throw new Error('Unexpected table '+name);
+    }
+    window.FL_ADMIN_CORE={isPrimaryAdmin:true,esc:s=>String(s??'').replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;'),notify(){},db:{from:table,rpc:async()=>({data:0,error:null})}};
   });
   await page.addScriptTag({url:new URL('admin-business.js?v=__FL_VERSION__',base).href});
-  await page.evaluate(async()=>{await window.FL_ADMIN_BUSINESS.load();document.body.innerHTML=window.FL_ADMIN_BUSINESS.cardsHtml();window.FL_ADMIN_BUSINESS.bind(()=>{});});
-  await expect(page.locator('#flBusiness_contact_phone')).toHaveValue('0560933353');
-  await page.locator('#flBusiness_legal_name').fill('شركة بصائر الخليج الجديدة');
-  await page.locator('#flBusiness_show_tax_number').uncheck();
+  await page.evaluate(async()=>{await window.FL_ADMIN_BUSINESS.load();const render=()=>{document.body.innerHTML=window.FL_ADMIN_BUSINESS.cardsHtml();window.FL_ADMIN_BUSINESS.bind(render);};render();});
+  await expect(page.locator('[data-business-row]')).toHaveCount(2);
+  await page.locator('[data-business-row]').nth(0).locator('[data-business-label]').fill('الاسم الرسمي');
+  await page.locator('[data-business-row]').nth(0).locator('[data-business-value]').fill('شركة بصائر الخليج الجديدة');
+  await page.locator('#flBusinessAddField').click();
+  await page.locator('[data-business-row]').nth(2).locator('[data-business-label]').fill('خدمة العملاء');
+  await page.locator('[data-business-row]').nth(2).locator('[data-business-value]').fill('0500000000');
+  await page.locator('[data-business-row]').nth(1).locator('[data-business-action="delete"]').click();
+  await expect(page.locator('[data-business-row]')).toHaveCount(2);
   await page.locator('#flBusiness_retention_days').fill('90');
   await page.locator('#flBusinessSave').click();
   await expect.poll(()=>page.evaluate(()=>window.__businessSaved?.retention_days)).toBe(90);
-  const saved=await page.evaluate(()=>window.__businessSaved);
-  expect(saved.tax_number).toBe('311199840200003');expect(saved.show_tax_number).toBe(false);
-  expect(saved.legal_name).toBe('شركة بصائر الخليج الجديدة');
-  await page.locator('#flBusinessShowAll').uncheck();await page.locator('#flBusinessSave').click();
+  const saved=await page.evaluate(()=>({settings:window.__businessSaved,fields:window.__businessFieldsSaved,deleted:window.__businessDeleted}));
+  expect(saved.settings.show_all).toBe(true);
+  expect(saved.fields.map(x=>x.label)).toEqual(['الاسم الرسمي','خدمة العملاء']);
+  expect(saved.fields.map(x=>x.sort_order)).toEqual([0,1]);
+  expect(saved.deleted).toEqual(['22222222-2222-4222-8222-222222222222']);
+  await page.locator('.fl-business-master-toggle').click();
+  await expect(page.locator('#flBusinessShowAll')).not.toBeChecked();
+  await page.locator('#flBusinessSave').click();
   await expect.poll(()=>page.evaluate(()=>window.__businessSaved?.show_all)).toBe(false);
   const hidden=await page.evaluate(()=>{window.FL_ADMIN_CORE.isPrimaryAdmin=false;return window.FL_ADMIN_BUSINESS.cardsHtml();});
   expect(hidden).toBe('');
+});
+
+test('public bank accounts render and expose copy actions',async({page})=>{
+  await installSupabaseMock(page);
+  await page.route('**/rest/v1/rpc/get_public_business_privacy',route=>route.fulfill({contentType:'application/json',body:'{}'}));
+  await page.route('**/rest/v1/rpc/get_public_bank_accounts',route=>route.fulfill({contentType:'application/json',body:JSON.stringify([{id:'bank-1',bank_name:'مصرف الراجحي',beneficiary_name:'شركة بصائر الخليج',iban:'SA0380000000608010167519',account_number:'608010167519',swift_code:'RJHISARI',note:'للحوالات البنكية فقط',is_primary:true,sort_order:0}])}));
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await expect(page.locator('#flBankAccounts')).toBeVisible();
+  const bankToggle=page.locator('#flBankAccounts .fl-bank-toggle');
+  await expect(bankToggle).toHaveAttribute('aria-expanded','false');
+  await expect(page.locator('#flBankAccountsPanel')).toBeHidden();
+  await bankToggle.click();
+  await expect(bankToggle).toHaveAttribute('aria-expanded','true');
+  await expect(page.locator('#flBankAccountsPanel')).toBeVisible();
+  await expect(page.locator('[data-bank-account="bank-1"]')).toContainText('مصرف الراجحي');
+  await expect(page.locator('[data-bank-account="bank-1"]')).toContainText('شركة بصائر الخليج');
+  await expect(page.locator('[data-bank-account="bank-1"]')).toContainText('SA03 8000 0000 6080 1016 7519');
+  await expect(page.locator('[data-bank-account="bank-1"] .fl-bank-copy')).toHaveCount(3);
+  await bankToggle.click();
+  await expect(page.locator('#flBankAccountsPanel')).toBeHidden();
+});
+
+test('owner can manage bank accounts and validate Saudi IBAN',async({page})=>{
+  await installSupabaseMock(page);
+  await page.route('**/rest/v1/rpc/get_public_business_privacy',route=>route.fulfill({contentType:'application/json',body:'{}'}));
+  await page.route('**/rest/v1/rpc/get_public_bank_accounts',route=>route.fulfill({contentType:'application/json',body:'[]'}));
+  await page.goto(base);
+  await page.evaluate(()=>{
+    window.__bankSaved=null;window.__bankDeleted=[];
+    const accounts=[{id:'11111111-1111-4111-8111-111111111111',bank_name:'مصرف الراجحي',beneficiary_name:'شركة بصائر الخليج',iban:'SA0380000000608010167519',account_number:'',swift_code:'',note:'',is_visible:true,is_primary:true,sort_order:0}];
+    const table=()=>({
+      select(){return this;},order(){return this;},then(resolve){return Promise.resolve({data:accounts,error:null}).then(resolve);},
+      delete(){return {in:async ids=>{window.__bankDeleted=ids;return {error:null};}};},
+      update(){return {eq:async()=>({error:null})};},
+      upsert:async rows=>{window.__bankSaved=rows;return {error:null};}
+    });
+    window.FL_ADMIN_CORE={isPrimaryAdmin:true,esc:s=>String(s??'').replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;'),notify(){},db:{from:table}};
+  });
+  await page.addScriptTag({url:new URL('admin-banks.js?v=__FL_VERSION__',base).href});
+  await page.evaluate(async()=>{await window.FL_ADMIN_BANKS.load();document.body.innerHTML=window.FL_ADMIN_BANKS.cardsHtml();window.FL_ADMIN_BANKS.bind(()=>{});});
+  await expect(page.locator('[data-bank-row]')).toHaveCount(1);
+  await page.locator('#flBankAdd').click();
+  await page.locator('[data-bank-row]').nth(1).locator('[data-bank-name]').fill('بنك إضافي');
+  await page.locator('[data-bank-row]').nth(1).locator('[data-bank-account-number]').fill('1234567890');
+  await page.locator('[data-bank-row]').nth(1).locator('[data-bank-primary]').check();
+  await page.locator('#flBankSave').click();
+  await expect.poll(()=>page.evaluate(()=>window.__bankSaved?.length||0)).toBe(2);
+  const saved=await page.evaluate(()=>window.__bankSaved);
+  expect(saved.filter(x=>x.is_primary)).toHaveLength(1);
+  expect(await page.evaluate(()=>window.FL_ADMIN_BANKS.validIban('SA0380000000608010167519'))).toBe(true);
+  expect(await page.evaluate(()=>window.FL_ADMIN_BANKS.validIban('SA1500000000000000000000'))).toBe(false);
 });

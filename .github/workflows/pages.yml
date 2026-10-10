@@ -4,6 +4,8 @@ on:
     branches: [main, master]
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'
 permissions:
   contents: read
 concurrency:
@@ -47,4 +49,3 @@ jobs:
     steps:
       - uses: actions/deploy-pages@v4
         id: deployment
-

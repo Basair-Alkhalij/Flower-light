@@ -13,9 +13,13 @@ const server=http.createServer((req,res)=>{
   const target=path.resolve(root,'.'+pathname);
   if(!target.startsWith(root+path.sep)){res.writeHead(403);res.end('forbidden');return;}
   fs.stat(target,(err,stat)=>{
-    if(err||!stat.isFile()){res.writeHead(404);res.end('not found');return;}
-    res.writeHead(200,{'Content-Type':types[path.extname(target).toLowerCase()]||'application/octet-stream','Cache-Control':'no-store'});
-    fs.createReadStream(target).pipe(res);
+    if(err){res.writeHead(404);res.end('not found');return;}
+    const file=stat.isDirectory()?path.join(target,'index.html'):target;
+    fs.stat(file,(fileErr,fileStat)=>{
+      if(fileErr||!fileStat.isFile()){res.writeHead(404);res.end('not found');return;}
+      res.writeHead(200,{'Content-Type':types[path.extname(file).toLowerCase()]||'application/octet-stream','Cache-Control':'no-store'});
+      fs.createReadStream(file).pipe(res);
+    });
   });
 });
 server.listen(port,'127.0.0.1',()=>process.stdout.write(`FLOWER_LIGHT_FINAL_TEST_SERVER ${port}\n`));

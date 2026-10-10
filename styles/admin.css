@@ -1,0 +1,51 @@
+/* ===== v103 owner dashboard organization and admin touch targets ===== */
+.fl-cloud-nav-group{display:grid;gap:2px}
+.fl-cloud-nav-group + .fl-cloud-nav-group{border-top:1px solid #edf0f4;margin-top:10px;padding-top:10px}
+.fl-cloud-nav-label{display:block;padding:3px 12px 6px;color:#9aa3b2;font-size:10px;font-weight:900;letter-spacing:.02em}
+.fl-overview-section{margin-bottom:16px}
+.fl-overview-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:9px}
+.fl-overview-section-head h3{margin:0;color:#263248;font-size:16px}
+.fl-overview-section-head p{margin:0;color:#8791a3;font-size:12px}
+.fl-overview-shortcuts{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.fl-overview-shortcut{position:relative;min-width:0;min-height:82px;border:1px solid #e3e8f0;border-radius:15px;background:#fff;padding:13px 42px 13px 14px;text-align:right;font:inherit;cursor:pointer;box-shadow:0 5px 15px rgba(28,39,60,.035);transition:.16s ease}
+.fl-overview-shortcut:hover{border-color:#f0c878;background:#fffdf8;transform:translateY(-1px);box-shadow:0 9px 20px rgba(28,39,60,.07)}
+.fl-overview-shortcut strong{display:block;color:#263248;font-size:14px}
+.fl-overview-shortcut small{display:block;margin-top:5px;color:#7d8799;font-size:11px;line-height:1.5}
+.fl-overview-shortcut>span{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:#b36a00;font-size:18px;font-weight:900}
+.fl-cloud-card fieldset{min-width:0;margin:0;padding:0;border:0;display:grid;gap:12px}
+.fl-cloud-card fieldset:disabled{opacity:.66}
+.fl-cloud-mini{min-height:44px}
+.fl-product-drag-handle{height:44px;min-height:44px}
+.fl-flex-spec-remove{min-height:44px}
+.fl-product-spec-head>div{min-width:0}
+.fl-add-spec-btn{max-width:100%;flex:0 0 auto}
+
+/* Keep every pricing control inside the product editor at tablet/laptop widths. */
+.fl-price-tier-row{
+  grid-template-columns:minmax(96px,1.05fr) minmax(92px,1fr) minmax(0,1.75fr) minmax(72px,.62fr);
+  overflow:hidden;
+}
+.fl-price-tier-row.is-retail{grid-template-columns:minmax(110px,1fr) minmax(110px,1fr) minmax(72px,.55fr)}
+.fl-price-tier-row>.fl-cloud-field,.fl-price-tier-range,.fl-price-tier-range>.fl-cloud-field{min-width:0}
+.fl-price-tier-row select,.fl-price-tier-row input{min-width:0}
+.fl-price-tier-remove{min-width:0;min-height:44px;width:100%;padding-inline:8px}
+
+@media (max-width: 760px) {
+  .fl-cloud-nav-group{display:contents}
+  .fl-cloud-nav-label{display:none}
+  .fl-overview-section-head{align-items:flex-start;flex-direction:column;gap:3px}
+  .fl-overview-shortcuts{grid-template-columns:1fr 1fr}
+  .fl-overview-shortcut{min-height:76px;padding:11px 36px 11px 11px}
+  .fl-overview-shortcut>span{left:11px}
+}
+
+@media (max-width: 520px) {
+  .fl-overview-shortcuts{grid-template-columns:1fr}
+  .fl-price-tier-row,.fl-price-tier-row.is-retail{grid-template-columns:1fr}
+  .fl-price-tier-range{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+/* v104: Cloudflare Turnstile host inside the customer lead gate. */
+.fl-lead-turnstile{min-height:65px;display:flex;justify-content:center;align-items:center;margin-top:4px;overflow:hidden}
+.fl-lead-turnstile[hidden]{display:none!important}
+
