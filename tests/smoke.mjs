@@ -495,5 +495,11 @@ assert.match(publicSync,/flowerlight:site-settings/);
 assert.match(quoteList,/quote_list_enabled/);
 assert.match(quoteList,/flowerlight:site-settings/);
 assert.match(quoteList,/isEnabled/);
+assert.match(quoteList,/createQuantityInput/);
+assert.match(quoteList,/input\.type = 'number'/);
+assert.match(quoteList,/input\.min = '1'/);
+assert.match(quoteList,/input\.max = String\(MAX_QTY\)/);
+assert.match(quoteList,/input\.addEventListener\('change'/);
+assert.match(read('styles/products.css'),/\.fl-quote-item-qty-input/);
 
 console.log('FLOWER_LIGHT_FINAL_SMOKE_OK');
