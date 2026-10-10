@@ -86,6 +86,7 @@ assert.deepEqual(responsiveQueries, [
   '(min-width:720px)',
   '(max-width:420px)',
   '(prefers-reduced-motion:reduce)',
+  '(prefers-color-scheme:dark)',
   '(max-width: 760px)',
   '(max-width: 520px)',
   '(max-width:520px)',
