@@ -37,9 +37,12 @@ assert.equal(window.FLOWER_LIGHT_CUSTOM_FILTERS[0].label,'نوع التشطيب'
 
 M.render();
 assert.match(rendered,/فلاتر البحث/);
-assert.match(rendered,/>تشغيل<\/span>/);
-assert.match(rendered,/>إيقاف<\/span>/);
-assert.doesNotMatch(rendered,/ON · تشغيل|OFF · إيقاف/);
+assert.match(rendered,/role="switch"/);
+assert.match(rendered,/aria-checked="true"/);
+assert.match(rendered,/aria-checked="false"/);
+assert.match(rendered,/width:52px;height:30px/);
+assert.match(rendered,/width:24px;height:24px/);
+assert.doesNotMatch(rendered,/ON · تشغيل|OFF · إيقاف|>تشغيل<\/span>|>إيقاف<\/span>/);
 assert.match(rendered,/حفظ الفلاتر والترتيب/);
 assert.match(rendered,/▲/);
 assert.match(rendered,/▼/);
