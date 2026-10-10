@@ -1,3 +1,13 @@
+## v111K — 2026-10-10 — dynamic catalog filters
+
+- Completed task 6 with dynamic filters for availability, canonical wattage and canonical CCT.
+- Wattage and CCT choices are derived from rendered product data, so new values appear automatically.
+- Filters combine with the existing cross-section text search and with each other.
+- Non-matching product sections and PDF catalog tabs are hidden while filtering, and the first matching section opens automatically.
+- Added a dedicated “مسح الفلاتر” action that resets filters without clearing the search query.
+- Added 360px Chromium coverage for combined search/filter behavior and horizontal fit.
+- No database change is required.
+
 ## v111J — 2026-10-10 — canonical product specification keys
 
 - Replaced free-form specification-name entry in the admin product editor with standardized specification types plus an explicit custom option.
