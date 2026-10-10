@@ -26,6 +26,8 @@
   let designFooterNumberSettingError='';
   let pwaInstallEnabled=window.FLOWER_LIGHT_SITE_SETTINGS?.pwa_install_enabled===true;
   let pwaInstallSettingError='';
+  let quoteListEnabled=window.FLOWER_LIGHT_SITE_SETTINGS?.quote_list_enabled!==false;
+  let quoteListSettingError='';
 
   async function load(){
     if(!isPrimaryAdmin)return;
@@ -34,6 +36,7 @@
     masterBarcodeSettingError='';
     designFooterNumberSettingError='';
     pwaInstallSettingError='';
+    quoteListSettingError='';
     try{
       const {data,error}=await db.from('site_settings').select('require_customer_lead,master_barcode_path,design_footer_number,design_footer_label').eq('id',1).maybeSingle();
       if(error)throw error;
@@ -48,24 +51,34 @@
       }else{
         pwaInstallEnabled=pwaResult.data?.pwa_install_enabled===true;
       }
+      const quoteResult=await db.from('site_settings').select('quote_list_enabled').eq('id',1).maybeSingle();
+      if(quoteResult.error){
+        quoteListEnabled=true;
+        quoteListSettingError=String(quoteResult.error?.message||quoteResult.error||'');
+      }else{
+        quoteListEnabled=quoteResult.data?.quote_list_enabled!==false;
+      }
       window.FLOWER_LIGHT_SITE_SETTINGS={
         require_customer_lead:customerLeadGateEnabled,
         master_barcode_path:masterBarcodePath,
         master_barcode_url:masterBarcodePath?imageUrl(masterBarcodePath):'',
         design_footer_number:designFooterNumber,
         design_footer_label:designFooterLabel,
-        pwa_install_enabled:pwaInstallEnabled
+        pwa_install_enabled:pwaInstallEnabled,
+        quote_list_enabled:quoteListEnabled
       };
     }catch(error){
       customerLeadGateEnabled=true;
       masterBarcodePath='';
       designFooterNumber='';
       pwaInstallEnabled=false;
+      quoteListEnabled=true;
       const message=String(error?.message||error||'');
       customerLeadGateSettingError=message;
       masterBarcodeSettingError=message;
       designFooterNumberSettingError=message;
       pwaInstallSettingError=message;
+      quoteListSettingError=message;
     }
   }
 
@@ -107,6 +120,17 @@
         <span class="fl-permission-check" aria-hidden="true">✓</span>
       </label>
       <div class="fl-cloud-actions"><button class="fl-cloud-btn primary" id="flPwaInstallSettingsSave" type="submit" ${pwaInstallSettingError?'disabled':''}>حفظ الإعداد</button></div>
+    </form>:'';
+    const quoteListCard=isPrimaryAdmin?`<form id="flQuoteListSettingsForm" class="fl-cloud-card fl-quote-list-settings-card">
+      <div class="fl-credentials-card-head"><div><span class="fl-account-badge owner">طلبات الأسعار</span><h3>إظهار قائمة طلب عرض السعر للزوار</h3></div></div>
+      <p>تحكم في ظهور زر «أضف لقائمة الطلب» والشريط العائم ونافذة طلب عرض السعر داخل الموقع العام. إخفاء الميزة لا يحذف القوائم المحفوظة في أجهزة الزوار.</p>
+      ${quoteListSettingError?`<div class="fl-cloud-note bad">تعذر قراءة إعداد قائمة طلب السعر. شغّل ملف الترقية <b>supabase/UPGRADE_EXISTING_V111.sql</b> في Supabase ثم أعد تحميل الصفحة.</div>`:''}
+      <label class="fl-permission-row fl-quote-list-setting-row">
+        <span class="fl-permission-copy"><strong>إظهار طلب عرض السعر</strong><small>${quoteListEnabled?'مفعّل الآن: يمكن للزوار إضافة عدة منتجات وإرسال طلب واحد عبر واتساب.':'متوقف الآن: لن تظهر للزوار أزرار أو قائمة طلب عرض السعر.'}</small></span>
+        <input id="flQuoteListEnabled" type="checkbox" ${quoteListEnabled?'checked':''} ${quoteListSettingError?'disabled':''}>
+        <span class="fl-permission-check" aria-hidden="true">✓</span>
+      </label>
+      <div class="fl-cloud-actions"><button class="fl-cloud-btn primary" id="flQuoteListSettingsSave" type="submit" ${quoteListSettingError?'disabled':''}>حفظ الإعداد</button></div>
     </form>`:'';
     const barcodePreviewUrl=masterBarcodePath?imageUrl(masterBarcodePath):'';
     const masterBarcodeCard=isPrimaryAdmin?`<form id="flMasterBarcodeSettingsForm" class="fl-cloud-card fl-master-barcode-card">
@@ -133,10 +157,10 @@
       <div class="fl-cloud-actions"><button class="fl-cloud-btn primary" id="flDesignFooterNumberSave" type="submit" ${designFooterNumberSettingError?'disabled':''}>حفظ البيانات</button></div>
     </form>`:'';
     const businessCard=window.FL_ADMIN_BUSINESS?.cardsHtml()||'';
-    if(scope==='site') return `${leadGateCard}${pwaInstallCard}`;
+    if(scope==='site') return `${leadGateCard}${pwaInstallCard}${quoteListCard}`;
     if(scope==='business') return businessCard;
     if(scope==='template') return `${masterBarcodeCard}${designFooterNumberCard}`;
-    return `${businessCard}${leadGateCard}${pwaInstallCard}${masterBarcodeCard}${designFooterNumberCard}`;
+    return `${businessCard}${leadGateCard}${pwaInstallCard}${quoteListCard}${masterBarcodeCard}${designFooterNumberCard}`;
   }
 
   // Wires the cards' forms; `renderOverview` is re-run after each successful save.
@@ -160,6 +184,27 @@
         renderOverview();
       }catch(error){
         notify(/42703|PGRST204|PGRST205|42P01/i.test(String(error?.code||''))?'شغّل ملف هجرة إعداد تثبيت التطبيق في Supabase أولًا.':'تعذر حفظ إعداد التثبيت: '+(error?.message||error));
+        save.disabled=false;save.textContent='حفظ الإعداد';
+      }
+    });
+
+    document.getElementById('flQuoteListSettingsForm')?.addEventListener('submit',async event=>{
+      event.preventDefault();
+      const toggle=document.getElementById('flQuoteListEnabled');
+      const save=document.getElementById('flQuoteListSettingsSave');
+      if(!toggle||!save)return;
+      const enabled=Boolean(toggle.checked);
+      save.disabled=true;save.textContent='جاري الحفظ...';
+      try{
+        const {error}=await db.from('site_settings').upsert({id:1,quote_list_enabled:enabled},{onConflict:'id'});
+        if(error)throw error;
+        quoteListEnabled=enabled;
+        quoteListSettingError='';
+        window.FLOWER_LIGHT_SITE_SETTINGS={...(window.FLOWER_LIGHT_SITE_SETTINGS||{}),quote_list_enabled:enabled};
+        notify(enabled?'تم إظهار قائمة طلب عرض السعر للزوار':'تم إخفاء قائمة طلب عرض السعر عن الزوار');
+        renderOverview();
+      }catch(error){
+        notify(/42703|PGRST204|PGRST205|42P01/i.test(String(error?.code||''))?'شغّل supabase/UPGRADE_EXISTING_V111.sql في Supabase أولًا.':'تعذر حفظ إعداد طلب عرض السعر: '+(error?.message||error));
         save.disabled=false;save.textContent='حفظ الإعداد';
       }
     });
