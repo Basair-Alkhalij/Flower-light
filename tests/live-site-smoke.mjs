@@ -68,6 +68,8 @@ assert.match(loader,/admin\.js\?v=/);
 assert.match(loader,/public-sync\.js\?v=/);
 assert.match(quoteList,/fl_quote_list_v1/);
 assert.match(quoteList,/quote_list_send/);
+assert.match(quoteList,/quote_list_enabled/);
+assert.match(quoteList,/flowerlight:site-settings/);
 assert.match(admin,/FL_ADMIN_CORE/);
 assert.match(admin,/createClient/);
 assert.doesNotMatch(admin,/const XLSX_IMPORT_CDN/);
