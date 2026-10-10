@@ -46,6 +46,7 @@ create table if not exists public.products (
   model text not null default '',
   caption text not null default '',
   image_path text not null default '',
+  availability text not null default 'available' constraint products_availability_check check (availability in ('available','out_of_stock','coming_soon')),
   sort_order integer not null default 0,
   is_visible boolean not null default true,
   created_at timestamptz not null default now(),
@@ -1004,12 +1005,31 @@ alter table public.products
   add column if not exists price numeric(12,2),
   add column if not exists wholesale_price numeric(12,2),
   add column if not exists wholesale_min_qty integer,
-  add column if not exists limited_offer boolean not null default false;
+  add column if not exists limited_offer boolean not null default false,
+  add column if not exists availability text not null default 'available';
+
+update public.products
+set availability='available'
+where availability is null or availability not in ('available','out_of_stock','coming_soon');
+
+do $
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname='products_availability_check'
+      and conrelid='public.products'::regclass
+  ) then
+    alter table public.products
+      add constraint products_availability_check
+      check (availability in ('available','out_of_stock','coming_soon'));
+  end if;
+end $;
 
 comment on column public.products.price is 'Retail price.';
 comment on column public.products.wholesale_price is 'Wholesale price.';
 comment on column public.products.wholesale_min_qty is 'Minimum quantity for wholesale price.';
 comment on column public.products.limited_offer is 'Show limited-time offer badge.';
+comment on column public.products.availability is 'Public availability: available, out_of_stock, or coming_soon.';
 
 update public.products
 set specifications = '[]'::jsonb
