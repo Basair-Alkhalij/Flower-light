@@ -142,7 +142,24 @@ test('public quote list follows the owner visibility setting without losing save
   await page.locator('#openProducts').click();
 
   const control=page.locator('.quote-list-product-control').first();
+  const actions=page.locator('.product-card-actions').first();
+  const whatsapp=actions.locator('.product-whatsapp-button');
+  const download=actions.locator('.product-download-pdf-button');
   await expect(control).toBeVisible();
+  await expect(actions).toHaveClass(/has-quote-list/);
+  const shownLayout=await actions.evaluate(node=>{
+    const rect=selector=>node.querySelector(selector).getBoundingClientRect();
+    const d=rect('.product-download-pdf-button');
+    const s=rect('.product-share-button');
+    const w=rect('.product-whatsapp-button');
+    const q=rect('.quote-list-product-control');
+    return {download:d,share:s,whatsapp:w,quote:q};
+  });
+  expect(Math.abs(shownLayout.download.top-shownLayout.share.top)).toBeLessThan(3);
+  expect(Math.abs(shownLayout.whatsapp.top-shownLayout.quote.top)).toBeLessThan(3);
+  expect(Math.abs(shownLayout.whatsapp.width-shownLayout.quote.width)).toBeLessThan(6);
+  expect(shownLayout.whatsapp.top).toBeGreaterThan(shownLayout.download.top+8);
+
   await control.locator('.quote-list-add-button').click();
   await expect(page.locator('#flQuoteBar')).toBeVisible();
 
@@ -154,6 +171,16 @@ test('public quote list follows the owner visibility setting without losing save
   })).toBe(false);
   await expect(control).toBeHidden();
   await expect(page.locator('#flQuoteBar')).toBeHidden();
+  await expect(actions).not.toHaveClass(/has-quote-list/);
+  const hiddenLayout=await actions.evaluate(node=>{
+    const d=node.querySelector('.product-download-pdf-button').getBoundingClientRect();
+    const s=node.querySelector('.product-share-button').getBoundingClientRect();
+    const w=node.querySelector('.product-whatsapp-button').getBoundingClientRect();
+    return {download:d,share:s,whatsapp:w};
+  });
+  expect(Math.abs(hiddenLayout.download.top-hiddenLayout.share.top)).toBeLessThan(3);
+  expect(hiddenLayout.whatsapp.top).toBeGreaterThan(hiddenLayout.download.top+8);
+  expect(hiddenLayout.whatsapp.width).toBeGreaterThan(hiddenLayout.download.width*1.8);
 
   await page.evaluate(()=>{
     const settings={...(window.FLOWER_LIGHT_SITE_SETTINGS||{}),quote_list_enabled:true};
@@ -162,6 +189,7 @@ test('public quote list follows the owner visibility setting without losing save
   });
   await expect(control).toBeVisible();
   await expect(page.locator('#flQuoteBar')).toBeVisible();
+  await expect(actions).toHaveClass(/has-quote-list/);
   expect(await page.evaluate(()=>window.FL_QUOTE_LIST.items().length)).toBe(1);
 });
 
