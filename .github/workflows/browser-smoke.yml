@@ -16,3 +16,10 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser
+      - name: Upload light and dark screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: theme-screenshots
+          path: test-results/theme-screens/*.png
+          if-no-files-found: ignore
