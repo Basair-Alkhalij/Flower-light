@@ -472,4 +472,23 @@ assert.match(quoteList,/quote_list_send/);
 assert.match(quoteList,/role="dialog"/);
 assert.match(read('styles/products.css'),/\.fl-quote-bar/);
 
+
+// v111D: Owner controls whether the public quote-list feature is visible.
+const quoteVisibilityMigration=read('supabase/migrations/20261010113500_quote_list_visibility.sql');
+const v111Upgrade=read('supabase/UPGRADE_EXISTING_V111.sql');
+const adminSettings=read('admin-settings.js');
+const publicSync=read('public-sync.js');
+assert.match(sql,/quote_list_enabled boolean not null default true/i);
+assert.match(quoteVisibilityMigration,/quote_list_enabled/);
+assert.match(quoteVisibilityMigration,/QUOTE_LIST_VISIBILITY_V111D_OK/);
+assert.match(v111Upgrade,/quote_list_enabled/);
+assert.match(v111Upgrade,/UPGRADE_EXISTING_V111_OK/);
+assert.match(adminSettings,/flQuoteListSettingsForm/);
+assert.match(adminSettings,/quote_list_enabled/);
+assert.match(publicSync,/quote_list_enabled/);
+assert.match(publicSync,/flowerlight:site-settings/);
+assert.match(quoteList,/quote_list_enabled/);
+assert.match(quoteList,/flowerlight:site-settings/);
+assert.match(quoteList,/isEnabled/);
+
 console.log('FLOWER_LIGHT_FINAL_SMOKE_OK');
