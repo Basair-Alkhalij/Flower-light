@@ -133,6 +133,38 @@ test('main catalog, product actions, lightbox navigation and catalog tab work',a
 
 
 
+
+test('public quote list follows the owner visibility setting without losing saved items',async({page})=>{
+  await installSupabaseMock(page);
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await page.evaluate(()=>localStorage.removeItem('fl_quote_list_v1'));
+  await injectCatalogFixtures(page);
+  await page.locator('#openProducts').click();
+
+  const control=page.locator('.quote-list-product-control').first();
+  await expect(control).toBeVisible();
+  await control.locator('.quote-list-add-button').click();
+  await expect(page.locator('#flQuoteBar')).toBeVisible();
+
+  expect(await page.evaluate(()=>{
+    const settings={...(window.FLOWER_LIGHT_SITE_SETTINGS||{}),quote_list_enabled:false};
+    window.FLOWER_LIGHT_SITE_SETTINGS=settings;
+    window.dispatchEvent(new CustomEvent('flowerlight:site-settings',{detail:settings}));
+    return window.FL_QUOTE_LIST.add({id:'blocked-product',name:'لا يجب إضافته'},1);
+  })).toBe(false);
+  await expect(control).toBeHidden();
+  await expect(page.locator('#flQuoteBar')).toBeHidden();
+
+  await page.evaluate(()=>{
+    const settings={...(window.FLOWER_LIGHT_SITE_SETTINGS||{}),quote_list_enabled:true};
+    window.FLOWER_LIGHT_SITE_SETTINGS=settings;
+    window.dispatchEvent(new CustomEvent('flowerlight:site-settings',{detail:settings}));
+  });
+  await expect(control).toBeVisible();
+  await expect(page.locator('#flQuoteBar')).toBeVisible();
+  expect(await page.evaluate(()=>window.FL_QUOTE_LIST.items().length)).toBe(1);
+});
+
 test('quote list keeps quantities after reload and sends two products to WhatsApp',async({page})=>{
   await page.addInitScript(()=>{
     window.__quoteOpened=[];
