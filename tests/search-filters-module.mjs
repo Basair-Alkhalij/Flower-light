@@ -5,15 +5,7 @@ import assert from 'node:assert/strict';
 const src=fs.readFileSync(new URL('../admin-search-filters.js', import.meta.url),'utf8');
 const listeners={}; const els={}; const upserts=[]; const notified=[]; let rendered='';
 const mkEl=id=>els[id]||(els[id]={id,value:'',checked:false,disabled:false,textContent:'',dataset:{},addEventListener:(event,fn)=>{listeners[id+':'+event]=fn}});
-let checkedInputs=[];
-const document={
-  getElementById:mkEl,
-  querySelectorAll(selector){
-    if(selector==='[data-search-filter-key]:checked')return checkedInputs;
-    if(selector==='[data-delete-custom-filter]')return[];
-    return[];
-  }
-};
+const document={getElementById:mkEl,querySelectorAll:()=>[]};
 let siteRow={
   catalog_filter_keys:['availability','custom_filter_finish'],
   catalog_custom_filters:[{key:'custom_filter_finish',label:'نوع التشطيب'}]
@@ -23,7 +15,7 @@ const db={
     assert.equal(table,'site_settings');
     return{
       select:()=>({eq:()=>({maybeSingle:async()=>({data:siteRow,error:null})})}),
-      upsert:async(row)=>{upserts.push(row);siteRow={...siteRow,...row};return{error:null}}
+      upsert:async row=>{upserts.push(row);siteRow={...siteRow,...row};return{error:null}}
     };
   }
 };
@@ -33,7 +25,7 @@ const core={
   get db(){return db;}
 };
 const window={FL_ADMIN_CORE:core,FLOWER_LIGHT_SITE_SETTINGS:{},dispatchEvent(){}};
-const context={window,document,console,Proxy,Set,Map,Array,Object,String,Number,Boolean,Promise,RegExp,Date,crypto:{randomUUID:()=> 'AABB-CCDD-0011-2233'},confirm:()=>true};
+const context={window,document,console,Proxy,Set,Map,Array,Object,String,Number,Boolean,Promise,RegExp,Date,crypto:{randomUUID:()=> 'AABB-CCDD-0011-2233'},confirm:()=>true,CustomEvent:class{constructor(type,init){this.type=type;this.detail=init?.detail;}}};
 vm.createContext(context);
 vm.runInContext(src,context,{filename:'admin-search-filters.js'});
 const M=window.FL_ADMIN_SEARCH_FILTERS;
@@ -45,28 +37,39 @@ assert.equal(window.FLOWER_LIGHT_CUSTOM_FILTERS[0].label,'نوع التشطيب'
 
 M.render();
 assert.match(rendered,/فلاتر البحث/);
-assert.match(rendered,/نوع التشطيب/);
-assert.match(rendered,/إضافة فلتر جديد/);
+assert.match(rendered,/ON · تشغيل/);
+assert.match(rendered,/OFF · إيقاف/);
+assert.match(rendered,/حفظ الفلاتر والترتيب/);
+assert.match(rendered,/▲/);
+assert.match(rendered,/▼/);
 
-// Add a reusable custom filter; it must immediately join the product-spec definitions surface.
+// Turn wattage ON, then move it above the existing filters.
+await listeners['flSearchFilterToggle_wattage:click']();
+assert.match(rendered,/القدرة/);
+await listeners['flSearchFilterUp_wattage:click']();
+await listeners['flSearchFilterUp_wattage:click']();
+await listeners['flSearchFiltersSave:click']();
+assert.deepEqual(Array.from(upserts.at(-1).catalog_filter_keys),['wattage','availability','custom_filter_finish']);
+assert.ok(notified.some(msg=>msg.includes('ترتيبها')));
+
+// Turn availability OFF and save: it must disappear from the persisted order.
+await listeners['flSearchFilterToggle_availability:click']();
+await listeners['flSearchFiltersSave:click']();
+assert.deepEqual(Array.from(upserts.at(-1).catalog_filter_keys),['wattage','custom_filter_finish']);
+
+// Add a reusable custom filter; it must be switched on and join product-spec definitions.
 mkEl('flCustomFilterLabel').value='نوع العدسة';
 await listeners['flCustomFilterAdd:click']();
 assert.ok(window.FLOWER_LIGHT_CUSTOM_FILTERS.some(row=>row.label==='نوع العدسة'));
-assert.ok(notified.some(msg=>msg.includes('حفظ الفلاتر')));
-
-// Save two selected filters plus all custom definitions.
-checkedInputs=[
-  {dataset:{searchFilterKey:'wattage'}},
-  {dataset:{searchFilterKey:'custom_filter_finish'}}
-];
+assert.ok(notified.some(msg=>msg.includes('تمت إضافة الفلتر وتشغيله')));
 await listeners['flSearchFiltersSave:click']();
-assert.deepEqual(Array.from(upserts.at(-1).catalog_filter_keys),['wattage','custom_filter_finish']);
 assert.ok(Array.isArray(upserts.at(-1).catalog_custom_filters));
-assert.ok(upserts.at(-1).catalog_custom_filters.some(row=>row.key==='custom_filter_finish'));
+assert.ok(upserts.at(-1).catalog_custom_filters.some(row=>row.label==='نوع العدسة'));
+assert.equal(upserts.at(-1).catalog_filter_keys.at(-1),'custom_filter_aabbccdd00112233');
 
 const subCore={...core,isPrimaryAdmin:false};
 const subWindow={FL_ADMIN_CORE:subCore};
-vm.runInContext(src,vm.createContext({window:subWindow,document,console,Proxy,Set,Map,Array,Object,String,Number,Boolean,Promise,RegExp,Date,crypto:{},confirm:()=>true}));
+vm.runInContext(src,vm.createContext({window:subWindow,document,console,Proxy,Set,Map,Array,Object,String,Number,Boolean,Promise,RegExp,Date,crypto:{},confirm:()=>true,CustomEvent:class{}}));
 assert.ok(subWindow.FL_ADMIN_SEARCH_FILTERS);
 await subWindow.FL_ADMIN_SEARCH_FILTERS.load();
 

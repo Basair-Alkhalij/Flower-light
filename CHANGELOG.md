@@ -1,3 +1,11 @@
+## v111N — 2026-10-10 — filter ON/OFF controls and ordering
+
+- Replaced the Search Filters “show” checkbox with explicit ON/OFF toggle buttons.
+- Enabled filters are listed first and display their current public order.
+- Added up/down controls to reorder enabled filters.
+- Persisted order reuses the existing `site_settings.catalog_filter_keys` array, so no database migration is needed.
+- Added runtime coverage for toggling, disabling, and reordering filters.
+
 ## v111M — 2026-10-10 — dedicated custom/dependent search filters
 
 - Moved catalog filter management out of Site Settings into its own Owner-only **Search Filters** admin section.

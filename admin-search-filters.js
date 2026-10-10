@@ -29,13 +29,26 @@
     }
     return out;
   };
-  const allKeys=()=>new Set([...standardOptions().map(row=>row.key),...customFilters.map(row=>row.key)]);
+  const allRows=()=>[
+    ...standardOptions(),
+    ...customFilters.map(row=>({key:row.key,label:row.label,hint:'فلتر خاص أضفته أنت',custom:true}))
+  ];
+  const allKeys=()=>new Set(allRows().map(row=>row.key));
   const normalizeSelected=value=>{
     const allowed=allKeys();
     return Array.isArray(value)?[...new Set(value.map(String).filter(key=>allowed.has(key)))]:DEFAULT_KEYS.filter(key=>allowed.has(key));
   };
-  function publish(){
+  const orderedRows=()=>{
+    const rows=allRows(),byKey=new Map(rows.map(row=>[row.key,row]));
+    const active=selectedKeys.map(key=>byKey.get(key)).filter(Boolean);
+    const activeSet=new Set(active.map(row=>row.key));
+    return [...active,...rows.filter(row=>!activeSet.has(row.key))];
+  };
+  function publishCustomDefinitions(){
     window.FLOWER_LIGHT_CUSTOM_FILTERS=customFilters.map(row=>({...row}));
+  }
+  function publish(){
+    publishCustomDefinitions();
     window.FLOWER_LIGHT_SITE_SETTINGS={
       ...(window.FLOWER_LIGHT_SITE_SETTINGS||{}),
       catalog_filter_keys:selectedKeys.slice(),
@@ -61,24 +74,42 @@
     }
   }
 
+  function toggleStyle(on){
+    return on
+      ? 'min-width:104px;border:1px solid #f0b43f;background:#fff5df;color:#9a5a00;border-radius:999px;padding:9px 12px;font-weight:900;cursor:pointer'
+      : 'min-width:104px;border:1px solid #d9e0e8;background:#f5f7fa;color:#64748b;border-radius:999px;padding:9px 12px;font-weight:900;cursor:pointer';
+  }
+  function orderButton(id,label,disabled){
+    return `<button id="${id}" class="fl-cloud-btn secondary" type="button" aria-label="${esc(label)}" title="${esc(label)}" ${disabled?'disabled':''} style="min-width:42px;padding:8px 10px">▼</button>`;
+  }
   function optionsHtml(){
-    const rows=[...standardOptions(),...customFilters.map(row=>({key:row.key,label:row.label,hint:'فلتر خاص أضفته أنت',custom:true}))];
-    return rows.map(row=>`<div class="fl-permission-row" data-filter-option="${esc(row.key)}">
-      <span class="fl-permission-copy"><strong>${esc(row.label)}</strong><small>${esc(row.hint)}</small></span>
-      <label class="fl-cloud-check" style="margin:0"><input type="checkbox" data-search-filter-key="${esc(row.key)}" ${selectedKeys.includes(row.key)?'checked':''} ${settingError?'disabled':''}> إظهار</label>
-      ${row.custom?`<button class="fl-cloud-btn secondary" type="button" data-delete-custom-filter="${esc(row.key)}" ${settingError?'disabled':''}>حذف</button>`:''}
-    </div>`).join('');
+    const rows=orderedRows(),activeCount=selectedKeys.length;
+    return rows.map(row=>{
+      const on=selectedKeys.includes(row.key),position=selectedKeys.indexOf(row.key);
+      const controls=on?`<div style="display:flex;gap:6px;align-items:center">
+        <button id="flSearchFilterUp_${esc(row.key)}" class="fl-cloud-btn secondary" type="button" aria-label="تحريك ${esc(row.label)} للأعلى" title="تحريك للأعلى" ${position<=0?'disabled':''} style="min-width:42px;padding:8px 10px">▲</button>
+        ${orderButton(`flSearchFilterDown_${esc(row.key)}`,`تحريك ${row.label} للأسفل`,position<0||position>=activeCount-1)}
+      </div>`:'';
+      return `<div class="fl-permission-row" data-filter-option="${esc(row.key)}">
+        <span class="fl-permission-copy"><strong>${esc(row.label)}</strong><small>${esc(row.hint)}${on?` · الترتيب ${position+1}`:''}</small></span>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          ${controls}
+          <button id="flSearchFilterToggle_${esc(row.key)}" type="button" aria-pressed="${on?'true':'false'}" ${settingError?'disabled':''} style="${toggleStyle(on)}">${on?'ON · تشغيل':'OFF · إيقاف'}</button>
+          ${row.custom?`<button id="flDeleteCustomFilter_${esc(row.key)}" class="fl-cloud-btn secondary" type="button" ${settingError?'disabled':''}>حذف</button>`:''}
+        </div>
+      </div>`;
+    }).join('');
   }
 
   function render(){
     if(!isPrimaryAdmin)return;
-    layout(`<div class="fl-cloud-head"><div><h2>فلاتر البحث</h2><p>اختر الفلاتر التي تظهر للزائر، وأضف فلاتر خاصة بك. خيارات كل فلتر تتغير تلقائيًا حسب الفلاتر الأخرى المختارة في الكتالوج.</p></div></div>
+    layout(`<div class="fl-cloud-head"><div><h2>فلاتر البحث</h2><p>شغّل أو أوقف الفلاتر التي تظهر للزائر، ورتّب الفلاتر المشغلة من الأعلى للأسفل. خيارات كل فلتر تتغير تلقائيًا حسب الفلاتر الأخرى المختارة.</p></div></div>
       ${settingError?`<div class="fl-cloud-note bad">تعذر قراءة إعداد فلاتر البحث. شغّل <b>supabase/UPGRADE_EXISTING_V111.sql</b> في Supabase ثم حدّث الصفحة.</div>`:''}
       <section class="fl-cloud-card">
-        <div class="fl-credentials-card-head"><div><span class="fl-account-badge owner">الفلاتر الظاهرة</span><h3>اختيار فلاتر البحث</h3></div></div>
-        <p>فعّل أي عدد من الفلاتر. إذا ألغيت الجميع سيبقى البحث النصي فقط.</p>
+        <div class="fl-credentials-card-head"><div><span class="fl-account-badge owner">الفلاتر الظاهرة</span><h3>تشغيل وترتيب فلاتر البحث</h3></div></div>
+        <p>استخدم ON/OFF للتشغيل والإيقاف. الفلاتر المشغلة تظهر أولًا، واستخدم ▲ و▼ لتحديد أي فلتر يأتي قبل الآخر.</p>
         <div class="fl-catalog-filter-options">${optionsHtml()}</div>
-        <div class="fl-cloud-actions"><button class="fl-cloud-btn primary" id="flSearchFiltersSave" type="button" ${settingError?'disabled':''}>حفظ الفلاتر</button></div>
+        <div class="fl-cloud-actions"><button class="fl-cloud-btn primary" id="flSearchFiltersSave" type="button" ${settingError?'disabled':''}>حفظ الفلاتر والترتيب</button></div>
       </section>
       <section class="fl-cloud-card">
         <div class="fl-credentials-card-head"><div><span class="fl-account-badge owner">فلتر خاص</span><h3>إضافة فلتر جديد</h3></div></div>
@@ -89,25 +120,34 @@
     bind();
   }
 
-  function collectSelected(){
-    selectedKeys=[...document.querySelectorAll('[data-search-filter-key]:checked')].map(input=>String(input.dataset.searchFilterKey||'')).filter(key=>allKeys().has(key));
+  function toggleFilter(key){
+    if(settingError||!allKeys().has(key))return;
+    const index=selectedKeys.indexOf(key);
+    if(index>=0)selectedKeys.splice(index,1);
+    else selectedKeys.push(key);
+    render();
+  }
+  function moveFilter(key,delta){
+    const index=selectedKeys.indexOf(key),next=index+delta;
+    if(index<0||next<0||next>=selectedKeys.length)return;
+    [selectedKeys[index],selectedKeys[next]]=[selectedKeys[next],selectedKeys[index]];
+    render();
   }
 
   async function save(){
     if(settingError)return;
-    collectSelected();
     const button=document.getElementById('flSearchFiltersSave');
     if(button){button.disabled=true;button.textContent='جاري الحفظ...';}
     try{
-      const payload={id:1,catalog_filter_keys:selectedKeys,catalog_custom_filters:customFilters};
+      const payload={id:1,catalog_filter_keys:selectedKeys.slice(),catalog_custom_filters:customFilters};
       const {error}=await db.from('site_settings').upsert(payload,{onConflict:'id'});
       if(error)throw error;
       publish();
-      notify(selectedKeys.length?'تم حفظ فلاتر البحث':'تم إخفاء الفلاتر؛ البحث النصي فقط سيبقى ظاهرًا');
+      notify(selectedKeys.length?'تم حفظ تشغيل الفلاتر وترتيبها':'تم إيقاف جميع الفلاتر؛ البحث النصي فقط سيبقى ظاهرًا');
       render();
     }catch(error){
       notify(/42703|PGRST204|PGRST205|42P01/i.test(String(error?.code||''))?'شغّل supabase/UPGRADE_EXISTING_V111.sql في Supabase أولًا.':'تعذر حفظ الفلاتر: '+(error?.message||error));
-      if(button){button.disabled=false;button.textContent='حفظ الفلاتر';}
+      if(button){button.disabled=false;button.textContent='حفظ الفلاتر والترتيب';}
     }
   }
 
@@ -121,22 +161,20 @@
     const duplicate=[...standardOptions(),...customFilters].some(row=>labelToken(row.label)===token);
     if(duplicate){notify('يوجد فلتر بهذا الاسم مسبقًا');return;}
     const key=`custom_filter_${(crypto.randomUUID?.()||String(Date.now())).replace(/-/g,'').slice(0,16).toLowerCase()}`;
-    collectSelected();
     customFilters.push({key,label});
     selectedKeys.push(key);
-    publish();
+    publishCustomDefinitions();
     render();
-    notify('تمت إضافة الفلتر محليًا؛ اضغط «حفظ الفلاتر» لتثبيته');
+    notify('تمت إضافة الفلتر وتشغيله؛ رتّبه ثم اضغط «حفظ الفلاتر والترتيب»');
   }
 
   function deleteCustomFilter(key){
     const row=customFilters.find(item=>item.key===key);
     if(!row)return;
     if(!confirm(`حذف الفلتر «${row.label}» من قائمة الفلاتر؟ لن تُحذف القيم المحفوظة داخل المنتجات.`))return;
-    collectSelected();
     customFilters=customFilters.filter(item=>item.key!==key);
     selectedKeys=selectedKeys.filter(item=>item!==key);
-    publish();
+    publishCustomDefinitions();
     render();
   }
 
@@ -144,7 +182,12 @@
     document.getElementById('flSearchFiltersSave')?.addEventListener('click',save);
     document.getElementById('flCustomFilterAdd')?.addEventListener('click',addCustomFilter);
     document.getElementById('flCustomFilterLabel')?.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();addCustomFilter();}});
-    document.querySelectorAll('[data-delete-custom-filter]').forEach(button=>button.addEventListener('click',()=>deleteCustomFilter(String(button.dataset.deleteCustomFilter||''))));
+    orderedRows().forEach(row=>{
+      document.getElementById(`flSearchFilterToggle_${row.key}`)?.addEventListener('click',()=>toggleFilter(row.key));
+      document.getElementById(`flSearchFilterUp_${row.key}`)?.addEventListener('click',()=>moveFilter(row.key,-1));
+      document.getElementById(`flSearchFilterDown_${row.key}`)?.addEventListener('click',()=>moveFilter(row.key,1));
+      if(row.custom)document.getElementById(`flDeleteCustomFilter_${row.key}`)?.addEventListener('click',()=>deleteCustomFilter(row.key));
+    });
   }
 
   window.FL_ADMIN_SEARCH_FILTERS={load,render};
