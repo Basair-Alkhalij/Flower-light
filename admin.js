@@ -117,6 +117,172 @@
     {key:'bulb_count', label:'عدد اللمبات', placeholder:'مثال: 6'}
   ];
   const PRODUCT_SPEC_KEYS = new Set(PRODUCT_SPEC_FIELDS.map(field => field.key));
+  const PRODUCT_SPEC_ALIAS_GROUPS={
+    sku:['sku','كود المنتج','رقم المنتج','رمز المنتج'],
+    wattage:['wattage','power','watt','w','القدرة','القدره','الواط','وات'],
+    lumens:['lumens','lumen','lm','اللومن','لومن','التدفق الضوئي','شدة الاضاءة','شدة الإضاءة'],
+    cct:['cct','kelvin','k','حرارة اللون','حراره اللون','درجة حرارة اللون','درجه حراره اللون','كلفن'],
+    cri:['cri','مؤشر تجسيد الالوان','مؤشر تجسيد الألوان'],
+    voltage:['voltage','volt','v','الفولت','الجهد','فولت'],
+    ip_rating:['ip_rating','ip rating','ip','درجة الحماية ip','درجه الحمايه ip','درجة الحماية','درجه الحمايه'],
+    dimensions:['dimensions','dimension','size','المقاس','المقاسات','الأبعاد','الابعاد'],
+    color:['color','colour','اللون'],
+    material:['material','الخامة','الخامه'],
+    beam_angle:['beam_angle','beam angle','زاوية الإضاءة','زاويه الاضاءه','زاوية الضوء','زاويه الضوء'],
+    frequency:['frequency','hz','التردد'],
+    warranty:['warranty','الضمان'],
+    bulb_base:['bulb_base','bulb base','socket','قاعدة اللمبة','قاعده اللمبه','سوكت'],
+    bulb_count:['bulb_count','bulb count','عدد اللمبات','عدد اللمبة','عدد اللمبه']
+  };
+  function productSpecAliasToken(value){
+    return String(value||'').trim().toLowerCase()
+      .replace(/[\u064B-\u0652]/g,'').replace(/[إأآا]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه')
+      .replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim();
+  }
+  const PRODUCT_SPEC_ALIAS_MAP=(()=>{
+    const map=new Map();
+    PRODUCT_SPEC_FIELDS.forEach(def=>{
+      [def.key,def.label,...(PRODUCT_SPEC_ALIAS_GROUPS[def.key]||[])].forEach(alias=>{
+        const token=productSpecAliasToken(alias);if(token)map.set(token,def.key);
+      });
+    });
+    return map;
+  })();
+  function resolveProductSpecDefinition(key,label=''){
+    const direct=String(key||'').trim();
+    if(PRODUCT_SPEC_KEYS.has(direct)) return PRODUCT_SPEC_FIELDS.find(field=>field.key===direct)||null;
+    const aliasKey=PRODUCT_SPEC_ALIAS_MAP.get(productSpecAliasToken(direct)) || PRODUCT_SPEC_ALIAS_MAP.get(productSpecAliasToken(label));
+    return aliasKey ? (PRODUCT_SPEC_FIELDS.find(field=>field.key===aliasKey)||null) : null;
+  }
+  function normalizeKnownSpecValue(value,def,existingUnit=''){
+    let text=String(value??'').trim();
+    let unit=String(existingUnit||'').trim();
+    const canonicalUnit=String(def?.unit||'').trim();
+    if(canonicalUnit){
+      const escaped=canonicalUnit.replace(/[\^$.*+?()[\]{}|\\]/g,'\\  const PRODUCT_SPEC_KEYS = new Set(PRODUCT_SPEC_FIELDS.map(field => field.key));');
+      text=text.replace(new RegExp(`\\s*${escaped}\\s*// Flower Light / Basair Gulf Supabase admin controller — final release.
+// ?admin=1 requires the Owner role; ?admin=2 requires the linked Sub-admin role.
+// Permissions are enforced in both this interface and Supabase RLS/RPC policies.
+
+// Supabase settings live in config.js (loaded before this file).
+
+(() => {
+  'use strict';
+  const MAX_PRODUCT_IMAGES = 4;
+  const cfg = window.FLOWER_LIGHT_SUPABASE || {};
+  const configured = /^https:\/\/.+\.supabase\.co$/i.test(String(cfg.url || '').trim()) && String(cfg.anonKey || '').trim() && !String(cfg.anonKey).includes('YOUR_');
+  let db = null;
+  if (configured && window.supabase?.createClient) {
+    db = window.supabase.createClient(String(cfg.url).trim(), String(cfg.anonKey).trim(), { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+  }
+  window.flSupabase = db;
+
+  const adminQuery = new URLSearchParams(location.search);
+  const adminPanel = adminQuery.get('admin');
+  const adminMode = adminPanel === '1' || adminPanel === '2';
+  const isPrimaryAdmin = adminPanel === '1';
+  const recoveryPortalRequested = adminMode && adminQuery.get('recovery') === '1';
+  const baseAnalyticsTracker = typeof window.flTrack === 'function' ? window.flTrack : null;
+  const analyticsId = (storage,key) => {
+    try {
+      let value=storage.getItem(key);
+      if(!value){value=crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;storage.setItem(key,value);}
+      return value;
+    } catch (_) {
+      return crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+  };
+  const analyticsVisitorId = analyticsId(localStorage,'fl_analytics_visitor_id');
+  const analyticsSessionId = analyticsId(sessionStorage,'fl_analytics_session_id');
+  const analyticsLabel = (eventName,params={}) => {
+    if(eventName==='product_category_view') return String(params.category||'');
+    if(eventName==='contact_location') return String(params.label||params.branch||'');
+    if(eventName==='product_whatsapp_click' || eventName==='product_image_open') return String(params.product_name||'');
+    if(eventName==='catalog_download') return String(params.label||'الكتالوج');
+    if(eventName==='contact_phone' || eventName==='contact_whatsapp') return String(params.label||params.source||'');
+    return String(params.label||'');
+  };
+  async function saveAnalyticsEvent(eventName,params={}){
+    if(!db || adminMode || !eventName) return;
+    try{
+      const metadata={};
+      ['source','category','panel_id','product_name','product_category','product_model','product_reference','direction','method','label','branch','products_count','failed_images'].forEach(key=>{
+        if(params?.[key]!==undefined && params?.[key]!==null) metadata[key]=String(params[key]).slice(0,300);
+      });
+      const {error}=await db.rpc('log_site_event',{
+        p_event_name:String(eventName).slice(0,64),
+        p_event_label:analyticsLabel(eventName,params).slice(0,180),
+        p_visitor_id:String(analyticsVisitorId).slice(0,80),
+        p_session_id:String(analyticsSessionId).slice(0,80),
+        p_page_path:String(location.pathname||'/').slice(0,300),
+        p_metadata:metadata
+      });
+      if(error && String(error.code)!=='42883') console.warn('[Site analytics] save failed',error.message||error);
+    }catch(error){console.warn('[Site analytics] save failed',error);}
+  }
+  window.flTrack = function(eventName,params={}){
+    // GA4 already sends its automatic page_view; avoid counting it twice there.
+    if(eventName!=='page_view'){try{baseAnalyticsTracker?.(eventName,params);}catch(_){}}
+    void saveAnalyticsEvent(eventName,params);
+  };
+  if(db && !adminMode){
+    window.setTimeout(()=>window.flTrack('page_view',{source:'public_site'}),0);
+
+    // One delegated listener for every static/dynamic element that declares data-track.
+    // Keeping this here makes Supabase analytics work even when GA4 is not configured.
+    document.addEventListener('click',event=>{
+      const target=event.target.closest?.('[data-track]');
+      if(!target)return;
+      const params={};
+      if(target.dataset.trackLocation)params.location=target.dataset.trackLocation;
+      if(target.dataset.trackBranch)params.branch=target.dataset.trackBranch;
+      params.label=target.dataset.trackLabel || target.getAttribute('aria-label') || target.textContent?.trim().replace(/\s+/g,' ').slice(0,180) || '';
+      if(target.href)params.link_url=target.href;
+      window.flTrack(target.dataset.track,params);
+    },{capture:true});
+  }
+
+
+  const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const leadPhoneDigits = value => String(value || '').replace(/\D/g,'');
+  const normalizeLeadPhone = value => {
+    let digits=leadPhoneDigits(value);
+    if(digits.startsWith('00')) digits=digits.slice(2);
+    if(/^05\d{8}$/.test(digits)) return `966${digits.slice(1)}`;
+    if(/^5\d{8}$/.test(digits)) return `966${digits}`;
+    if(/^96605\d{8}$/.test(digits)) return `966${digits.slice(4)}`;
+    return digits;
+  };
+  const safeFileStem = value => String(value || '').trim().toLowerCase().replace(/[\s_]+/g,'-').replace(/[^a-z0-9\u0600-\u06ff-]/g,'').replace(/-+/g,'-').replace(/^-|-$/g,'') || 'contact';
+  const newCategorySlug = () => `section-${(crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`).replace(/-/g,'').slice(0,20)}`;
+  const bucket = String(cfg.storageBucket || 'product-images');
+  const catalogBucket = 'catalog-files';
+  const EMPTY_IMAGE = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800"><rect width="800" height="800" fill="#f2f4f8"/><path d="M210 525l115-125 82 83 85-105 110 147H210z" fill="#c8d0dc"/><circle cx="310" cy="300" r="55" fill="#d8dee7"/><text x="400" y="650" text-anchor="middle" font-family="Arial" font-size="34" fill="#7b8598">No image</text></svg>')}`;
+  const isExternalImage = value => /^(https?:|data:|blob:)/i.test(String(value || '').trim());
+  const isStoragePath = value => Boolean(value) && !isExternalImage(value);
+
+  const PRODUCT_SPEC_FIELDS = [
+    {key:'sku', label:'SKU / كود المنتج', placeholder:'مثال: WL-205'},
+    {key:'wattage', label:'القدرة', unit:'W', placeholder:'مثال: 12'},
+    {key:'lumens', label:'اللومن', unit:'lm', placeholder:'مثال: 1200'},
+    {key:'cct', label:'حرارة اللون', unit:'K', placeholder:'مثال: 3000 / 4000 / 6500'},
+    {key:'cri', label:'CRI', placeholder:'مثال: ≥80 أو ≥90'},
+    {key:'voltage', label:'الفولت', unit:'V', placeholder:'مثال: 220-240'},
+    {key:'ip_rating', label:'درجة الحماية IP', placeholder:'مثال: IP44'},
+    {key:'dimensions', label:'المقاس / الأبعاد', placeholder:'مثال: 30 × 12 × 8 سم'},
+    {key:'color', label:'اللون', placeholder:'مثال: أسود / ذهبي'},
+    {key:'material', label:'الخامة', placeholder:'مثال: ألمنيوم + أكريليك'},
+    {key:'beam_angle', label:'زاوية الإضاءة', unit:'°', placeholder:'مثال: 120'},
+    {key:'frequency', label:'التردد', unit:'Hz', placeholder:'مثال: 50/60'},
+    {key:'warranty', label:'الضمان', placeholder:'مثال: 3 سنوات'},
+    {key:'bulb_base', label:'قاعدة اللمبة', placeholder:'مثال: E27 / GU10'},
+    {key:'bulb_count', label:'عدد اللمبات', placeholder:'مثال: 6'}
+  ];
+,'i'),'').trim();
+      unit=canonicalUnit;
+    }
+    return {value:text,unit};
+  }
   const WHATSAPP_META_SHOW_DESCRIPTION='__whatsapp_show_description';
   const WHATSAPP_META_SHOW_SPECS='__whatsapp_show_specifications';
   const PRICING_META_KEY='__pricing_tiers_v2';
@@ -257,13 +423,14 @@
     else if(raw && typeof raw==='object') rows=Object.entries(raw).map(([key,value])=>({key,value}));
     return rows.map((row,index)=>{
       if(!row || typeof row!=='object') return null;
-      const key=String(row.key||`custom_${index+1}`).trim();
-      if(key===WHATSAPP_META_SHOW_DESCRIPTION || key===WHATSAPP_META_SHOW_SPECS || key===PRICING_META_KEY) return null;
-      const def=PRODUCT_SPEC_FIELDS.find(field=>field.key===key);
-      const label=String(row.label||def?.label||key).trim();
-      const value=String(row.value??'').trim();
-      const unit=String(row.unit||def?.unit||'').trim();
-      return label && value ? {key,label,value,unit} : null;
+      const rawKey=String(row.key||`custom_${index+1}`).trim();
+      if(rawKey===WHATSAPP_META_SHOW_DESCRIPTION || rawKey===WHATSAPP_META_SHOW_SPECS || rawKey===PRICING_META_KEY) return null;
+      const rawLabel=String(row.label||'').trim();
+      const def=resolveProductSpecDefinition(rawKey,rawLabel);
+      const key=def?.key||rawKey;
+      const label=String(def?.label||rawLabel||key).trim();
+      const normalized=normalizeKnownSpecValue(row.value,def,row.unit);
+      return label && normalized.value ? {key,label,value:normalized.value,unit:normalized.unit} : null;
     }).filter(Boolean).slice(0,30);
   }
 
@@ -279,9 +446,13 @@
   }
 
   function productSpecEditorRowHtml(spec=null){
+    const def=resolveProductSpecDefinition(spec?.key,spec?.label);
+    const selectedKey=def?.key||'__custom__';
+    const options=PRODUCT_SPEC_FIELDS.map(field=>`<option value="${field.key}" ${field.key===selectedKey?'selected':''}>${field.label}</option>`).join('');
+    const customLabel=def?'':String(spec?.label||'');
     return `<div class="fl-flex-spec-row" data-flex-spec-row>
-      <div class="fl-cloud-field"><label>اسم الصفة</label><input data-flex-spec-label value="${esc(spec?.label||'')}" placeholder="مثال: القدرة"></div>
-      <div class="fl-cloud-field"><label>القيمة</label><input data-flex-spec-value value="${esc(specificationEditorValue(spec))}" placeholder="مثال: 30W"></div>
+      <div class="fl-cloud-field"><label>نوع المواصفة</label><select data-flex-spec-type>${options}<option value="__custom__" ${selectedKey==='__custom__'?'selected':''}>مواصفة أخرى</option></select><input data-flex-spec-label value="${esc(customLabel)}" placeholder="اكتب اسم المواصفة" ${selectedKey==='__custom__'?'':'hidden'}></div>
+      <div class="fl-cloud-field"><label>القيمة</label><input data-flex-spec-value value="${esc(specificationEditorValue(spec))}" placeholder="${esc(def?.placeholder||'مثال: قيمة المواصفة')}"></div>
       <button class="fl-flex-spec-remove" data-flex-spec-remove type="button" aria-label="حذف الصفة">حذف</button>
     </div>`;
   }
@@ -290,21 +461,28 @@
     const specs=normalizeSpecifications(prod?.specifications);
     const rows=(specs.length?specs:[null]).map(spec=>productSpecEditorRowHtml(spec)).join('');
     const showInWhatsApp=productWhatsAppOption(prod?.specifications,WHATSAPP_META_SHOW_SPECS);
-    return `<div class="fl-product-spec-section full"><div class="fl-product-spec-head"><div><div class="fl-field-label-inline"><strong>المواصفات الفنية</strong><label class="fl-whatsapp-include-toggle"><input id="flProdWhatsAppShowSpecs" type="checkbox" ${showInWhatsApp?'checked':''}><span>إظهار في رسالة واتساب</span></label></div><small>اكتب اسم الصفة وقيمتها بنفسك، مثل: القدرة — 30W. أضف فقط المواصفات التي تحتاجها.</small></div><button class="fl-cloud-btn fl-add-spec-btn" id="flAddProductSpec" type="button">+ إضافة صفة</button></div><div id="flFlexibleSpecs" class="fl-flex-spec-list">${rows}</div></div>`;
+    return `<div class="fl-product-spec-section full"><div class="fl-product-spec-head"><div><div class="fl-field-label-inline"><strong>المواصفات الفنية</strong><label class="fl-whatsapp-include-toggle"><input id="flProdWhatsAppShowSpecs" type="checkbox" ${showInWhatsApp?'checked':''}><span>إظهار في رسالة واتساب</span></label></div><small>اختر نوع المواصفة من القائمة لتوحيدها بين المنتجات. استخدم «مواصفة أخرى» فقط عند الحاجة.</small></div><button class="fl-cloud-btn fl-add-spec-btn" id="flAddProductSpec" type="button">+ إضافة صفة</button></div><div id="flFlexibleSpecs" class="fl-flex-spec-list">${rows}</div></div>`;
   }
 
   function collectProductSpecifications(pricingTiers=[]){
     const specs=[];
+    const usedCanonicalKeys=new Set();
     document.querySelectorAll('[data-flex-spec-row]').forEach((row,index)=>{
-      const label=String(row.querySelector('[data-flex-spec-label]')?.value||'').trim();
-      const value=String(row.querySelector('[data-flex-spec-value]')?.value||'').trim();
-      if(!label || !value) return;
-      specs.push({
-        key:`custom_${index+1}`,
-        label,
-        value,
-        unit:'',
-      });
+      const type=String(row.querySelector('[data-flex-spec-type]')?.value||'__custom__').trim();
+      const customLabel=String(row.querySelector('[data-flex-spec-label]')?.value||'').trim();
+      const rawValue=String(row.querySelector('[data-flex-spec-value]')?.value||'').trim();
+      if(!rawValue) return;
+      const def=type==='__custom__'?resolveProductSpecDefinition('',customLabel):resolveProductSpecDefinition(type,'');
+      const key=def?.key||`custom_${index+1}`;
+      const label=def?.label||customLabel;
+      if(!label) return;
+      if(def){
+        if(usedCanonicalKeys.has(key)) throw new Error(`المواصفة «${label}» مضافة أكثر من مرة. اجمع القيم في خانة واحدة.`);
+        usedCanonicalKeys.add(key);
+      }
+      const normalized=normalizeKnownSpecValue(rawValue,def,'');
+      if(!normalized.value) return;
+      specs.push({key,label,value:normalized.value,unit:normalized.unit});
     });
     return [...specs.slice(0,30),...productWhatsAppMetaRows(),pricingMetaRow(pricingTiers)];
   }
@@ -1302,6 +1480,8 @@
     closeModal,
     MAX_PRODUCT_IMAGES,
     PRODUCT_SPEC_FIELDS,
+    resolveProductSpecDefinition,
+    normalizeKnownSpecValue,
     WHATSAPP_META_SHOW_DESCRIPTION,
     WHATSAPP_META_SHOW_SPECS,
     PRICE_TIER_TYPE_MAP,
