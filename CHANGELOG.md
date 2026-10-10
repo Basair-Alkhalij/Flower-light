@@ -1,3 +1,14 @@
+## v111I — 2026-10-10 — global catalog search
+
+- Expanded the existing `catalog-search.js` search from the active category to every rendered product section.
+- Search now includes product name metadata as well as model and visible card text.
+- Non-matching section tabs are hidden while a query is active, and the first matching section opens automatically.
+- Matching cards show their section name during search.
+- Attached PDF catalog tabs remain outside product search.
+- Specification filters are intentionally deferred until specification keys are normalized across the catalog, per task 6 plan.
+- Added static and Chromium browser coverage.
+- No database change is required.
+
 ## v111H — 2026-10-10 — product availability states
 
 - Added `products.availability` with allowed values `available`, `out_of_stock`, and `coming_soon`.
