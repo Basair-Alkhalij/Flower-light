@@ -60,6 +60,17 @@
     if(['لا','no','false','0','مخفي','غير مفعل'].includes(s)) return false;
     return defaultValue;
   }
+  function normalizeImportAvailability(value,defaultValue=null){
+    const s=importKey(value);
+    if(!s) return defaultValue;
+    if(['available','in stock','متوفر'].includes(s)) return 'available';
+    if(['out of stock','out_of_stock','sold out','نفد','غير متوفر'].includes(s)) return 'out_of_stock';
+    if(['coming soon','coming_soon','قريبا','قريباً'].includes(s)) return 'coming_soon';
+    return defaultValue;
+  }
+  function excelAvailability(value){
+    return ({available:'متوفر',out_of_stock:'نفد',coming_soon:'قريبًا'})[normalizeImportAvailability(value,'available')]||'متوفر';
+  }
   function normalizeImportPath(value){
     const parts=String(value||'').replace(/\\/g,'/').split('/');const out=[];
     for(const part of parts){if(!part||part==='.')continue;if(part==='..')out.pop();else out.push(part);}return out.join('/');
@@ -206,7 +217,7 @@
     bulk_price:['سعر جملة الجملة','سعر جمله الجمله','bulk wholesale price','bulk price'],
     bulk_min_qty:['جملة الجملة أدنى','جمله الجمله ادنى','bulk min qty'],
     bulk_max_qty:['جملة الجملة أعلى','جمله الجمله اعلى','bulk max qty'],
-    limited_offer:['عرض محدود','عرض لفتره محدوده','عرض لفترة محدودة','limited offer'],is_visible:['ظاهر','اظهار','إظهار','visible'],sort_order:['الترتيب','sort','sort order']
+    limited_offer:['عرض محدود','عرض لفتره محدوده','عرض لفترة محدودة','limited offer'],availability:['حالة التوفر','حاله التوفر','التوفر','availability','stock status'],is_visible:['ظاهر','اظهار','إظهار','visible'],sort_order:['الترتيب','sort','sort order']
   };
   const IMPORT_ALIAS_MAP=(()=>{const m=new Map();Object.entries(IMPORT_HEADER_ALIASES).forEach(([key,list])=>list.forEach(v=>m.set(importKey(v),key)));return m;})();
   function canonicalImportHeader(header){
@@ -274,7 +285,7 @@
         if(retailPrice!=null) pricingTiers.push({type:'retail',price:retailPrice,min_qty:null,max_qty:null});
         if(wholesalePrice!=null) pricingTiers.push({type:'wholesale',price:wholesalePrice,min_qty:wholesaleMin==null?null:Math.trunc(wholesaleMin),max_qty:wholesaleMax==null?null:Math.trunc(wholesaleMax)});
         if(bulkPrice!=null) pricingTiers.push({type:'bulk',price:bulkPrice,min_qty:bulkMin==null?null:Math.trunc(bulkMin),max_qty:bulkMax==null?null:Math.trunc(bulkMax)});
-        const product={sheetName,rowNumber:Number(row.__rowNum__??(rowIndex+1))+1,product_id:importText(get('product_id')),name,model:importText(get('model')),caption:importText(get('caption')),price:retailPrice,wholesale_price:wholesalePrice,wholesale_min_qty:wholesaleMin,pricing_tiers:pricingTiers,limited_offer:importBoolean(get('limited_offer'),false),is_visible:importBoolean(get('is_visible'),true),sort_order:importNumber(get('sort_order')),specifications:specs.slice(0,30),imageSources:sources.slice(0,4),imageRefs:imageRefs.slice(0,4),unresolvedImages:unresolved};
+        const product={sheetName,rowNumber:Number(row.__rowNum__??(rowIndex+1))+1,product_id:importText(get('product_id')),name,model:importText(get('model')),caption:importText(get('caption')),price:retailPrice,wholesale_price:wholesalePrice,wholesale_min_qty:wholesaleMin,pricing_tiers:pricingTiers,limited_offer:importBoolean(get('limited_offer'),false),availability:normalizeImportAvailability(get('availability'),null),is_visible:importBoolean(get('is_visible'),true),sort_order:importNumber(get('sort_order')),specifications:specs.slice(0,30),imageSources:sources.slice(0,4),imageRefs:imageRefs.slice(0,4),unresolvedImages:unresolved};
         section.products.push(product);total++;
       });
       if(section.products.length)sections.push(section);
@@ -318,10 +329,10 @@
   function excelSpecKey(spec){return `${importKey(spec?.label)}|${importKey(spec?.unit)}`;}
   function excelBoolean(value){return value===false?'لا':'نعم';}
   function liveExcelHeaders(specHeaders=[]){
-    return ['معرف المنتج','اسم المنتج','الكود','الوصف','سعر المفرق','سعر الجملة','الجملة أدنى','الجملة أعلى','سعر جملة الجملة','جملة الجملة أدنى','جملة الجملة أعلى','عرض محدود','ظاهر','الترتيب','الصورة 1','الصورة 2','الصورة 3','الصورة 4',...specHeaders];
+    return ['معرف المنتج','اسم المنتج','الكود','الوصف','سعر المفرق','سعر الجملة','الجملة أدنى','الجملة أعلى','سعر جملة الجملة','جملة الجملة أدنى','جملة الجملة أعلى','عرض محدود','حالة التوفر','ظاهر','الترتيب','الصورة 1','الصورة 2','الصورة 3','الصورة 4',...specHeaders];
   }
   function excelColumnWidths(specCount){
-    return [24,28,18,36,14,14,14,14,16,16,16,14,12,12,36,36,36,36,...Array(specCount).fill(20)].map(w=>({wch:w}));
+    return [24,28,18,36,14,14,14,14,16,16,16,14,16,12,12,36,36,36,36,...Array(specCount).fill(20)].map(w=>({wch:w}));
   }
   async function downloadExcelTemplate(event){
     const button=event?.currentTarget||document.getElementById('flDownloadExcelTemplate');const original=button?.innerHTML;
@@ -336,7 +347,8 @@
         ['كل ورقة تمثل قسمًا. يمكنك إضافة منتج جديد في نهاية ورقة القسم نفسها.'],
         ['للمنتج الجديد: اكتب رابط الصورة في «الصورة 1» على الأقل، أو استخدم حزمة ZIP إذا أردت صورًا محلية.'],
         ['صور المنتجات الحالية مضافة كرابط تلقائيًا، وعند إعادة استيراد الملف دون تغيير الروابط سيحتفظ الموقع بالصور نفسها دون إعادة رفعها.'],
-        ['القيم المقبولة في «ظاهر» و«عرض محدود»: نعم / لا.']
+        ['القيم المقبولة في «ظاهر» و«عرض محدود»: نعم / لا.'],
+        ['القيم المقبولة في «حالة التوفر»: متوفر / نفد / قريبًا.']
       ];
       const infoWs=window.XLSX.utils.aoa_to_sheet(instructions);infoWs['!cols']=[{wch:110}];
       window.XLSX.utils.book_append_sheet(wb,infoWs,excelSafeSheetName('تعليمات',usedNames));
@@ -359,7 +371,7 @@
             importText(product.id),importText(product.name),importText(product.model),importText(product.caption),
             retail?.price??'',wholesale?.price??'',wholesale?.min_qty??'',wholesale?.max_qty??'',
             bulk?.price??'',bulk?.min_qty??'',bulk?.max_qty??'',
-            product.limited_offer===true?'نعم':'لا',excelBoolean(product.is_visible),product.sort_order==null?'':Number(product.sort_order),...images,
+            product.limited_offer===true?'نعم':'لا',excelAvailability(product.availability),excelBoolean(product.is_visible),product.sort_order==null?'':Number(product.sort_order),...images,
             ...specDefs.map(def=>specs.get(def.key)||'')
           ];
         });
@@ -444,7 +456,7 @@
             {key:WHATSAPP_META_SHOW_DESCRIPTION,label:'',value:'0',unit:''},
             {key:WHATSAPP_META_SHOW_SPECS,label:'',value:'0',unit:''}
           ];
-          const payload={category_id:category.id,name:row.name,model:row.model,caption:row.caption,specifications:[...row.specifications,...preservedMeta,pricingMetaRow(importedPricing)],price:importedRetail?.price??null,wholesale_price:importedWholesale?.price??null,wholesale_min_qty:importedWholesale?.min_qty??null,limited_offer:row.limited_offer,is_visible:row.is_visible,sort_order:row.sort_order!=null?Math.trunc(row.sort_order):(existing?Number(existing.sort_order)||0:newSort)};
+          const payload={category_id:category.id,name:row.name,model:row.model,caption:row.caption,specifications:[...row.specifications,...preservedMeta,pricingMetaRow(importedPricing)],price:importedRetail?.price??null,wholesale_price:importedWholesale?.price??null,wholesale_min_qty:importedWholesale?.min_qty??null,limited_offer:row.limited_offer,availability:row.availability||normalizeImportAvailability(existing?.availability,'available')||'available',is_visible:row.is_visible,sort_order:row.sort_order!=null?Math.trunc(row.sort_order):(existing?Number(existing.sort_order)||0:newSort)};
           let saved;
           if(existing){const {data,error}=await db.from('products').update(payload).eq('id',existing.id).select().single();if(error)throw error;saved=data;updated++;}
           else{const {data,error}=await db.from('products').insert({...payload,image_path:imagePaths[0]}).select().single();if(error)throw error;saved=data;createdId=saved.id;created++;newSort+=10;}
