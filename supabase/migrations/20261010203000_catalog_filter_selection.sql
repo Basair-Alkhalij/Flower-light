@@ -19,3 +19,5 @@ commit;
 select id, catalog_filter_keys, updated_at
 from public.site_settings
 where id=1;
+
+select 'CATALOG_FILTER_SELECTION_V111L_OK' as status;
