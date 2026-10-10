@@ -75,12 +75,10 @@
   }
 
   function toggleStyle(on){
-    return on
-      ? 'min-width:78px;height:34px;border:1px solid #e7bf5d;background:#fff9ec;color:#9a6500;border-radius:12px;padding:0 11px;font-size:13px;font-weight:850;display:inline-flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;box-shadow:0 1px 2px rgba(15,23,42,.04);white-space:nowrap'
-      : 'min-width:78px;height:34px;border:1px solid #d8e0e8;background:#fff;color:#718096;border-radius:12px;padding:0 11px;font-size:13px;font-weight:850;display:inline-flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;box-shadow:0 1px 2px rgba(15,23,42,.03);white-space:nowrap';
+    return `position:relative;width:52px;height:30px;border:0;border-radius:999px;padding:0;background:${on?'#f0a915':'#dbe1e8'};cursor:pointer;box-shadow:inset 0 0 0 1px ${on?'rgba(154,101,0,.12)':'rgba(100,116,139,.14)'};transition:background .18s ease;flex:0 0 52px`;
   }
   function toggleLabel(on){
-    return `<span style="width:7px;height:7px;border-radius:50%;background:${on?'#d39b16':'#a8b3c2'};display:inline-block;flex:0 0 7px"></span><span>${on?'تشغيل':'إيقاف'}</span>`;
+    return `<span aria-hidden="true" style="position:absolute;top:3px;${on?'left:3px':'right:3px'};width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(15,23,42,.24);transition:left .18s ease,right .18s ease"></span>`;
   }
   function orderButton(id,label,disabled){
     return `<button id="${id}" class="fl-cloud-btn secondary" type="button" aria-label="${esc(label)}" title="${esc(label)}" ${disabled?'disabled':''} style="min-width:42px;padding:8px 10px">▼</button>`;
@@ -97,7 +95,7 @@
         <span class="fl-permission-copy"><strong>${esc(row.label)}</strong><small>${esc(row.hint)}${on?` · الترتيب ${position+1}`:''}</small></span>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           ${controls}
-          <button id="flSearchFilterToggle_${esc(row.key)}" type="button" aria-pressed="${on?'true':'false'}" aria-label="${on?'إيقاف':'تشغيل'} ${esc(row.label)}" ${settingError?'disabled':''} style="${toggleStyle(on)}">${toggleLabel(on)}</button>
+          <button id="flSearchFilterToggle_${esc(row.key)}" type="button" role="switch" aria-checked="${on?'true':'false'}" aria-label="${on?'إيقاف':'تشغيل'} ${esc(row.label)}" ${settingError?'disabled':''} style="${toggleStyle(on)}">${toggleLabel(on)}</button>
           ${row.custom?`<button id="flDeleteCustomFilter_${esc(row.key)}" class="fl-cloud-btn secondary" type="button" ${settingError?'disabled':''}>حذف</button>`:''}
         </div>
       </div>`;
@@ -110,7 +108,7 @@
       ${settingError?`<div class="fl-cloud-note bad">تعذر قراءة إعداد فلاتر البحث. شغّل <b>supabase/UPGRADE_EXISTING_V111.sql</b> في Supabase ثم حدّث الصفحة.</div>`:''}
       <section class="fl-cloud-card">
         <div class="fl-credentials-card-head"><div><span class="fl-account-badge owner">الفلاتر الظاهرة</span><h3>تشغيل وترتيب فلاتر البحث</h3></div></div>
-        <p>استخدم «تشغيل / إيقاف» للتحكم بالفلاتر. الفلاتر المشغلة تظهر أولًا، واستخدم ▲ و▼ لتحديد أي فلتر يأتي قبل الآخر.</p>
+        <p>استخدم المفتاح للتشغيل والإيقاف. الفلاتر المشغلة تظهر أولًا، واستخدم ▲ و▼ لتحديد أي فلتر يأتي قبل الآخر.</p>
         <div class="fl-catalog-filter-options">${optionsHtml()}</div>
         <div class="fl-cloud-actions"><button class="fl-cloud-btn primary" id="flSearchFiltersSave" type="button" ${settingError?'disabled':''}>حفظ الفلاتر والترتيب</button></div>
       </section>
