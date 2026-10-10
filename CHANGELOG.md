@@ -1,3 +1,12 @@
+## v111D — 2026-10-10 — admin-controlled quote-list visibility
+
+- Added Owner-only setting `site_settings.quote_list_enabled` with default `true`.
+- Added an Admin card to show/hide the public multi-product quote-list feature.
+- Public quote controls, floating bar, modal, add and send actions now respect the setting.
+- Existing visitor lists remain stored locally while the feature is hidden.
+- Added `supabase/migrations/20261010113500_quote_list_visibility.sql` and `supabase/UPGRADE_EXISTING_V111.sql`.
+- Added static/admin/browser coverage for disabling and re-enabling the feature.
+
 ## v111C — 2026-10-10 — multi-product quote list
 
 - Added a local-only quote list for up to 30 products with quantities from 1–9999, persisted in `localStorage` under `fl_quote_list_v1`.
