@@ -231,7 +231,7 @@
       return `<article class="fl-cloud-product" data-product-id="${p.id}">
         <button class="fl-product-drag-handle" type="button" aria-label="اسحب لتغيير ترتيب ${esc(p.name||'المنتج')}" title="اسحب لتغيير الترتيب"><span>⋮⋮</span><small>${index+1}</small></button>
         <div class="fl-cloud-product-image-wrap"><img src="${esc(imageUrl(productThumbnailPath(imagePath)))}" alt="${esc(p.name||'منتج')}" loading="lazy" decoding="async"><span class="fl-admin-gallery-count">${gallery.length} / ${MAX_PRODUCT_IMAGES} صور</span></div>
-        <div class="fl-cloud-product-body"><div class="fl-cloud-product-title-row"><strong>${esc(p.name||'منتج بدون اسم')}</strong><span class="fl-admin-availability is-${availability}">${availabilityLabel}</span></div><small>${esc(p.model?`الكود ${p.model}`:'بدون كود')} · ${p.is_visible===false?'مخفي':'ظاهر'}${specCount?` · ${specCount} معلومات`:''}${pricingSummary?` · ${esc(pricingSummary)}`:''}${p.limited_offer===true?' · عرض محدود':''}</small>
+        <div class="fl-cloud-product-body"><strong>${esc(p.name||'منتج بدون اسم')}</strong><small>${esc(p.model?`الكود ${p.model}`:'بدون كود')} · ${availabilityLabel} · ${p.is_visible===false?'مخفي':'ظاهر'}${specCount?` · ${specCount} معلومات`:''}${pricingSummary?` · ${esc(pricingSummary)}`:''}${p.limited_offer===true?' · عرض محدود':''}</small>
         <div class="fl-cloud-product-actions"><button class="fl-cloud-mini" data-prod-edit="${p.id}" type="button">تعديل</button><button class="fl-cloud-mini" data-prod-copy="${p.id}" type="button">نسخ</button><button class="fl-cloud-mini red" data-prod-delete="${p.id}" type="button">حذف</button></div></div></article>`;
     }).join('');
 
