@@ -751,6 +751,9 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     figure.dataset.productId = String(item?.id || '');
     figure.dataset.productName = String(item?.name || '');
     figure.dataset.productModel = String(item?.model || '');
+    const filterSpecs=new Map(productSpecifications(item).map(spec=>[spec.key,specificationDisplayValue(spec)]));
+    figure.dataset.filterWattage=filterSpecs.get('wattage')||'';
+    figure.dataset.filterCct=filterSpecs.get('cct')||'';
 
     const thumb = document.createElement('div');
     thumb.className = `${type}-thumb`;
