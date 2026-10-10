@@ -1,3 +1,14 @@
+## v111O — 2026-10-10 — system dark mode
+
+- Added automatic public dark mode using `prefers-color-scheme: dark`.
+- Added dark values for the existing core theme variables and targeted overrides for legacy direct-color public surfaces.
+- Added separate light/dark browser `theme-color` metadata and `color-scheme: light dark`.
+- Kept PDF/JPG export canvas rendering and PDF catalog pages unchanged.
+- Added browser contrast checks (minimum 4.5:1 for the tested body/search surfaces).
+- Added CI screenshots for both modes and upload them as the `theme-screenshots` artifact.
+- Compacted legacy public CSS source formatting to stay within the existing CSS size budget.
+- No database migration is required.
+
 ## v111N — 2026-10-10 — filter ON/OFF controls and ordering
 
 - Replaced the Search Filters “show” checkbox with explicit ON/OFF toggle buttons.

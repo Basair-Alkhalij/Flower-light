@@ -86,6 +86,7 @@ assert.deepEqual(responsiveQueries, [
   '(min-width:720px)',
   '(max-width:420px)',
   '(prefers-reduced-motion:reduce)',
+  '(prefers-color-scheme:dark)',
   '(max-width: 760px)',
   '(max-width: 520px)',
   '(max-width:520px)',
@@ -564,5 +565,14 @@ assert.match(catalogSearchFilters,/cardMatchesFilters/);
 assert.match(catalogSearchFilters,/choicesFor/);
 assert.match(catalogSearchFilters,/exceptKey/);
 assert.match(catalogSearchFilters,/flowerlight:site-settings/);
+
+
+// v111O / task 7: system dark mode without changing export canvases.
+assert.match(css,/prefers-color-scheme:dark/);
+assert.match(css,/color-scheme:dark/);
+assert.match(index,/name="color-scheme" content="light dark"/);
+assert.match(index,/theme-color" content="#111827" media="\(prefers-color-scheme: dark\)"/);
+assert.match(index,/theme-color" content="#ff9f0a" media="\(prefers-color-scheme: light\)"/);
+assert.doesNotMatch(read('styles/responsive.css'),/site-catalog-page canvas/);
 
 console.log('FLOWER_LIGHT_FINAL_SMOKE_OK');

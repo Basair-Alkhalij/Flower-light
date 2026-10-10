@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import fs from 'node:fs';
 
 const base=process.env.FL_SITE_URL||'http://127.0.0.1:4173/';
 
@@ -69,6 +70,50 @@ async function injectCatalogFixtures(page){
     window.flRenderProducts();
   });
 }
+
+test('system light and dark modes keep readable contrast and produce review screenshots',async({page})=>{
+  fs.mkdirSync('test-results/theme-screens',{recursive:true});
+  await installSupabaseMock(page);
+  await page.emulateMedia({colorScheme:'light'});
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await injectCatalogFixtures(page);
+  await page.locator('#openProducts').click();
+  await expect(page.locator('#catalogModal')).toHaveClass(/open/);
+
+  const contrastRatio=async(selector)=>{
+    return page.locator(selector).evaluate(node=>{
+      const parse=value=>{
+        const m=String(value||'').match(/rgba?\((\d+)[, ]+(\d+)[, ]+(\d+)/i);
+        return m?[Number(m[1]),Number(m[2]),Number(m[3])]:[0,0,0];
+      };
+      const lum=rgb=>{
+        const values=rgb.map(v=>{const s=v/255;return s<=.04045?s/12.92:((s+.055)/1.055)**2.4;});
+        return .2126*values[0]+.7152*values[1]+.0722*values[2];
+      };
+      const style=getComputedStyle(node),fg=lum(parse(style.color)),bg=lum(parse(style.backgroundColor));
+      return (Math.max(fg,bg)+.05)/(Math.min(fg,bg)+.05);
+    });
+  };
+
+  expect(await contrastRatio('body')).toBeGreaterThanOrEqual(4.5);
+  expect(await contrastRatio('#catalogSearchInput')).toBeGreaterThanOrEqual(4.5);
+  await page.locator('.catalog-sheet').screenshot({path:'test-results/theme-screens/catalog-light.png'});
+
+  await page.emulateMedia({colorScheme:'dark'});
+  await expect.poll(()=>contrastRatio('body')).toBeGreaterThanOrEqual(4.5);
+  expect(await contrastRatio('#catalogSearchInput')).toBeGreaterThanOrEqual(4.5);
+  expect(await page.evaluate(()=>getComputedStyle(document.documentElement).colorScheme)).toContain('dark');
+  await page.locator('.catalog-sheet').screenshot({path:'test-results/theme-screens/catalog-dark.png'});
+
+  const colors=await page.evaluate(()=>({
+    body:getComputedStyle(document.body).backgroundColor,
+    sheet:getComputedStyle(document.querySelector('.catalog-sheet')).backgroundColor,
+    search:getComputedStyle(document.querySelector('#catalogSearchInput')).backgroundColor
+  }));
+  expect(colors.body).not.toBe('rgb(247, 247, 245)');
+  expect(colors.sheet).not.toBe('rgb(247, 246, 243)');
+  expect(colors.search).not.toBe('rgb(255, 255, 255)');
+});
 
 test('customer gate can be enabled and disabled',async({page})=>{
   await installSupabaseMock(page);
