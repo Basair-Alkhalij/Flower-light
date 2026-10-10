@@ -515,7 +515,7 @@ assert.match(availabilityMigration,/PRODUCT_AVAILABILITY_V111H_OK/);
 assert.match(publicSync,/availability:\['available','out_of_stock','coming_soon'\]/);
 assert.match(app,/product-availability-badge/);
 assert.match(productForm,/flProdAvailability/);
-assert.match(productAdmin,/fl-admin-availability/);
+assert.match(productAdmin,/AVAILABILITY_LABELS/);
 assert.match(productImport,/حالة التوفر/);
 assert.match(quoteList,/availability !== 'available'/);
 assert.match(read('styles/products.css'),/\.product-availability-badge\.is-out_of_stock/);
