@@ -675,6 +675,7 @@
           price:p.price==null?null:Number(p.price),
           wholesale_price:p.wholesale_price==null?null:Number(p.wholesale_price),
           wholesale_min_qty:p.wholesale_min_qty==null?null:Number(p.wholesale_min_qty),
+          availability:['available','out_of_stock','coming_soon'].includes(String(p.availability||''))?String(p.availability):'available',
           limited_offer:p.limited_offer===true,
           catalog_pdf_path:'',
           catalog_pdf_url:'',
