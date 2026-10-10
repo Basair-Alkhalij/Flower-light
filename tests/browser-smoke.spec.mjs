@@ -248,10 +248,12 @@ test('quote list keeps quantities after reload and sends two products to WhatsAp
   expect(url.origin).toBe('https://wa.me');
   expect(url.pathname).toBe('/966570372763');
   const message=url.searchParams.get('text');
-  expect(message).toContain('1) جداري تجريبي — WL-TEST × 25');
-  expect(message).toContain('2) منتج ثان — WL-TWO × 7');
-  expect(message).toContain('الاسم: محمد');
-  expect(message).toContain('ملاحظات: فضلاً إرسال أفضل سعر');
+  const plainMessage=message.replace(/[\u2066\u2069]/g,'');
+  expect(plainMessage).toContain('1) جداري تجريبي — WL-TEST * 25');
+  expect(plainMessage).toContain('2) منتج ثان — WL-TWO * 7');
+  expect(plainMessage).not.toContain(' × ');
+  expect(plainMessage).toContain('الاسم: محمد');
+  expect(plainMessage).toContain('ملاحظات: فضلاً إرسال أفضل سعر');
 });
 
 test('public product and category share URLs use static SEO paths',async({page})=>{

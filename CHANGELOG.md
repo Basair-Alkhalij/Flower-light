@@ -1,3 +1,12 @@
+## v111G — 2026-10-10 — stable WhatsApp quantity order
+
+- Kept the v111F direct-edit quantity inputs on cards and in the quote dialog.
+- Quote-list WhatsApp lines now use a fixed `product/code * quantity` order.
+- Added Unicode direction isolation so mixed Arabic, Latin codes, and numbers do not visually swap the quantity to the other side.
+- Avoids repeating the model when product name and model are identical.
+- Updated runtime and browser coverage for the exact WhatsApp message format.
+- No database change is required.
+
 ## v111F — 2026-10-10 — direct quote quantity entry
 
 - Replaced read-only quantity numbers with numeric inputs on product cards and inside the quote-list dialog.

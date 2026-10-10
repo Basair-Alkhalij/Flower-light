@@ -75,8 +75,10 @@
     rows.forEach((row, index) => {
       const item = cleanItem(row, row?.qty);
       if (!item) return;
-      const code = item.model ? ` — ${item.model}` : '';
-      lines.push(`${index + 1}) ${item.name}${code} × ${item.qty}`);
+      const hasDistinctModel = item.model && item.model !== item.name;
+      const code = hasDistinctModel ? ` — ${item.model}` : '';
+      const productLine = `${item.name}${code} * ${item.qty}`;
+      lines.push(`${index + 1}) \u2066${productLine}\u2069`);
     });
     const cleanName = cleanText(name, 80);
     const cleanNotes = cleanText(notes, MAX_NOTES);

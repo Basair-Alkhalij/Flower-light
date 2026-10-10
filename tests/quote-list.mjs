@@ -47,12 +47,17 @@ api.add({id:'two',name:'مصباح ثاني',model:'B-2'},3);
 const rows=api.items();
 assert.equal(Array.from(rows[0].name).length,80);
 const message=api.quoteListWhatsAppMessage(rows,{name:'محمد',notes:'فضلاً إرسال أفضل سعر'});
-assert.match(message,/السلام عليكم، أرغب بعرض سعر للمنتجات التالية:/);
-assert.match(message,/1\) .* — A-1 × 2/);
-assert.match(message,/2\) مصباح ثاني — B-2 × 3/);
-assert.match(message,/الاسم: محمد/);
-assert.match(message,/ملاحظات: فضلاً إرسال أفضل سعر/);
-assert.match(message,/العلامة التجارية: Flower Light/);
+const plainMessage=message.replace(/[\u2066\u2069]/g,'');
+assert.match(plainMessage,/السلام عليكم، أرغب بعرض سعر للمنتجات التالية:/);
+assert.match(plainMessage,/1\) .* — A-1 \* 2/);
+assert.match(plainMessage,/2\) مصباح ثاني — B-2 \* 3/);
+assert.match(plainMessage,/الاسم: محمد/);
+assert.match(plainMessage,/ملاحظات: فضلاً إرسال أفضل سعر/);
+assert.match(plainMessage,/العلامة التجارية: Flower Light/);
+assert.doesNotMatch(plainMessage,/ × /);
+const duplicateMessage=api.quoteListWhatsAppMessage([{id:'same-code',name:'1230',model:'1230',qty:2}]).replace(/[\u2066\u2069]/g,'');
+assert.match(duplicateMessage,/1\) 1230 \* 2/);
+assert.doesNotMatch(duplicateMessage,/1230 — 1230/);
 
 const broken={
   getItem(){throw new Error('blocked')},
