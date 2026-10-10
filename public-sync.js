@@ -470,7 +470,7 @@
     try{window.dispatchEvent(new CustomEvent('flowerlight:site-settings',{detail:settings}));}catch(_){}
   }
   async function loadPublicSiteSettings(){
-    const fallback={require_customer_lead:true,master_barcode_path:'',master_barcode_url:'',design_footer_number:'',design_footer_label:'',pwa_install_enabled:false,quote_list_enabled:true};
+    const fallback={require_customer_lead:true,master_barcode_path:'',master_barcode_url:'',design_footer_number:'',design_footer_label:'',pwa_install_enabled:false,quote_list_enabled:true,catalog_filter_keys:['availability','wattage','cct']};
     if(!db){publishPublicSiteSettings(fallback);return false;}
     try{
       let data=null;
@@ -494,6 +494,13 @@
       }else{
         quoteListEnabled=quoteResult.data?.quote_list_enabled!==false;
       }
+      let catalogFilterKeys=['availability','wattage','cct'];
+      const filterResult=await db.from('site_settings').select('catalog_filter_keys').eq('id',1).maybeSingle();
+      if(filterResult.error){
+        if(!/42703|PGRST204/i.test(String(filterResult.error?.code||''))) console.warn('[Site settings] catalog-filter load failed; keeping default filters.',filterResult.error);
+      }else if(Array.isArray(filterResult.data?.catalog_filter_keys)){
+        catalogFilterKeys=filterResult.data.catalog_filter_keys.map(String).filter(Boolean);
+      }
       const masterBarcodePath=String(data?.master_barcode_path||'').trim();
       publishPublicSiteSettings({
         require_customer_lead:data?.require_customer_lead!==false,
@@ -502,7 +509,8 @@
         design_footer_number:String(data?.design_footer_number||'').trim(),
         design_footer_label:String(data?.design_footer_label||'').trim(),
         pwa_install_enabled:data?.pwa_install_enabled===true,
-        quote_list_enabled:quoteListEnabled
+        quote_list_enabled:quoteListEnabled,
+        catalog_filter_keys:catalogFilterKeys
       });
       return true;
     }catch(err){
@@ -704,7 +712,7 @@
   window.FLOWER_LIGHT_CONTACTS = [];
   window.FLOWER_LIGHT_SITE_CATALOGS = [];
   window.FLOWER_LIGHT_SITE_CATALOG = {};
-  window.FLOWER_LIGHT_SITE_SETTINGS = { require_customer_lead: true, master_barcode_path: '', master_barcode_url: '', design_footer_number: '', design_footer_label: '', pwa_install_enabled: false };
+  window.FLOWER_LIGHT_SITE_SETTINGS = { require_customer_lead: true, master_barcode_path: '', master_barcode_url: '', design_footer_number: '', design_footer_label: '', pwa_install_enabled: false, quote_list_enabled: true, catalog_filter_keys: ['availability','wattage','cct'] };
   window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extraSections: [] };
   renderPublicProfile();
   if (db) { publicSiteSettingsPromise=loadPublicSiteSettings(); loadPublicProfile(); loadPublicSiteCatalog(); loadCloudProducts(); }

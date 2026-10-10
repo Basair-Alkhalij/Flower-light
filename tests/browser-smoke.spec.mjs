@@ -63,7 +63,7 @@ async function injectCatalogFixtures(page){
       id:'sec-test',slug:'wall-lights',name:'جداريات',description:'قسم تجريبي',sort_order:0,items:[{
         id:'prod-test',name:'جداري تجريبي',model:'WL-TEST',caption:'منتج تجريبي',alt:'جداري تجريبي',category:'جداريات',category_id:'sec-test',category_slug:'wall-lights',
         image:image1,image_thumb:thumb1,image_path:'one',gallery:[{image:image1,thumb:thumb1,image_path:'one'},{image:image2,thumb:thumb2,image_path:'two'}],
-        specifications:[{key:'custom_1',label:'الواط',value:'12W',unit:''},{key:'custom_2',label:'حرارة اللون',value:'3000K',unit:''}],price:100,wholesale_price:80,wholesale_min_qty:10,availability:'available',is_visible:true
+        specifications:[{key:'custom_1',label:'الواط',value:'12W',unit:''},{key:'custom_2',label:'حرارة اللون',value:'3000K',unit:''},{key:'color',label:'اللون',value:'أسود',unit:''}],price:100,wholesale_price:80,wholesale_min_qty:10,availability:'available',is_visible:true
       }]
     }]};
     window.flRenderProducts();
@@ -394,20 +394,20 @@ test('catalog filters combine availability, wattage, CCT and search on mobile',a
   });
   await page.locator('#openProducts').click();
 
-  await expect(page.locator('#catalogAvailabilityFilter')).toBeVisible();
-  await expect(page.locator('#catalogWattageFilter')).toBeVisible();
-  await expect(page.locator('#catalogCctFilter')).toBeVisible();
-  await expect(page.locator('#catalogWattageFilter option[value="12W"]')).toHaveCount(1);
-  await expect(page.locator('#catalogWattageFilter option[value="24W"]')).toHaveCount(1);
-  await expect(page.locator('#catalogCctFilter option[value="3000K"]')).toHaveCount(1);
-  await expect(page.locator('#catalogCctFilter option[value="4000K"]')).toHaveCount(1);
+  await expect(page.locator('#catalogFilter_availability')).toBeVisible();
+  await expect(page.locator('#catalogFilter_wattage')).toBeVisible();
+  await expect(page.locator('#catalogFilter_cct')).toBeVisible();
+  await expect(page.locator('#catalogFilter_wattage option[value="12W"]')).toHaveCount(1);
+  await expect(page.locator('#catalogFilter_wattage option[value="24W"]')).toHaveCount(1);
+  await expect(page.locator('#catalogFilter_cct option[value="3000K"]')).toHaveCount(1);
+  await expect(page.locator('#catalogFilter_cct option[value="4000K"]')).toHaveCount(1);
 
-  await page.locator('#catalogWattageFilter').selectOption('24W');
+  await page.locator('#catalogFilter_wattage').selectOption('24W');
   await expect(page.locator('#catalogSearchCount')).toHaveText('1 نتيجة · 1 قسم');
   await expect(page.locator('.extra-section-tab').filter({hasText:'كشافات خارجية'})).toHaveClass(/active/);
 
-  await page.locator('#catalogAvailabilityFilter').selectOption('out_of_stock');
-  await page.locator('#catalogCctFilter').selectOption('4000K');
+  await page.locator('#catalogFilter_availability').selectOption('out_of_stock');
+  await page.locator('#catalogFilter_cct').selectOption('4000K');
   await expect(page.locator('#catalogSearchCount')).toHaveText('1 نتيجة · 1 قسم');
   await expect(page.locator('.catalog-panel.active .chandelier-card:not(.catalog-search-hidden)')).toHaveCount(1);
 
@@ -417,11 +417,19 @@ test('catalog filters combine availability, wattage, CCT and search on mobile',a
   await expect(page.locator('#catalogSearchCount')).toHaveText('1 نتيجة · 1 قسم');
 
   await page.locator('#catalogFilterClear').click();
-  await expect(page.locator('#catalogWattageFilter')).toHaveValue('');
-  await expect(page.locator('#catalogCctFilter')).toHaveValue('');
-  await expect(page.locator('#catalogAvailabilityFilter')).toHaveValue('');
+  await expect(page.locator('#catalogFilter_wattage')).toHaveValue('');
+  await expect(page.locator('#catalogFilter_cct')).toHaveValue('');
+  await expect(page.locator('#catalogFilter_availability')).toHaveValue('');
   await expect(page.locator('#catalogSearchInput')).toHaveValue('كشاف');
   await expect(page.locator('#catalogSearchCount')).toHaveText('1 نتيجة · 1 قسم');
+
+  await page.evaluate(()=>{
+    window.FLOWER_LIGHT_SITE_SETTINGS={...(window.FLOWER_LIGHT_SITE_SETTINGS||{}),catalog_filter_keys:['color']};
+    window.dispatchEvent(new CustomEvent('flowerlight:site-settings',{detail:window.FLOWER_LIGHT_SITE_SETTINGS}));
+  });
+  await expect(page.locator('#catalogFilter_color')).toBeVisible();
+  await expect(page.locator('#catalogFilter_wattage')).toHaveCount(0);
+  await expect(page.locator('#catalogFilter_availability')).toHaveCount(0);
 
   const fit=await page.locator('#catalogFilterWrap').evaluate(el=>({scroll:el.scrollWidth,client:el.clientWidth}));
   expect(fit.scroll).toBeLessThanOrEqual(fit.client+1);

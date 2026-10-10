@@ -1,3 +1,13 @@
+## v111L — 2026-10-10 — owner-selected catalog filters
+
+- Added owner-controlled catalog filter selection in the site settings panel.
+- Filter configuration is stored in `site_settings.catalog_filter_keys` as a text array.
+- The owner can choose availability or any standardized product specification as a public filter, or choose no filters and keep text search only.
+- Public catalog filters rebuild dynamically when site settings are loaded or changed.
+- Product cards now expose all normalized specification values to the filter module rather than hard-coding only wattage and CCT.
+- Added migration `20261010203000_catalog_filter_selection.sql` and wired the same change into `SUPABASE_SETUP.sql` and `UPGRADE_EXISTING_V111.sql`.
+- Updated static, settings-module and mobile browser coverage.
+
 ## v111K — 2026-10-10 — dynamic catalog filters
 
 - Completed task 6 with dynamic filters for availability, canonical wattage and canonical CCT.
