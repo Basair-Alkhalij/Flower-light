@@ -132,6 +132,58 @@ test('main catalog, product actions, lightbox navigation and catalog tab work',a
 });
 
 
+
+test('quote list keeps quantities after reload and sends two products to WhatsApp',async({page})=>{
+  await page.addInitScript(()=>{
+    window.__quoteOpened=[];
+    Object.defineProperty(window,'open',{configurable:true,writable:true,value:(...args)=>{window.__quoteOpened.push(args);return null;}});
+  });
+  await installSupabaseMock(page);
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await page.evaluate(()=>localStorage.removeItem('fl_quote_list_v1'));
+  await injectCatalogFixtures(page);
+  await page.evaluate(()=>{
+    const section=window.FLOWER_LIGHT_PRODUCTS.extraSections[0];
+    const first=section.items[0];
+    section.items.push({...first,id:'prod-two',name:'منتج ثان',model:'WL-TWO',caption:'منتج تجريبي ثان',image_path:'two',gallery:[first.gallery[1]]});
+    window.flRenderProducts();
+  });
+  await page.locator('#openProducts').click();
+  await expect(page.locator('.quote-list-product-control')).toHaveCount(2);
+  await expect(page.locator('.quote-list-add-button')).toHaveCount(2);
+
+  await page.locator('.quote-list-product-control[data-quote-control-id="prod-test"] .quote-list-add-button').click();
+  await page.locator('.quote-list-product-control[data-quote-control-id="prod-two"] .quote-list-add-button').click();
+  await page.locator('.quote-list-product-control[data-quote-control-id="prod-test"] .quote-list-qty-button').nth(1).click();
+  await expect(page.locator('.quote-list-product-control[data-quote-control-id="prod-test"] .quote-list-qty-value')).toHaveText('2');
+  await expect(page.locator('#flQuoteBar')).toBeVisible();
+  await expect(page.locator('#flQuoteCount')).toHaveText('2');
+
+  await page.reload({waitUntil:'domcontentloaded'});
+  await injectCatalogFixtures(page);
+  await expect(page.locator('#flQuoteBar')).toBeVisible();
+  await expect(page.locator('#flQuoteCount')).toHaveText('2');
+  await page.locator('#flQuoteBar').click();
+  await expect(page.locator('#flQuoteModal')).toHaveClass(/open/);
+  await expect(page.locator('#flQuoteItems .fl-quote-item')).toHaveCount(2);
+  await page.locator('#flQuoteName').fill('محمد');
+  await page.locator('#flQuoteNotes').fill('فضلاً إرسال أفضل سعر');
+  await page.locator('#flQuoteSend').click();
+
+  const opened=await page.evaluate(()=>window.__quoteOpened.at(-1));
+  expect(opened).toBeTruthy();
+  expect(opened[1]).toBe('_blank');
+  expect(opened[2]).toBe('noopener');
+  const url=new URL(opened[0]);
+  expect(url.origin).toBe('https://wa.me');
+  expect(url.pathname).toBe('/966570372763');
+  const message=url.searchParams.get('text');
+  expect(message).toContain('1) جداري تجريبي — WL-TEST × 2');
+  expect(message).toContain('2) منتج ثان — WL-TWO × 1');
+  expect(message).toContain('الاسم: محمد');
+  expect(message).toContain('ملاحظات: فضلاً إرسال أفضل سعر');
+});
+
 test('public product and category share URLs use static SEO paths',async({page})=>{
   await page.addInitScript(()=>{
     window.__flSharedPayloads=[];
