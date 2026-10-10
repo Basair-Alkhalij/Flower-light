@@ -9,7 +9,7 @@ for(const fail of [false,true]){
   run('admin-media.js');Object.assign(ctx.window.FL_ADMIN_CORE,ctx.window.FL_ADMIN_MEDIA);run('admin-products.js');
   await ctx.window.FL_ADMIN_PRODUCTS.duplicateProduct('p1');
   const s=JSON.parse(JSON.stringify(ctx.window.__duplicateState));
-  assert.equal(s.payload.is_visible,false);assert.equal(s.payload.price,100);assert.equal(s.payload.wholesale_price,80);
+  assert.equal(s.payload.is_visible,false);assert.equal(s.payload.price,100);assert.equal(s.payload.wholesale_price,80);assert.equal(s.payload.availability,'out_of_stock');
   assert.equal(s.payload.specifications.find(x=>x.key==='show_specs').value,'1');
   assert.equal(s.payload.specifications.find(x=>x.key==='show_description').value,'0');
   assert.equal(JSON.parse(s.payload.specifications.find(x=>x.key==='pricing').value)[0].price,100);
