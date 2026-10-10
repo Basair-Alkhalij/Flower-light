@@ -773,7 +773,10 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     actions.className = 'product-card-actions';
     actions.append(pdfButton, shareButton, whatsappLink);
     const quoteControl = window.FL_QUOTE_LIST?.createAddControl?.(item);
-    if (quoteControl) actions.appendChild(quoteControl);
+    if (quoteControl) {
+      actions.appendChild(quoteControl);
+      actions.classList.toggle('has-quote-list', !quoteControl.hidden);
+    }
     figure.appendChild(actions);
     return figure;
   }

@@ -1,3 +1,11 @@
+## v111E — 2026-10-10 — balanced product action layout
+
+- Keeps Download + Share as the first 2-column row.
+- Shows WhatsApp + Quote List side by side as the second row while the quote-list feature is enabled.
+- Restores WhatsApp to a full-width second row when the Owner hides the quote-list feature.
+- Added browser geometry checks and static smoke coverage for both visibility states.
+- No database change is required.
+
 ## v111D — 2026-10-10 — admin-controlled quote-list visibility
 
 - Added Owner-only setting `site_settings.quote_list_enabled` with default `true`.

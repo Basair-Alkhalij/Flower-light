@@ -471,6 +471,11 @@ assert.match(quoteList,/quote_list_add/);
 assert.match(quoteList,/quote_list_send/);
 assert.match(quoteList,/role="dialog"/);
 assert.match(read('styles/products.css'),/\.fl-quote-bar/);
+assert.match(app,/classList\.toggle\('has-quote-list'/);
+assert.match(quoteList,/closest\('\.product-card-actions'\)\?\.classList\.toggle\('has-quote-list'/);
+assert.match(read('styles/products.css'),/\.product-card-actions\.has-quote-list \.product-whatsapp-button[\s\S]*?grid-column:1!important/);
+assert.match(read('styles/products.css'),/\.product-card-actions\.has-quote-list \.quote-list-product-control[\s\S]*?grid-column:2!important/);
+assert.match(read('styles/products.css'),/\.product-card-actions:not\(\.has-quote-list\) \.product-whatsapp-button[\s\S]*?grid-column:1\/-1!important/);
 
 
 // v111D: Owner controls whether the public quote-list feature is visible.

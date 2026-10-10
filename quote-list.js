@@ -166,6 +166,7 @@
     if (!control || !doc) return;
     const enabled = isEnabled();
     control.hidden = !enabled;
+    control.closest('.product-card-actions')?.classList.toggle('has-quote-list', enabled);
     control.replaceChildren();
     if (!enabled) return;
     const item = control._quoteItem;

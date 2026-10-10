@@ -948,3 +948,25 @@ body.fl-quote-open{overflow:hidden}
   .fl-quote-dialog{padding:14px;border-radius:20px}.fl-quote-item{grid-template-columns:minmax(0,1fr) auto}.fl-quote-remove{grid-column:1/-1}
   .fl-quote-actions{grid-template-columns:1fr}.fl-quote-bar{min-width:calc(100vw - 20px);bottom:calc(10px + env(safe-area-inset-bottom))}
 }
+
+
+/* ===== v111E: balanced 2x2 product actions when quote list is visible ===== */
+.product-card-actions.has-quote-list .product-whatsapp-button{
+  grid-column:1!important;
+  width:100%!important;
+  min-height:48px!important;
+}
+.product-card-actions.has-quote-list .quote-list-product-control{
+  grid-column:2!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:48px!important;
+}
+.product-card-actions.has-quote-list .quote-list-add-button,
+.product-card-actions.has-quote-list .quote-list-qty-control{
+  min-height:48px!important;
+}
+.product-card-actions:not(.has-quote-list) .product-whatsapp-button{
+  grid-column:1/-1!important;
+}
+.quote-list-product-control[hidden]{display:none!important}
