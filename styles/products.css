@@ -924,6 +924,8 @@
 .fl-quote-bar[hidden]{display:none!important}
 .fl-quote-bar strong{min-width:28px;height:28px;padding:0 7px;border-radius:999px;background:#fff;color:#8d5200;display:grid;place-items:center}
 body.fl-has-quote-bar{padding-bottom:calc(78px + env(safe-area-inset-bottom))}
+body.fl-has-quote-bar .catalog-modal{padding-bottom:calc(100px + env(safe-area-inset-bottom));scroll-padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+body.fl-has-quote-bar .product-card-actions{scroll-margin-bottom:110px}
 .fl-quote-modal{position:fixed;inset:0;z-index:16000;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(20,16,10,.68);backdrop-filter:blur(9px);direction:rtl}
 .fl-quote-modal.open{display:flex}
 body.fl-quote-open{overflow:hidden}
