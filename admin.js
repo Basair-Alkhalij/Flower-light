@@ -120,7 +120,23 @@
   const PRODUCT_SPEC_ALIAS_GROUPS={sku:['sku','كود المنتج','رقم المنتج','رمز المنتج'],wattage:['wattage','power','watt','w','القدرة','القدره','الواط','وات'],lumens:['lumens','lumen','lm','اللومن','لومن','التدفق الضوئي','شدة الاضاءة','شدة الإضاءة'],cct:['cct','kelvin','k','حرارة اللون','حراره اللون','درجة حرارة اللون','درجه حراره اللون','كلفن'],cri:['cri','مؤشر تجسيد الالوان','مؤشر تجسيد الألوان'],voltage:['voltage','volt','v','الفولت','الجهد','فولت'],ip_rating:['ip_rating','ip rating','ip','درجة الحماية ip','درجه الحمايه ip','درجة الحماية','درجه الحمايه'],dimensions:['dimensions','dimension','size','المقاس','المقاسات','الأبعاد','الابعاد'],color:['color','colour','اللون'],material:['material','الخامة','الخامه'],beam_angle:['beam_angle','beam angle','زاوية الإضاءة','زاويه الاضاءه','زاوية الضوء','زاويه الضوء'],frequency:['frequency','hz','التردد'],warranty:['warranty','الضمان'],bulb_base:['bulb_base','bulb base','socket','قاعدة اللمبة','قاعده اللمبه','سوكت'],bulb_count:['bulb_count','bulb count','عدد اللمبات','عدد اللمبة','عدد اللمبه']};
   function productSpecAliasToken(value){return String(value||'').trim().toLowerCase().replace(/[\u064B-\u0652]/g,'').replace(/[إأآا]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim();}
   const PRODUCT_SPEC_ALIAS_MAP=(()=>{const map=new Map();PRODUCT_SPEC_FIELDS.forEach(def=>[def.key,def.label,...(PRODUCT_SPEC_ALIAS_GROUPS[def.key]||[])].forEach(alias=>{const token=productSpecAliasToken(alias);if(token)map.set(token,def.key);}));return map;})();
-  function resolveProductSpecDefinition(key,label=''){const direct=String(key||'').trim();if(PRODUCT_SPEC_KEYS.has(direct))return PRODUCT_SPEC_FIELDS.find(field=>field.key===direct)||null;const aliasKey=PRODUCT_SPEC_ALIAS_MAP.get(productSpecAliasToken(direct))||PRODUCT_SPEC_ALIAS_MAP.get(productSpecAliasToken(label));return aliasKey?(PRODUCT_SPEC_FIELDS.find(field=>field.key===aliasKey)||null):null;}
+  function productSpecFields(){
+    const custom=(Array.isArray(window.FLOWER_LIGHT_CUSTOM_FILTERS)?window.FLOWER_LIGHT_CUSTOM_FILTERS:[]).map(row=>({
+      key:String(row?.key||'').trim(),label:String(row?.label||'').trim(),placeholder:String(row?.placeholder||'مثال: قيمة المواصفة').trim()
+    })).filter(row=>/^custom_filter_[a-z0-9]+$/i.test(row.key)&&row.label);
+    const seen=new Set(PRODUCT_SPEC_FIELDS.map(field=>field.key));
+    return [...PRODUCT_SPEC_FIELDS,...custom.filter(field=>!seen.has(field.key)&&seen.add(field.key))];
+  }
+  function resolveProductSpecDefinition(key,label=''){
+    const direct=String(key||'').trim();
+    const fields=productSpecFields();
+    const directDef=fields.find(field=>field.key===direct);
+    if(directDef)return directDef;
+    const aliasKey=PRODUCT_SPEC_ALIAS_MAP.get(productSpecAliasToken(direct))||PRODUCT_SPEC_ALIAS_MAP.get(productSpecAliasToken(label));
+    if(aliasKey)return PRODUCT_SPEC_FIELDS.find(field=>field.key===aliasKey)||null;
+    const labelToken=productSpecAliasToken(label);
+    return labelToken?(fields.find(field=>productSpecAliasToken(field.label)===labelToken)||null):null;
+  }
   function normalizeKnownSpecValue(value,def,existingUnit=''){let text=String(value??'').trim();let unit=String(existingUnit||'').trim();const canonicalUnit=String(def?.unit||'').trim();if(canonicalUnit){const escaped=canonicalUnit.replace(/[\^$.*+?()[\]{}|\\]/g,'\\$&');text=text.replace(new RegExp(`\\s*${escaped}\\s*$`,'i'),'').trim();unit=canonicalUnit;}return {value:text,unit};}
   const WHATSAPP_META_SHOW_DESCRIPTION='__whatsapp_show_description';
   const WHATSAPP_META_SHOW_SPECS='__whatsapp_show_specifications';
@@ -287,7 +303,7 @@
   function productSpecEditorRowHtml(spec=null){
     const def=resolveProductSpecDefinition(spec?.key,spec?.label);
     const selectedKey=def?.key||'__custom__';
-    const options=PRODUCT_SPEC_FIELDS.map(field=>`<option value="${field.key}" ${field.key===selectedKey?'selected':''}>${field.label}</option>`).join('');
+    const options=productSpecFields().map(field=>`<option value="${field.key}" ${field.key===selectedKey?'selected':''}>${field.label}</option>`).join('');
     const customLabel=def?'':String(spec?.label||'');
     return `<div class="fl-flex-spec-row" data-flex-spec-row>
       <div class="fl-cloud-field"><label>نوع المواصفة</label><select data-flex-spec-type>${options}<option value="__custom__" ${selectedKey==='__custom__'?'selected':''}>مواصفة أخرى</option></select><input data-flex-spec-label value="${esc(customLabel)}" placeholder="اكتب اسم المواصفة" ${selectedKey==='__custom__'?'':'hidden'}></div>
@@ -932,6 +948,7 @@
     ['leads','جهات اتصال العملاء']
   ];
   const ownerSettingsViewItems = [
+    ['search-filters','فلاتر البحث'],
     ['site-settings','إعدادات الموقع'],
     ['business-settings','بيانات الشركة'],
     ['bank-settings','الحسابات البنكية'],
@@ -1198,6 +1215,7 @@
       loadContactsAdminData(),
       whenModule('FL_ADMIN_LEADS').then(m=>m?m.loadLeadsPage({reset:true}):null),
       whenModule('FL_ADMIN_SETTINGS').then(m=>m?m.load():null),
+      whenModule('FL_ADMIN_SEARCH_FILTERS').then(m=>m?m.load():null),
       whenModule('FL_ADMIN_BANKS').then(m=>m?m.load():null)
     ]);
   }
@@ -1319,6 +1337,7 @@
     closeModal,
     MAX_PRODUCT_IMAGES,
     PRODUCT_SPEC_FIELDS,
+    productSpecFields,
     resolveProductSpecDefinition,
     normalizeKnownSpecValue,
     WHATSAPP_META_SHOW_DESCRIPTION,
@@ -1397,6 +1416,7 @@
     else if(view==='profile') renderProfile();
     else if(view==='contacts') renderContacts();
     else if(view==='leads') renderSplitSection('FL_ADMIN_LEADS','renderLeads');
+    else if(view==='search-filters' && isPrimaryAdmin) renderSplitSection('FL_ADMIN_SEARCH_FILTERS','render');
     else if(view==='site-settings' && isPrimaryAdmin) renderOwnerSettingsPage('site');
     else if(view==='business-settings' && isPrimaryAdmin) renderOwnerSettingsPage('business');
     else if(view==='bank-settings' && isPrimaryAdmin) renderOwnerSettingsPage('banks');
@@ -1437,7 +1457,7 @@
     if(allowed.has('leads'))statCards.push([window.FL_ADMIN_LEADS?.totalForStats()||0,'جهات اتصال العملاء']);
     const statsHtml=statCards.length?`<div class="fl-cloud-stats">${statCards.map(([value,label])=>`<div class="fl-cloud-stat"><strong>${value}</strong><span>${label}</span></div>`).join('')}</div>`:'';
     const contentShortcuts=adminViewItems.filter(([key])=>allowed.has(key)).map(([key,label])=>ownerShortcutButton(key,label,'فتح القسم وإدارته')).join('');
-    const ownerShortcuts=isPrimaryAdmin?`${ownerShortcutButton('site-settings','إعدادات الموقع','دخول العملاء وتثبيت التطبيق')}${ownerShortcutButton('business-settings','بيانات الشركة','خانات مرنة لبيانات المنشأة وإعدادات الخصوصية')}${ownerShortcutButton('bank-settings','الحسابات البنكية','إدارة حسابات التحويل ونسخ IBAN')}${ownerShortcutButton('template-settings','قالب المنتجات','الباركود ورقم التذييل')}${ownerShortcutButton('credentials','بيانات تسجيل الدخول','حسابات المدير والأدمن والاستعادة')}${ownerShortcutButton('permissions','صلاحيات الأدمن','تحديد ما يستطيع الأدمن الوصول إليه')}`:'';
+    const ownerShortcuts=isPrimaryAdmin?`${ownerShortcutButton('search-filters','فلاتر البحث','اختر الفلاتر وأضف فلاتر خاصة بك')}${ownerShortcutButton('site-settings','إعدادات الموقع','دخول العملاء وتثبيت التطبيق')}${ownerShortcutButton('business-settings','بيانات الشركة','خانات مرنة لبيانات المنشأة وإعدادات الخصوصية')}${ownerShortcutButton('bank-settings','الحسابات البنكية','إدارة حسابات التحويل ونسخ IBAN')}${ownerShortcutButton('template-settings','قالب المنتجات','الباركود ورقم التذييل')}${ownerShortcutButton('credentials','بيانات تسجيل الدخول','حسابات المدير والأدمن والاستعادة')}${ownerShortcutButton('permissions','صلاحيات الأدمن','تحديد ما يستطيع الأدمن الوصول إليه')}`:'';
     layout(`<div class="fl-cloud-head"><div><h2>${isPrimaryAdmin?'الرئيسية':'لوحة الأدمن'}</h2><p>${isPrimaryAdmin?'ملخص سريع للموقع. كل نوع من الإعدادات أصبح في صفحته الخاصة لتبقى اللوحة مرتبة وواضحة.':'الأقسام المتاحة لحسابك حسب الصلاحيات المحددة.'}</p></div></div>
       ${statsHtml}
       ${contentShortcuts?`<section class="fl-overview-section"><div class="fl-overview-section-head"><h3>إدارة المحتوى</h3><p>الأقسام التشغيلية للموقع.</p></div><div class="fl-overview-shortcuts">${contentShortcuts}</div></section>`:''}
