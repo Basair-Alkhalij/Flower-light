@@ -63,7 +63,7 @@ async function injectCatalogFixtures(page){
       id:'sec-test',slug:'wall-lights',name:'جداريات',description:'قسم تجريبي',sort_order:0,items:[{
         id:'prod-test',name:'جداري تجريبي',model:'WL-TEST',caption:'منتج تجريبي',alt:'جداري تجريبي',category:'جداريات',category_id:'sec-test',category_slug:'wall-lights',
         image:image1,image_thumb:thumb1,image_path:'one',gallery:[{image:image1,thumb:thumb1,image_path:'one'},{image:image2,thumb:thumb2,image_path:'two'}],
-        specifications:[{key:'custom_1',label:'الواط',value:'12W',unit:''},{key:'custom_2',label:'حرارة اللون',value:'3000K',unit:''}],price:100,wholesale_price:80,wholesale_min_qty:10,availability:'available',is_visible:true
+        specifications:[{key:'custom_1',label:'الواط',value:'12W',unit:''},{key:'custom_2',label:'حرارة اللون',value:'3000K',unit:''},{key:'color',label:'اللون',value:'أسود',unit:''}],price:100,wholesale_price:80,wholesale_min_qty:10,availability:'available',is_visible:true
       }]
     }]};
     window.flRenderProducts();
