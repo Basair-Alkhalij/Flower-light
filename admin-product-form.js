@@ -30,12 +30,14 @@
       original:true
     }));
     const defaultSort=prod ? Number(prod.sort_order||0) : nextProductSort(cid);
+    const availability=['available','out_of_stock','coming_soon'].includes(String(prod?.availability||''))?String(prod.availability):'available';
 
     openModal(prod?'تعديل المنتج':'إضافة منتج',`<form id="flProductForm"><div class="fl-cloud-form">
       <div class="fl-cloud-field"><label>القسم</label><select id="flProdCat">${options}</select></div>
       <div class="fl-cloud-field"><label>الترتيب</label><input id="flProdSort" type="number" min="0" step="1" value="${defaultSort}"><small class="fl-field-help">يمكنك أيضًا تغييره لاحقًا بالسحب.</small></div>
       <div class="fl-cloud-field"><label>اسم المنتج</label><input id="flProdName" required value="${esc(prod?.name||'')}" placeholder="مثال: جدارية LED"></div>
       <div class="fl-cloud-field"><label>رقم المنتج / الكود</label><input id="flProdModel" value="${esc(prod?.model||'')}" placeholder="مثال: 1010 أو WL-205"></div>
+      <div class="fl-cloud-field"><label for="flProdAvailability">حالة التوفر</label><select id="flProdAvailability"><option value="available" ${availability==='available'?'selected':''}>متوفر</option><option value="out_of_stock" ${availability==='out_of_stock'?'selected':''}>نفد</option><option value="coming_soon" ${availability==='coming_soon'?'selected':''}>قريبًا</option></select><small class="fl-field-help">المنتج غير المتوفر يبقى ظاهرًا لكن لا يمكن إضافته لقائمة الطلب.</small></div>
       <div class="fl-cloud-field full"><div class="fl-field-label-inline"><label for="flProdCaption">الوصف</label><label class="fl-whatsapp-include-toggle"><input id="flProdWhatsAppShowDescription" type="checkbox" ${productWhatsAppOption(prod?.specifications,WHATSAPP_META_SHOW_DESCRIPTION)?'checked':''}><span>إظهار في رسالة واتساب</span></label></div><textarea id="flProdCaption" placeholder="وصف مختصر">${esc(prod?.caption||'')}</textarea></div>
       ${productPricingEditorHtml(prod)}
       ${productSpecsFormHtml(prod)}
@@ -208,6 +210,7 @@
           price:firstRetail?.price??null,
           wholesale_price:firstWholesale?.price??null,
           wholesale_min_qty:firstWholesale?.min_qty??null,
+          availability:document.getElementById('flProdAvailability')?.value || 'available',
           limited_offer:document.getElementById('flProdLimitedOffer')?.checked===true,
           sort_order:Number(document.getElementById('flProdSort').value)||0,
           is_visible:document.getElementById('flProdVisible').checked
