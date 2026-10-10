@@ -63,7 +63,7 @@ async function injectCatalogFixtures(page){
       id:'sec-test',slug:'wall-lights',name:'جداريات',description:'قسم تجريبي',sort_order:0,items:[{
         id:'prod-test',name:'جداري تجريبي',model:'WL-TEST',caption:'منتج تجريبي',alt:'جداري تجريبي',category:'جداريات',category_id:'sec-test',category_slug:'wall-lights',
         image:image1,image_thumb:thumb1,image_path:'one',gallery:[{image:image1,thumb:thumb1,image_path:'one'},{image:image2,thumb:thumb2,image_path:'two'}],
-        specifications:[{key:'custom_1',label:'القدرة',value:'12W',unit:''}],price:100,wholesale_price:80,wholesale_min_qty:10,is_visible:true
+        specifications:[{key:'custom_1',label:'القدرة',value:'12W',unit:''}],price:100,wholesale_price:80,wholesale_min_qty:10,availability:'available',is_visible:true
       }]
     }]};
     window.flRenderProducts();
@@ -191,6 +191,34 @@ test('public quote list follows the owner visibility setting without losing save
   await expect(page.locator('#flQuoteBar')).toBeVisible();
   await expect(actions).toHaveClass(/has-quote-list/);
   expect(await page.evaluate(()=>window.FL_QUOTE_LIST.items().length)).toBe(1);
+});
+
+
+test('product availability badge disables quote-list additions when unavailable',async({page})=>{
+  await installSupabaseMock(page);
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await page.evaluate(()=>localStorage.removeItem('fl_quote_list_v1'));
+  await injectCatalogFixtures(page);
+  await page.locator('#openProducts').click();
+
+  await expect(page.locator('.product-availability-badge').first()).toHaveText('متوفر');
+  await expect(page.locator('.quote-list-add-button').first()).toBeEnabled();
+
+  await page.evaluate(()=>{
+    const item=window.FLOWER_LIGHT_PRODUCTS.extraSections[0].items[0];
+    item.availability='out_of_stock';
+    window.flRenderProducts();
+  });
+  await expect(page.locator('.product-availability-badge').first()).toHaveText('نفد');
+  await expect(page.locator('.quote-list-add-button').first()).toBeDisabled();
+
+  await page.evaluate(()=>{
+    const item=window.FLOWER_LIGHT_PRODUCTS.extraSections[0].items[0];
+    item.availability='coming_soon';
+    window.flRenderProducts();
+  });
+  await expect(page.locator('.product-availability-badge').first()).toHaveText('قريبًا');
+  await expect(page.locator('.quote-list-add-button').first()).toBeDisabled();
 });
 
 test('quote list keeps quantities after reload and sends two products to WhatsApp',async({page})=>{
