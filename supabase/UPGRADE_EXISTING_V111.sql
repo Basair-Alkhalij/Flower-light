@@ -21,7 +21,7 @@ update public.site_settings
 set catalog_custom_filters='[]'::jsonb
 where id=1 and (catalog_custom_filters is null or jsonb_typeof(catalog_custom_filters) <> 'array');
 
-do $
+do $$
 begin
   if not exists (
     select 1 from pg_constraint
@@ -32,7 +32,7 @@ begin
       add constraint site_settings_catalog_custom_filters_array_check
       check (jsonb_typeof(catalog_custom_filters)='array');
   end if;
-end $;
+end $$;
 
 alter table public.products
   add column if not exists availability text not null default 'available';
