@@ -71,5 +71,5 @@
     }catch(_){container.hidden=true;}
     finally{pending=false;}
   }
-  void refresh();window.addEventListener('pageshow',()=>void refresh());
+  void refresh();window.addEventListener('pageshow',event=>{if(event.persisted)void refresh();});
 })();
