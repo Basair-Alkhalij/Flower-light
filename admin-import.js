@@ -14,7 +14,7 @@
   }
   const categories=liveArray('categories');
   const products=liveArray('products');
-  const { esc,notify,openModal,closeModal,modalBody,MAX_PRODUCT_IMAGES,PRODUCT_SPEC_FIELDS,normalizeSpecifications,productPricingTiers,productWhatsAppOption,WHATSAPP_META_SHOW_DESCRIPTION,WHATSAPP_META_SHOW_SPECS,pricingMetaRow,adminGalleryRows,imageUrl,newCategorySlug,nextProductSort,isStoragePath,storagePathUsedByOtherProduct,bucket,loadCatalogAdminData,syncPublicProductsFromAdminCache,uploadProductImagePair,productStoragePairPaths }=core;
+  const { esc,notify,openModal,closeModal,modalBody,MAX_PRODUCT_IMAGES,PRODUCT_SPEC_FIELDS,resolveProductSpecDefinition,normalizeSpecifications,productPricingTiers,productWhatsAppOption,WHATSAPP_META_SHOW_DESCRIPTION,WHATSAPP_META_SHOW_SPECS,pricingMetaRow,adminGalleryRows,imageUrl,newCategorySlug,nextProductSort,isStoragePath,storagePathUsedByOtherProduct,bucket,loadCatalogAdminData,syncPublicProductsFromAdminCache,uploadProductImagePair,productStoragePairPaths }=core;
   const XLSX_IMPORT_CDN='https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
   const XLSX_IMPORT_SRI='sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT';
   const JSZIP_IMPORT_CDN='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
@@ -225,12 +225,7 @@
     const img=key.match(/^(?:الصوره|صوره|image)\s*([1-4])$/);if(img)return `image${img[1]}`;return null;
   }
   function knownSpecDefinition(label){
-    const key=importKey(label);
-    const aliases=[
-      ['wattage',['القدره','القدرة','wattage','power']],['lumens',['اللومن','لومن','lumens','lumen']],['cct',['حراره اللون','حرارة اللون','cct']],['cri',['cri']],['voltage',['الفولت','الجهد','voltage']],['ip_rating',['درجه الحمايه ip','درجة الحماية ip','ip']],['dimensions',['المقاس','الابعاد','الأبعاد','dimensions','size']],['color',['اللون','color']],['material',['الخامة','الخامه','material']],['beam_angle',['زاويه الاضاءه','زاوية الإضاءة','beam angle']],['frequency',['التردد','frequency']],['warranty',['الضمان','warranty']],['bulb_base',['قاعده اللمبه','قاعدة اللمبة','bulb base']],['bulb_count',['عدد اللمبات','bulb count']]
-    ];
-    for(const [specKey,list] of aliases){if(list.some(v=>importKey(v)===key))return PRODUCT_SPEC_FIELDS.find(f=>f.key===specKey)||{key:specKey,label};}
-    return null;
+    return resolveProductSpecDefinition?.('',label) || null;
   }
   function parseImportSpec(header,value,index){
     let label=importText(header).replace(/^\s*(?:مواصفه|مواصفة|spec)\s*[:：-]\s*/i,'').trim();if(!label||importText(value)==='')return null;
