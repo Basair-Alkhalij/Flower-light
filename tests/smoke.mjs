@@ -533,16 +533,14 @@ assert.match(catalogSearch,/لا توجد نتائج مطابقة للبحث و�
 assert.match(catalogSearch,/site-catalog-tab/);
 
 
-// v111K / task 6: dynamic availability, wattage and CCT filters.
+// v111L / task 6: owner-selected dynamic catalog filters.
 const catalogSearchFilters=read('catalog-search.js');
-assert.match(app,/dataset\.filterWattage/);
-assert.match(app,/dataset\.filterCct/);
-assert.match(catalogSearchFilters,/catalogAvailabilityFilter/);
-assert.match(catalogSearchFilters,/catalogWattageFilter/);
-assert.match(catalogSearchFilters,/catalogCctFilter/);
+assert.match(app,/dataset\.filterSpecs/);
+assert.match(catalogSearchFilters,/catalog_filter_keys/);
+assert.match(catalogSearchFilters,/FILTER_DEFS/);
+assert.match(catalogSearchFilters,/catalogFilter_/);
 assert.match(catalogSearchFilters,/catalogFilterClear/);
-assert.match(catalogSearchFilters,/matchAvailability/);
-assert.match(catalogSearchFilters,/matchWattage/);
-assert.match(catalogSearchFilters,/matchCct/);
+assert.match(catalogSearchFilters,/cardMatchesFilters/);
+assert.match(catalogSearchFilters,/flowerlight:site-settings/);
 
 console.log('FLOWER_LIGHT_FINAL_SMOKE_OK');
