@@ -470,7 +470,7 @@
     try{window.dispatchEvent(new CustomEvent('flowerlight:site-settings',{detail:settings}));}catch(_){}
   }
   async function loadPublicSiteSettings(){
-    const fallback={require_customer_lead:true,master_barcode_path:'',master_barcode_url:'',design_footer_number:'',design_footer_label:'',pwa_install_enabled:false};
+    const fallback={require_customer_lead:true,master_barcode_path:'',master_barcode_url:'',design_footer_number:'',design_footer_label:'',pwa_install_enabled:false,quote_list_enabled:true};
     if(!db){publishPublicSiteSettings(fallback);return false;}
     try{
       let data=null;
@@ -485,6 +485,15 @@
         if(result.error)throw result.error;
         data=result.data||{};
       }
+      let quoteListEnabled=true;
+      const quoteResult=await db.from('site_settings').select('quote_list_enabled').eq('id',1).maybeSingle();
+      if(quoteResult.error){
+        if(!/42703|PGRST204/i.test(String(quoteResult.error?.code||''))){
+          console.warn('[Site settings] quote-list visibility load failed; keeping it visible for backward compatibility.',quoteResult.error);
+        }
+      }else{
+        quoteListEnabled=quoteResult.data?.quote_list_enabled!==false;
+      }
       const masterBarcodePath=String(data?.master_barcode_path||'').trim();
       publishPublicSiteSettings({
         require_customer_lead:data?.require_customer_lead!==false,
@@ -492,11 +501,12 @@
         master_barcode_url:masterBarcodePath?imageUrl(masterBarcodePath):'',
         design_footer_number:String(data?.design_footer_number||'').trim(),
         design_footer_label:String(data?.design_footer_label||'').trim(),
-        pwa_install_enabled:data?.pwa_install_enabled===true
+        pwa_install_enabled:data?.pwa_install_enabled===true,
+        quote_list_enabled:quoteListEnabled
       });
       return true;
     }catch(err){
-      console.warn('[Site settings] load failed; customer lead gate remains enabled and install prompt hidden for safety.',err);
+      console.warn('[Site settings] load failed; customer lead gate remains enabled, install prompt hidden, and quote list keeps its backward-compatible default.',err);
       publishPublicSiteSettings(fallback);
       return false;
     }
