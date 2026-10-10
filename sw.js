@@ -61,6 +61,7 @@ function isShellRequest(url) {
   if (url.origin !== self.location.origin) return false;
   if (url.search.includes('admin=')) return false;
   const path = url.pathname;
+  if (/\/(?:p|c)\/[^/]+\/?$/.test(path)) return false;
   if (path.endsWith('/admin.js')) return false;
   return (
     path.endsWith('/') ||

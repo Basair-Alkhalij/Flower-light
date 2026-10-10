@@ -1,6 +1,17 @@
+## v111B — 2026-10-10 — static product/category pages for SEO and sharing
+
+- Added build-time `scripts/generate-static-pages.mjs` using the same public Supabase tables/visibility rules as `public-sync.js`.
+- Production build now emits `/p/<product-id>/index.html` and `/c/<category-slug>/index.html` with canonical, Open Graph, Twitter Card and structured data metadata.
+- Product/category share buttons now use the static routes; legacy `?product=` / `?category=` deep links remain supported.
+- `sitemap.xml` is regenerated from visible products/categories with `updated_at` last-modified values.
+- Pages workflow now rebuilds every 6 hours and remains manually dispatchable.
+- Service Worker explicitly bypasses `/p/` and `/c/` routes.
+- Added `tests/static-pages.mjs` and browser coverage for static share paths plus legacy query deep links.
+- No database migration is required.
+
 ## v111A — 2026-10-08 — production settings + clean share URLs
 
-- Moved the optional GA4 Measurement ID setting to `config.js`; analytics remains disabled until a real `G-...` ID is supplied.
+- Moved the GA4 Measurement ID setting to `config.js`; the configured production ID is `G-WQRZWGY367`.
 - Updated `privacy.html` to explicitly disclose Google Analytics 4 when enabled.
 - Added static checks for the current Turnstile production hostname and exact 1200×630 social preview image dimensions.
 - Removed the obsolete `v=87` parameter from public product/category share URLs while continuing to strip legacy `v` parameters from incoming URLs.

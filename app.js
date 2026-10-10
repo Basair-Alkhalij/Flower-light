@@ -395,12 +395,23 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
       : description;
   }
 
+  function publicSiteBaseUrl() {
+    const url = new URL(window.location.href);
+    url.search = '';
+    url.hash = '';
+    if (/\/index\.html$/i.test(url.pathname)) url.pathname = url.pathname.replace(/index\.html$/i, '');
+    if (!url.pathname.endsWith('/')) url.pathname = url.pathname.replace(/[^/]*$/, '');
+    return url.href.replace(/\/?$/, '/');
+  }
+
   function categoryShareUrl(section) {
-    return buildPublicShareUrl({ category: categoryKey(section) });
+    const key = categoryKey(section);
+    return key ? new URL(`c/${encodeURIComponent(key)}/`, publicSiteBaseUrl()).toString() : buildPublicShareUrl();
   }
 
   function productShareUrl(item) {
-    return buildPublicShareUrl({ product: item?.id || '' });
+    const id = String(item?.id || '').trim();
+    return id ? new URL(`p/${encodeURIComponent(id)}/`, publicSiteBaseUrl()).toString() : buildPublicShareUrl();
   }
 
   async function copyText(value) {
