@@ -470,7 +470,7 @@
     try{window.dispatchEvent(new CustomEvent('flowerlight:site-settings',{detail:settings}));}catch(_){}
   }
   async function loadPublicSiteSettings(){
-    const fallback={require_customer_lead:true,master_barcode_path:'',master_barcode_url:'',design_footer_number:'',design_footer_label:'',pwa_install_enabled:false,quote_list_enabled:true,catalog_filter_keys:['availability','wattage','cct']};
+    const fallback={require_customer_lead:true,master_barcode_path:'',master_barcode_url:'',design_footer_number:'',design_footer_label:'',pwa_install_enabled:false,quote_list_enabled:true,catalog_filter_keys:['availability','wattage','cct'],catalog_custom_filters:[]};
     if(!db){publishPublicSiteSettings(fallback);return false;}
     try{
       let data=null;
@@ -495,11 +495,17 @@
         quoteListEnabled=quoteResult.data?.quote_list_enabled!==false;
       }
       let catalogFilterKeys=['availability','wattage','cct'];
-      const filterResult=await db.from('site_settings').select('catalog_filter_keys').eq('id',1).maybeSingle();
+      let catalogCustomFilters=[];
+      const filterResult=await db.from('site_settings').select('catalog_filter_keys,catalog_custom_filters').eq('id',1).maybeSingle();
       if(filterResult.error){
         if(!/42703|PGRST204/i.test(String(filterResult.error?.code||''))) console.warn('[Site settings] catalog-filter load failed; keeping default filters.',filterResult.error);
-      }else if(Array.isArray(filterResult.data?.catalog_filter_keys)){
-        catalogFilterKeys=filterResult.data.catalog_filter_keys.map(String).filter(Boolean);
+      }else{
+        if(Array.isArray(filterResult.data?.catalog_filter_keys))catalogFilterKeys=filterResult.data.catalog_filter_keys.map(String).filter(Boolean);
+        if(Array.isArray(filterResult.data?.catalog_custom_filters)){
+          catalogCustomFilters=filterResult.data.catalog_custom_filters.map(row=>({
+            key:String(row?.key||'').trim(),label:String(row?.label||'').trim()
+          })).filter(row=>/^custom_filter_[a-z0-9]+$/i.test(row.key)&&row.label).slice(0,20);
+        }
       }
       const masterBarcodePath=String(data?.master_barcode_path||'').trim();
       publishPublicSiteSettings({
@@ -510,7 +516,8 @@
         design_footer_label:String(data?.design_footer_label||'').trim(),
         pwa_install_enabled:data?.pwa_install_enabled===true,
         quote_list_enabled:quoteListEnabled,
-        catalog_filter_keys:catalogFilterKeys
+        catalog_filter_keys:catalogFilterKeys,
+        catalog_custom_filters:catalogCustomFilters
       });
       return true;
     }catch(err){
@@ -712,7 +719,7 @@
   window.FLOWER_LIGHT_CONTACTS = [];
   window.FLOWER_LIGHT_SITE_CATALOGS = [];
   window.FLOWER_LIGHT_SITE_CATALOG = {};
-  window.FLOWER_LIGHT_SITE_SETTINGS = { require_customer_lead: true, master_barcode_path: '', master_barcode_url: '', design_footer_number: '', design_footer_label: '', pwa_install_enabled: false, quote_list_enabled: true, catalog_filter_keys: ['availability','wattage','cct'] };
+  window.FLOWER_LIGHT_SITE_SETTINGS = { require_customer_lead: true, master_barcode_path: '', master_barcode_url: '', design_footer_number: '', design_footer_label: '', pwa_install_enabled: false, quote_list_enabled: true, catalog_filter_keys: ['availability','wattage','cct'], catalog_custom_filters: [] };
   window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extraSections: [] };
   renderPublicProfile();
   if (db) { publicSiteSettingsPromise=loadPublicSiteSettings(); loadPublicProfile(); loadPublicSiteCatalog(); loadCloudProducts(); }
