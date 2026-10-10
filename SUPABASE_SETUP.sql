@@ -1012,7 +1012,7 @@ update public.products
 set availability='available'
 where availability is null or availability not in ('available','out_of_stock','coming_soon');
 
-do $
+do $$
 begin
   if not exists (
     select 1 from pg_constraint
@@ -1023,7 +1023,7 @@ begin
       add constraint products_availability_check
       check (availability in ('available','out_of_stock','coming_soon'));
   end if;
-end $;
+end $$;
 
 comment on column public.products.price is 'Retail price.';
 comment on column public.products.wholesale_price is 'Wholesale price.';
@@ -3597,7 +3597,7 @@ update public.site_settings
 set catalog_custom_filters='[]'::jsonb
 where id=1 and (catalog_custom_filters is null or jsonb_typeof(catalog_custom_filters) <> 'array');
 
-do $
+do $$
 begin
   if not exists (
     select 1 from pg_constraint
@@ -3608,7 +3608,7 @@ begin
       add constraint site_settings_catalog_custom_filters_array_check
       check (jsonb_typeof(catalog_custom_filters)='array');
   end if;
-end $;
+end $$;
 
 insert into public.site_settings(id,require_customer_lead)
 values(1,true)
