@@ -161,6 +161,42 @@
     button.textContent = text;
     return button;
   }
+  function createQuantityInput(item, className) {
+    const input = doc.createElement('input');
+    input.type = 'number';
+    input.className = className;
+    input.min = '1';
+    input.max = String(MAX_QTY);
+    input.step = '1';
+    input.inputMode = 'numeric';
+    input.value = String(item.qty);
+    input.setAttribute('aria-label', `كمية ${item.name}`);
+    input.setAttribute('autocomplete', 'off');
+    input.addEventListener('focus', () => input.select());
+    input.addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        input.blur();
+      }
+    });
+    input.addEventListener('change', () => {
+      const raw = String(input.value || '').trim();
+      if (!raw) {
+        input.value = String(state.get(item.id)?.qty || item.qty || 1);
+        return;
+      }
+      const parsed = Number(raw);
+      if (!Number.isFinite(parsed)) {
+        input.value = String(state.get(item.id)?.qty || item.qty || 1);
+        return;
+      }
+      const next = Math.max(1, Math.min(MAX_QTY, Math.trunc(parsed)));
+      input.value = String(next);
+      setQty(item.id, next);
+    });
+    return input;
+  }
+
 
   function renderProductControl(control, id) {
     if (!control || !doc) return;
@@ -183,10 +219,7 @@
     group.setAttribute('role', 'group');
     group.setAttribute('aria-label', `كمية ${current.name}`);
     const minus = createButton('quote-list-qty-button', `إنقاص كمية ${current.name}`, '−');
-    const value = doc.createElement('span');
-    value.className = 'quote-list-qty-value';
-    value.textContent = String(current.qty);
-    value.setAttribute('aria-live', 'polite');
+    const value = createQuantityInput(current, 'quote-list-qty-value');
     const plus = createButton('quote-list-qty-button', `زيادة كمية ${current.name}`, '+');
     plus.setAttribute('aria-pressed', 'true');
     minus.addEventListener('click', () => setQty(current.id, current.qty - 1));
@@ -287,8 +320,7 @@
       const qty = doc.createElement('div');
       qty.className = 'fl-quote-item-qty';
       const minus = createButton('fl-quote-mini', `إنقاص كمية ${item.name}`, '−');
-      const value = doc.createElement('span');
-      value.textContent = String(item.qty);
+      const value = createQuantityInput(item, 'fl-quote-item-qty-input');
       const plus = createButton('fl-quote-mini', `زيادة كمية ${item.name}`, '+');
       minus.addEventListener('click', () => setQty(item.id, item.qty - 1));
       plus.addEventListener('click', () => setQty(item.id, item.qty + 1));
