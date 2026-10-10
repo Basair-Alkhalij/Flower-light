@@ -3556,6 +3556,7 @@ create table if not exists public.site_settings (
   master_barcode_path text not null default '',
   design_footer_number text not null default '',
   pwa_install_enabled boolean not null default true,
+  quote_list_enabled boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -3565,7 +3566,8 @@ alter table public.site_settings
   add column if not exists master_barcode_path text not null default '',
   add column if not exists design_footer_number text not null default '',
   add column if not exists design_footer_label text not null default '',
-  add column if not exists pwa_install_enabled boolean not null default true;
+  add column if not exists pwa_install_enabled boolean not null default true,
+  add column if not exists quote_list_enabled boolean not null default true;
 
 insert into public.site_settings(id,require_customer_lead)
 values(1,true)
@@ -3595,7 +3597,7 @@ revoke all on table public.site_settings from public, anon, authenticated;
 grant select on table public.site_settings to anon, authenticated;
 grant insert, update on table public.site_settings to authenticated;
 
-select id, require_customer_lead, master_barcode_path, design_footer_number, design_footer_label, pwa_install_enabled, updated_at
+select id, require_customer_lead, master_barcode_path, design_footer_number, design_footer_label, pwa_install_enabled, quote_list_enabled, updated_at
 from public.site_settings
 where id=1;
 
@@ -3760,7 +3762,7 @@ with check (
 
 commit;
 
-select id, require_customer_lead, master_barcode_path, design_footer_number, design_footer_label, pwa_install_enabled, updated_at
+select id, require_customer_lead, master_barcode_path, design_footer_number, design_footer_label, pwa_install_enabled, quote_list_enabled, updated_at
 from public.site_settings
 where id=1;
 
@@ -3785,7 +3787,7 @@ where id=1;
 
 commit;
 
-select id, require_customer_lead, master_barcode_path, design_footer_number, design_footer_label, pwa_install_enabled, updated_at
+select id, require_customer_lead, master_barcode_path, design_footer_number, design_footer_label, pwa_install_enabled, quote_list_enabled, updated_at
 from public.site_settings
 where id=1;
 
