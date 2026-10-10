@@ -3593,6 +3593,23 @@ alter table public.site_settings
   add column if not exists catalog_filter_keys text[] not null default array['availability','wattage','cct']::text[],
   add column if not exists catalog_custom_filters jsonb not null default '[]'::jsonb;
 
+update public.site_settings
+set catalog_custom_filters='[]'::jsonb
+where id=1 and (catalog_custom_filters is null or jsonb_typeof(catalog_custom_filters) <> 'array');
+
+do $
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname='site_settings_catalog_custom_filters_array_check'
+      and conrelid='public.site_settings'::regclass
+  ) then
+    alter table public.site_settings
+      add constraint site_settings_catalog_custom_filters_array_check
+      check (jsonb_typeof(catalog_custom_filters)='array');
+  end if;
+end $;
+
 insert into public.site_settings(id,require_customer_lead)
 values(1,true)
 on conflict (id) do nothing;
