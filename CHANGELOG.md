@@ -1,7 +1,7 @@
 ## v111H — 2026-10-10 — product availability states
 
 - Added `products.availability` with allowed values `available`, `out_of_stock`, and `coming_soon`.
-- Added Owner/Admin product-form selection and visible admin-list status badges.
+- Added Owner/Admin product-form selection and a visible availability label in the admin product list.
 - Public product cards now show متوفر / نفد / قريبًا badges.
 - Quote-list additions are disabled for out-of-stock and coming-soon products; stale unavailable items are removed when their current card is rendered.
 - Excel import/export and product duplication preserve availability.
