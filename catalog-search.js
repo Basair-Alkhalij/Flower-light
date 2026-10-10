@@ -1,19 +1,9 @@
-// Flower Light / Basair Gulf — in-catalog search/filter
+// Flower Light / Basair Gulf — global catalog search
 //
-// Design goal: add zero risk to the existing rendering pipeline in app.js.
-// This file does NOT modify renderExtraSections / createProductCard / the
-// tab-switching logic at all. It only:
-//   1. Reads already-rendered DOM (product cards inside the active panel).
-//   2. Hides/shows them by text match.
-//   3. Resets itself automatically whenever the catalog re-renders (e.g.
-//      after the admin edits products and the public page reloads live
-//      data), via a MutationObserver — so it can never show a stale filter
-//      over fresh data.
-//
-// Scope: searches text already visible on the card (name, model, specs,
-// price labels) within the CURRENTLY OPEN category tab. It intentionally
-// does not search across tabs or inside uploaded PDF catalog panels, to
-// keep behavior predictable and match what the user sees on screen.
+// Searches all rendered product sections without creating a second product renderer.
+// Matching product cards stay in their original section. Sections with no matches
+// are hidden while searching, and each visible result shows its section name.
+// Uploaded PDF catalog tabs are intentionally excluded from product search.
 
 (() => {
   'use strict';
@@ -21,12 +11,11 @@
   function normalize(text) {
     return String(text || '')
       .toLowerCase()
-      // Normalize common Arabic letter variants so "اناره"/"إنارة" style
-      // differences don't hide obvious matches.
-      .replace(/[\u064B-\u0652]/g, '')      // strip tashkeel
+      .replace(/[\u064B-\u0652]/g, '')
       .replace(/[إأآا]/g, 'ا')
       .replace(/ى/g, 'ي')
       .replace(/ة/g, 'ه')
+      .replace(/\s+/g, ' ')
       .trim();
   }
 
@@ -37,46 +26,130 @@
     const sheet = document.querySelector('.catalog-sheet');
     if (!input || !countLabel || !tabsHost || !sheet) return;
 
-    function activePanel() {
-      return sheet.querySelector('.catalog-panel.active');
+    function productPanels() {
+      return Array.from(sheet.querySelectorAll('.extra-section-panel'));
+    }
+
+    function tabForPanel(panel) {
+      return Array.from(tabsHost.querySelectorAll('.extra-section-tab'))
+        .find(tab => tab.dataset.target === panel.id) || null;
+    }
+
+    function sectionName(panel) {
+      return tabForPanel(panel)?.querySelector('strong')?.textContent?.trim() || 'قسم';
+    }
+
+    function clearSectionMarker(card) {
+      card.querySelector('.catalog-search-section-label')?.remove();
+      const caption = card.querySelector('figcaption[data-search-created-caption="1"]');
+      if (caption && !caption.childElementCount && !caption.textContent.trim()) caption.remove();
+    }
+
+    function showSectionMarker(card, name) {
+      let caption = card.querySelector('figcaption.product-card-info');
+      if (!caption) {
+        caption = document.createElement('figcaption');
+        caption.className = 'product-card-info';
+        caption.dataset.searchCreatedCaption = '1';
+        const firstAfterThumb = card.children[1] || null;
+        card.insertBefore(caption, firstAfterThumb);
+      }
+      let row = caption.querySelector('.catalog-search-section-label');
+      if (!row) {
+        row = document.createElement('div');
+        row.className = 'product-code-row catalog-search-section-label';
+        const label = document.createElement('span');
+        label.textContent = 'القسم';
+        const value = document.createElement('strong');
+        row.append(label, value);
+        caption.prepend(row);
+      }
+      row.querySelector('strong').textContent = name;
+    }
+
+    function resetSearchView() {
+      tabsHost.querySelectorAll('.catalog-tab').forEach(tab => { tab.hidden = false; });
+      productPanels().forEach(panel => {
+        panel.querySelectorAll('.chandelier-card').forEach(card => {
+          card.classList.remove('catalog-search-hidden');
+          clearSectionMarker(card);
+        });
+      });
+    }
+
+    function activateTab(tab) {
+      if (!tab || tab.classList.contains('active')) return;
+      tab.click();
     }
 
     function applyFilter() {
-      const panel = activePanel();
+      const panels = productPanels();
       const query = normalize(input.value);
+      const hasProducts = panels.length > 0;
 
-      // Search only applies to product-grid panels (extra-section-panel).
-      // Uploaded PDF catalog panels (site-catalog-panel) have no product
-      // cards to filter, so the box is simply inert there.
-      const isSearchablePanel = !!panel && panel.classList.contains('extra-section-panel');
-      input.disabled = !isSearchablePanel;
-      input.placeholder = isSearchablePanel
-        ? 'ابحث داخل هذا القسم (الاسم أو الموديل)…'
-        : 'البحث غير متاح لملفات PDF المرفوعة';
+      input.disabled = !hasProducts;
+      input.placeholder = hasProducts
+        ? 'ابحث في جميع الأقسام (الاسم أو الكود أو المواصفات)…'
+        : 'لا توجد أقسام منتجات قابلة للبحث';
 
-      if (!isSearchablePanel) {
+      if (!hasProducts) {
         countLabel.hidden = true;
         return;
       }
 
-      const cards = panel.querySelectorAll('.chandelier-card');
       if (!query) {
-        cards.forEach((card) => card.classList.remove('catalog-search-hidden'));
+        resetSearchView();
         countLabel.hidden = true;
         return;
       }
 
-      let visible = 0;
-      cards.forEach((card) => {
-        const match = normalize(card.textContent).includes(query);
-        card.classList.toggle('catalog-search-hidden', !match);
-        if (match) visible += 1;
+      let totalMatches = 0;
+      let matchingSections = 0;
+      let firstMatchingTab = null;
+
+      tabsHost.querySelectorAll('.site-catalog-tab').forEach(tab => { tab.hidden = true; });
+
+      panels.forEach(panel => {
+        const tab = tabForPanel(panel);
+        const name = sectionName(panel);
+        let sectionMatches = 0;
+
+        panel.querySelectorAll('.chandelier-card').forEach(card => {
+          const searchable = normalize([
+            card.dataset.productName,
+            card.dataset.productModel,
+            card.textContent,
+            name
+          ].join(' '));
+          const match = searchable.includes(query);
+          card.classList.toggle('catalog-search-hidden', !match);
+          if (match) {
+            sectionMatches += 1;
+            totalMatches += 1;
+            showSectionMarker(card, name);
+          } else {
+            clearSectionMarker(card);
+          }
+        });
+
+        if (tab) {
+          tab.hidden = sectionMatches === 0;
+          if (sectionMatches && !firstMatchingTab) firstMatchingTab = tab;
+        }
+        if (sectionMatches) matchingSections += 1;
       });
 
+      const activeTab = tabsHost.querySelector('.catalog-tab.active');
+      if (totalMatches > 0 && (!activeTab || activeTab.hidden)) {
+        activateTab(firstMatchingTab);
+      } else if (totalMatches === 0 && activeTab?.classList.contains('site-catalog-tab')) {
+        activateTab(tabsHost.querySelector('.extra-section-tab'));
+      }
+
       countLabel.hidden = false;
-      countLabel.textContent = visible
-        ? `${visible} نتيجة`
-        : 'لا توجد نتائج مطابقة في هذا القسم';
+      countLabel.textContent = totalMatches
+        ? `${totalMatches} نتيجة · ${matchingSections} قسم`
+        : 'لا توجد نتائج مطابقة في جميع الأقسام';
     }
 
     let debounceTimer = 0;
@@ -85,24 +158,14 @@
       debounceTimer = window.setTimeout(applyFilter, 120);
     });
 
-    // Re-apply the current query when the visitor switches tabs. Tabs are
-    // (re)created dynamically by app.js, but this delegated listener on the
-    // static .catalog-tabs container keeps working across re-renders, and
-    // runs after the tab's own click handler has already swapped the
-    // active panel.
-    tabsHost.addEventListener('click', (event) => {
-      if (event.target.closest('.catalog-tab')) {
+    tabsHost.addEventListener('click', event => {
+      if (event.target.closest('.catalog-tab') && input.value) {
         window.setTimeout(applyFilter, 0);
       }
     });
 
-    // If the catalog data reloads (admin changed products, or a scheduled
-    // refresh runs), clear any stale search rather than risk hiding newly
-    // added products behind an old query.
     const observer = new MutationObserver(() => {
-      if (input.value) {
-        input.value = '';
-      }
+      if (input.value) input.value = '';
       applyFilter();
     });
     observer.observe(tabsHost, { childList: true });
