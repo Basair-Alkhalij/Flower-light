@@ -534,6 +534,14 @@ assert.match(catalogSearch,/site-catalog-tab/);
 
 
 // v111L / task 6: owner-selected dynamic catalog filters.
+const catalogFilterMigration=read('supabase/migrations/20261010203000_catalog_filter_selection.sql');
+assert.match(sql,/catalog_filter_keys text\[\] not null default/i);
+assert.match(v111Upgrade,/catalog_filter_keys/);
+assert.match(catalogFilterMigration,/catalog_filter_keys/);
+assert.match(catalogFilterMigration,/CATALOG_FILTER_SELECTION_V111L_OK/);
+assert.match(adminSettings,/flCatalogFilterSettingsForm/);
+assert.match(adminSettings,/catalog_filter_keys/);
+assert.match(publicSync,/catalog_filter_keys/);
 const catalogSearchFilters=read('catalog-search.js');
 assert.match(app,/dataset\.filterSpecs/);
 assert.match(catalogSearchFilters,/catalog_filter_keys/);
