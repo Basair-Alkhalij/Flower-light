@@ -3578,6 +3578,7 @@ create table if not exists public.site_settings (
   pwa_install_enabled boolean not null default true,
   quote_list_enabled boolean not null default true,
   catalog_filter_keys text[] not null default array['availability','wattage','cct']::text[],
+  catalog_custom_filters jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -3589,7 +3590,25 @@ alter table public.site_settings
   add column if not exists design_footer_label text not null default '',
   add column if not exists pwa_install_enabled boolean not null default true,
   add column if not exists quote_list_enabled boolean not null default true,
-  add column if not exists catalog_filter_keys text[] not null default array['availability','wattage','cct']::text[];
+  add column if not exists catalog_filter_keys text[] not null default array['availability','wattage','cct']::text[],
+  add column if not exists catalog_custom_filters jsonb not null default '[]'::jsonb;
+
+update public.site_settings
+set catalog_custom_filters='[]'::jsonb
+where id=1 and (catalog_custom_filters is null or jsonb_typeof(catalog_custom_filters) <> 'array');
+
+do $
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname='site_settings_catalog_custom_filters_array_check'
+      and conrelid='public.site_settings'::regclass
+  ) then
+    alter table public.site_settings
+      add constraint site_settings_catalog_custom_filters_array_check
+      check (jsonb_typeof(catalog_custom_filters)='array');
+  end if;
+end $;
 
 insert into public.site_settings(id,require_customer_lead)
 values(1,true)
@@ -3619,7 +3638,7 @@ revoke all on table public.site_settings from public, anon, authenticated;
 grant select on table public.site_settings to anon, authenticated;
 grant insert, update on table public.site_settings to authenticated;
 
-select id, require_customer_lead, master_barcode_path, design_footer_number, design_footer_label, pwa_install_enabled, quote_list_enabled, catalog_filter_keys, updated_at
+select id, require_customer_lead, master_barcode_path, design_footer_number, design_footer_label, pwa_install_enabled, quote_list_enabled, catalog_filter_keys, catalog_custom_filters, updated_at
 from public.site_settings
 where id=1;
 
@@ -3784,7 +3803,7 @@ with check (
 
 commit;
 
-select id, require_customer_lead, master_barcode_path, design_footer_number, design_footer_label, pwa_install_enabled, quote_list_enabled, catalog_filter_keys, updated_at
+select id, require_customer_lead, master_barcode_path, design_footer_number, design_footer_label, pwa_install_enabled, quote_list_enabled, catalog_filter_keys, catalog_custom_filters, updated_at
 from public.site_settings
 where id=1;
 
@@ -3809,7 +3828,7 @@ where id=1;
 
 commit;
 
-select id, require_customer_lead, master_barcode_path, design_footer_number, design_footer_label, pwa_install_enabled, quote_list_enabled, catalog_filter_keys, updated_at
+select id, require_customer_lead, master_barcode_path, design_footer_number, design_footer_label, pwa_install_enabled, quote_list_enabled, catalog_filter_keys, catalog_custom_filters, updated_at
 from public.site_settings
 where id=1;
 

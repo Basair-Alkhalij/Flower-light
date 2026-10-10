@@ -14,13 +14,6 @@
     return;
   }
   const { esc, notify, imageUrl, isStoragePath, bucket, isPrimaryAdmin } = core;
-  const CATALOG_FILTER_OPTIONS=[
-    ['availability','حالة التوفر'],
-    ...(core.PRODUCT_SPEC_FIELDS||[]).map(field=>[field.key,field.label])
-  ];
-  const CATALOG_FILTER_KEYS=new Set(CATALOG_FILTER_OPTIONS.map(([key])=>key));
-  const DEFAULT_CATALOG_FILTER_KEYS=['availability','wattage','cct'];
-  const normalizeCatalogFilterKeys=value=>Array.isArray(value)?[...new Set(value.map(String).filter(key=>CATALOG_FILTER_KEYS.has(key)))]:DEFAULT_CATALOG_FILTER_KEYS.slice();
   // The code below was written against a `db` constant; this keeps it unchanged and always live.
   const db = new Proxy({}, { get: (_, prop) => { const real = core.db; const v = real[prop]; return typeof v === 'function' ? v.bind(real) : v; } });
 
@@ -35,8 +28,6 @@
   let pwaInstallSettingError='';
   let quoteListEnabled=window.FLOWER_LIGHT_SITE_SETTINGS?.quote_list_enabled!==false;
   let quoteListSettingError='';
-  let catalogFilterKeys=normalizeCatalogFilterKeys(window.FLOWER_LIGHT_SITE_SETTINGS?.catalog_filter_keys);
-  let catalogFilterSettingError='';
 
   async function load(){
     if(!isPrimaryAdmin)return;
@@ -46,7 +37,6 @@
     designFooterNumberSettingError='';
     pwaInstallSettingError='';
     quoteListSettingError='';
-    catalogFilterSettingError='';
     try{
       const {data,error}=await db.from('site_settings').select('require_customer_lead,master_barcode_path,design_footer_number,design_footer_label').eq('id',1).maybeSingle();
       if(error)throw error;
@@ -68,13 +58,6 @@
       }else{
         quoteListEnabled=quoteResult.data?.quote_list_enabled!==false;
       }
-      const filterResult=await db.from('site_settings').select('catalog_filter_keys').eq('id',1).maybeSingle();
-      if(filterResult.error){
-        catalogFilterKeys=DEFAULT_CATALOG_FILTER_KEYS.slice();
-        catalogFilterSettingError=String(filterResult.error?.message||filterResult.error||'');
-      }else{
-        catalogFilterKeys=normalizeCatalogFilterKeys(filterResult.data?.catalog_filter_keys);
-      }
       window.FLOWER_LIGHT_SITE_SETTINGS={
         require_customer_lead:customerLeadGateEnabled,
         master_barcode_path:masterBarcodePath,
@@ -82,8 +65,7 @@
         design_footer_number:designFooterNumber,
         design_footer_label:designFooterLabel,
         pwa_install_enabled:pwaInstallEnabled,
-        quote_list_enabled:quoteListEnabled,
-        catalog_filter_keys:catalogFilterKeys.slice()
+        quote_list_enabled:quoteListEnabled
       };
     }catch(error){
       customerLeadGateEnabled=true;
@@ -91,14 +73,12 @@
       designFooterNumber='';
       pwaInstallEnabled=false;
       quoteListEnabled=true;
-      catalogFilterKeys=DEFAULT_CATALOG_FILTER_KEYS.slice();
       const message=String(error?.message||error||'');
       customerLeadGateSettingError=message;
       masterBarcodeSettingError=message;
       designFooterNumberSettingError=message;
       pwaInstallSettingError=message;
       quoteListSettingError=message;
-      catalogFilterSettingError=message;
     }
   }
 
@@ -152,15 +132,6 @@
       </label>
       <div class="fl-cloud-actions"><button class="fl-cloud-btn primary" id="flQuoteListSettingsSave" type="submit" ${quoteListSettingError?'disabled':''}>حفظ الإعداد</button></div>
     </form>`:'';
-    const catalogFilterCard=isPrimaryAdmin?`<form id="flCatalogFilterSettingsForm" class="fl-cloud-card fl-catalog-filter-settings-card">
-      <div class="fl-credentials-card-head"><div><span class="fl-account-badge owner">فلاتر المنتجات</span><h3>اختيار الفلاتر التي تظهر للزوار</h3></div></div>
-      <p>اختر أنت المواصفات التي تريد استخدامها كفلاتر. البحث النصي يبقى متاحًا دائمًا، ويمكنك تغيير هذه الاختيارات لاحقًا في أي وقت.</p>
-      ${catalogFilterSettingError?`<div class="fl-cloud-note bad">تعذر قراءة إعداد الفلاتر. شغّل <b>supabase/UPGRADE_EXISTING_V111.sql</b> ثم أعد تحميل الصفحة.</div>`:''}
-      <div class="fl-catalog-filter-options">
-        ${CATALOG_FILTER_OPTIONS.map(([key,label])=>`<label class="fl-permission-row"><span class="fl-permission-copy"><strong>${esc(label)}</strong><small>${key==='availability'?'متوفر / نفد / قريبًا':'تظهر القيم الموجودة فعليًا في المنتجات فقط.'}</small></span><input id="flCatalogFilter_${key}" type="checkbox" ${catalogFilterKeys.includes(key)?'checked':''} ${catalogFilterSettingError?'disabled':''}><span class="fl-permission-check" aria-hidden="true">✓</span></label>`).join('')}
-      </div>
-      <div class="fl-cloud-actions"><button class="fl-cloud-btn primary" id="flCatalogFilterSettingsSave" type="submit" ${catalogFilterSettingError?'disabled':''}>حفظ الفلاتر</button></div>
-    </form>`:'';
     const barcodePreviewUrl=masterBarcodePath?imageUrl(masterBarcodePath):'';
     const masterBarcodeCard=isPrimaryAdmin?`<form id="flMasterBarcodeSettingsForm" class="fl-cloud-card fl-master-barcode-card">
       <div class="fl-credentials-card-head"><div><span class="fl-account-badge owner">قالب المنتجات</span><h3>الباركود الرئيسي</h3></div></div>
@@ -186,10 +157,10 @@
       <div class="fl-cloud-actions"><button class="fl-cloud-btn primary" id="flDesignFooterNumberSave" type="submit" ${designFooterNumberSettingError?'disabled':''}>حفظ البيانات</button></div>
     </form>`:'';
     const businessCard=window.FL_ADMIN_BUSINESS?.cardsHtml()||'';
-    if(scope==='site') return `${leadGateCard}${pwaInstallCard}${quoteListCard}${catalogFilterCard}`;
+    if(scope==='site') return `${leadGateCard}${pwaInstallCard}${quoteListCard}`;
     if(scope==='business') return businessCard;
     if(scope==='template') return `${masterBarcodeCard}${designFooterNumberCard}`;
-    return `${businessCard}${leadGateCard}${pwaInstallCard}${quoteListCard}${catalogFilterCard}${masterBarcodeCard}${designFooterNumberCard}`;
+    return `${businessCard}${leadGateCard}${pwaInstallCard}${quoteListCard}${masterBarcodeCard}${designFooterNumberCard}`;
   }
 
   // Wires the cards' forms; `renderOverview` is re-run after each successful save.
@@ -235,26 +206,6 @@
       }catch(error){
         notify(/42703|PGRST204|PGRST205|42P01/i.test(String(error?.code||''))?'شغّل supabase/UPGRADE_EXISTING_V111.sql في Supabase أولًا.':'تعذر حفظ إعداد طلب عرض السعر: '+(error?.message||error));
         save.disabled=false;save.textContent='حفظ الإعداد';
-      }
-    });
-
-    document.getElementById('flCatalogFilterSettingsForm')?.addEventListener('submit',async event=>{
-      event.preventDefault();
-      const save=document.getElementById('flCatalogFilterSettingsSave');
-      if(!save)return;
-      const next=CATALOG_FILTER_OPTIONS.filter(([key])=>document.getElementById(`flCatalogFilter_${key}`)?.checked).map(([key])=>key);
-      save.disabled=true;save.textContent='جاري الحفظ...';
-      try{
-        const {error}=await db.from('site_settings').upsert({id:1,catalog_filter_keys:next},{onConflict:'id'});
-        if(error)throw error;
-        catalogFilterKeys=next;catalogFilterSettingError='';
-        window.FLOWER_LIGHT_SITE_SETTINGS={...(window.FLOWER_LIGHT_SITE_SETTINGS||{}),catalog_filter_keys:next.slice()};
-        try{window.dispatchEvent(new CustomEvent('flowerlight:site-settings',{detail:window.FLOWER_LIGHT_SITE_SETTINGS}));}catch(_){}
-        notify(next.length?'تم حفظ فلاتر المنتجات التي اخترتها':'تم إخفاء جميع الفلاتر؛ البحث النصي فقط سيبقى ظاهرًا');
-        renderOverview();
-      }catch(error){
-        notify(/42703|PGRST204|PGRST205|42P01/i.test(String(error?.code||''))?'شغّل supabase/UPGRADE_EXISTING_V111.sql في Supabase أولًا.':'تعذر حفظ إعداد الفلاتر: '+(error?.message||error));
-        save.disabled=false;save.textContent='حفظ الفلاتر';
       }
     });
 

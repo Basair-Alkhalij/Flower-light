@@ -19,7 +19,7 @@ const DEFAULT_SITE_URL='https://basair-alkhalij.github.io/Flower-light/';
 const jsFiles=[
   'scripts/generate-static-pages.mjs',
   'analytics.js','catalog-pdf-viewer.js','quote-list.js','app.js','public-sync.js','pwa-install.js','catalog-search.js','config.js','site-bootstrap.js','site-loader.js',
-  'admin.js','admin-analytics.js','admin-datasheet.js','admin-leads.js','admin-permissions.js','admin-settings.js','admin-business.js','admin-banks.js',
+  'admin.js','admin-analytics.js','admin-datasheet.js','admin-leads.js','admin-permissions.js','admin-settings.js','admin-search-filters.js','admin-business.js','admin-banks.js',
   'business-info.js','bank-info.js','admin-media.js','admin-products.js','admin-product-form.js','admin-import.js','sw.js'
 ];
 for(const file of jsFiles){
@@ -48,7 +48,7 @@ if(!index.includes(JSONLD_CSP_TOKEN)){console.error('Missing JSON-LD CSP hash to
 const loader=fs.readFileSync(path.join(root,'site-loader.js'),'utf8');
 for(const ref of [
   `style.css?v=${VERSION_TOKEN}`,`config.js?v=${VERSION_TOKEN}`,`analytics.js?v=${VERSION_TOKEN}`,`catalog-pdf-viewer.js?v=${VERSION_TOKEN}`,`quote-list.js?v=${VERSION_TOKEN}`,`app.js?v=${VERSION_TOKEN}`,`site-loader.js?v=${VERSION_TOKEN}`,
-  `admin-datasheet.js?v=${VERSION_TOKEN}`,`admin-media.js?v=${VERSION_TOKEN}`,`admin-products.js?v=${VERSION_TOKEN}`,`admin-product-form.js?v=${VERSION_TOKEN}`,`admin-import.js?v=${VERSION_TOKEN}`
+  `admin-datasheet.js?v=${VERSION_TOKEN}`,`admin-search-filters.js?v=${VERSION_TOKEN}`,`admin-media.js?v=${VERSION_TOKEN}`,`admin-products.js?v=${VERSION_TOKEN}`,`admin-product-form.js?v=${VERSION_TOKEN}`,`admin-import.js?v=${VERSION_TOKEN}`
 ]){
   const haystack=ref.startsWith('admin-')?loader:index;
   if(!haystack.includes(ref)){console.error(`Missing release reference: ${ref}`);process.exit(1);}

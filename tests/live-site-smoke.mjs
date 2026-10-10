@@ -50,6 +50,7 @@ const [app,pwa,loader,quoteList,css,manifestText]=publicTexts;
 
 const adminAssets={
   admin:quotedAsset(loader,'admin.js'),
+  searchFilters:quotedAsset(loader,'admin-search-filters.js'),
   media:quotedAsset(loader,'admin-media.js'),
   products:quotedAsset(loader,'admin-products.js'),
   form:quotedAsset(loader,'admin-product-form.js'),
@@ -59,7 +60,7 @@ console.log('Detected live admin assets',adminAssets);
 
 const adminResponses=await Promise.all(Object.values(adminAssets).map(path=>get(path)));
 const adminTexts=await Promise.all(adminResponses.map(response=>response.text()));
-const [admin,media,products,form,importJs]=adminTexts;
+const [admin,searchFilters,media,products,form,importJs]=adminTexts;
 
 assert.ok(app.length>1000);
 assert.match(pwa,/beforeinstallprompt/);
@@ -72,6 +73,8 @@ assert.match(quoteList,/quote_list_enabled/);
 assert.match(quoteList,/flowerlight:site-settings/);
 assert.match(admin,/FL_ADMIN_CORE/);
 assert.match(admin,/createClient/);
+assert.match(searchFilters,/window\.FL_ADMIN_SEARCH_FILTERS\s*=/);
+assert.match(searchFilters,/catalog_custom_filters/);
 assert.doesNotMatch(admin,/const XLSX_IMPORT_CDN/);
 assert.match(media,/window\.FL_ADMIN_MEDIA\s*=/);
 assert.match(media,/\.l\.webp/);

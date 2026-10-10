@@ -50,6 +50,11 @@
     settingsScript.async = false;
     document.body.appendChild(settingsScript);
 
+    const searchFiltersScript = document.createElement('script');
+    searchFiltersScript.src = 'admin-search-filters.js?v=__FL_VERSION__';
+    searchFiltersScript.async = false;
+    document.body.appendChild(searchFiltersScript);
+
 
     // Product-area module split (v100): media, list/order, form, and Excel import/export.
     const mediaScript = document.createElement('script');

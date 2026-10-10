@@ -63,7 +63,7 @@ async function injectCatalogFixtures(page){
       id:'sec-test',slug:'wall-lights',name:'جداريات',description:'قسم تجريبي',sort_order:0,items:[{
         id:'prod-test',name:'جداري تجريبي',model:'WL-TEST',caption:'منتج تجريبي',alt:'جداري تجريبي',category:'جداريات',category_id:'sec-test',category_slug:'wall-lights',
         image:image1,image_thumb:thumb1,image_path:'one',gallery:[{image:image1,thumb:thumb1,image_path:'one'},{image:image2,thumb:thumb2,image_path:'two'}],
-        specifications:[{key:'custom_1',label:'الواط',value:'12W',unit:''},{key:'custom_2',label:'حرارة اللون',value:'3000K',unit:''},{key:'color',label:'اللون',value:'أسود',unit:''}],price:100,wholesale_price:80,wholesale_min_qty:10,availability:'available',is_visible:true
+        specifications:[{key:'custom_1',label:'الواط',value:'12W',unit:''},{key:'custom_2',label:'حرارة اللون',value:'3000K',unit:''},{key:'color',label:'اللون',value:'أسود',unit:''},{key:'custom_filter_mount',label:'نوع التركيب',value:'جداري',unit:''}],price:100,wholesale_price:80,wholesale_min_qty:10,availability:'available',is_visible:true
       }]
     }]};
     window.flRenderProducts();
@@ -386,7 +386,8 @@ test('catalog filters combine availability, wattage, CCT and search on mobile',a
         category_slug:'outdoor-filter',
         specifications:[
           {key:'wattage',label:'القدرة',value:'24',unit:'W'},
-          {key:'cct',label:'حرارة اللون',value:'4000',unit:'K'}
+          {key:'cct',label:'حرارة اللون',value:'4000',unit:'K'},
+          {key:'custom_filter_mount',label:'نوع التركيب',value:'سطحي',unit:''}
         ]
       }]
     });
@@ -402,7 +403,11 @@ test('catalog filters combine availability, wattage, CCT and search on mobile',a
   await expect(page.locator('#catalogFilter_cct option[value="3000K"]')).toHaveCount(1);
   await expect(page.locator('#catalogFilter_cct option[value="4000K"]')).toHaveCount(1);
 
+  // Dependent choices: choosing 24W must narrow CCT to the compatible value.
   await page.locator('#catalogFilter_wattage').selectOption('24W');
+  await expect(page.locator('#catalogFilter_cct option[value="4000K"]')).toHaveCount(1);
+  await expect(page.locator('#catalogFilter_cct option[value="3000K"]')).toHaveCount(0);
+
   await expect(page.locator('#catalogSearchCount')).toHaveText('1 نتيجة · 1 قسم');
   await expect(page.locator('.extra-section-tab').filter({hasText:'كشافات خارجية'})).toHaveClass(/active/);
 
@@ -424,10 +429,20 @@ test('catalog filters combine availability, wattage, CCT and search on mobile',a
   await expect(page.locator('#catalogSearchCount')).toHaveText('1 نتيجة · 1 قسم');
 
   await page.evaluate(()=>{
-    window.FLOWER_LIGHT_SITE_SETTINGS={...(window.FLOWER_LIGHT_SITE_SETTINGS||{}),catalog_filter_keys:['color']};
+    window.FLOWER_LIGHT_SITE_SETTINGS={
+      ...(window.FLOWER_LIGHT_SITE_SETTINGS||{}),
+      catalog_filter_keys:['custom_filter_mount'],
+      catalog_custom_filters:[{key:'custom_filter_mount',label:'نوع التركيب'}]
+    };
     window.dispatchEvent(new CustomEvent('flowerlight:site-settings',{detail:window.FLOWER_LIGHT_SITE_SETTINGS}));
   });
-  await expect(page.locator('#catalogFilter_color')).toBeVisible();
+  await expect(page.locator('#catalogFilter_custom_filter_mount')).toBeVisible();
+  // The text query "كشاف" is still active, so the custom filter must also depend on it.
+  await expect(page.locator('#catalogFilter_custom_filter_mount option[value="سطحي"]')).toHaveCount(1);
+  await expect(page.locator('#catalogFilter_custom_filter_mount option[value="جداري"]')).toHaveCount(0);
+  await page.locator('#catalogSearchInput').fill('');
+  await expect(page.locator('#catalogFilter_custom_filter_mount option[value="جداري"]')).toHaveCount(1);
+  await expect(page.locator('#catalogFilter_custom_filter_mount option[value="سطحي"]')).toHaveCount(1);
   await expect(page.locator('#catalogFilter_wattage')).toHaveCount(0);
   await expect(page.locator('#catalogFilter_availability')).toHaveCount(0);
 

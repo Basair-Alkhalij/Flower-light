@@ -1,9 +1,9 @@
-// Flower Light / Basair Gulf — global catalog search + owner-selected filters
+// Flower Light / Basair Gulf — global catalog search + owner-selected dependent filters
 (() => {
   'use strict';
 
   const DEFAULT_FILTERS=['availability','wattage','cct'];
-  const FILTER_DEFS={
+  const BASE_FILTER_DEFS={
     availability:{label:'حالة التوفر',all:'كل حالات التوفر',fixed:[['available','متوفر'],['out_of_stock','نفد'],['coming_soon','قريبًا']]},
     sku:{label:'كود المنتج',all:'كل الأكواد'},
     wattage:{label:'القدرة',all:'كل القدرات',unit:'W'},
@@ -33,10 +33,20 @@
     }
     return [...new Set(text.split(/[/|,،]+/).map(v=>v.trim()).filter(Boolean))];
   }
+  function filterDefinitions(){
+    const defs={...BASE_FILTER_DEFS};
+    const custom=window.FLOWER_LIGHT_SITE_SETTINGS?.catalog_custom_filters;
+    if(Array.isArray(custom))custom.forEach(row=>{
+      const key=String(row?.key||'').trim(),label=String(row?.label||'').trim();
+      if(/^custom_filter_[a-z0-9]+$/i.test(key)&&label&&!defs[key])defs[key]={label,all:`كل ${label}`};
+    });
+    return defs;
+  }
   function selectedFilterKeys(){
+    const defs=filterDefinitions();
     const raw=window.FLOWER_LIGHT_SITE_SETTINGS?.catalog_filter_keys;
     const keys=Array.isArray(raw)?raw:DEFAULT_FILTERS;
-    return [...new Set(keys.map(String).filter(key=>FILTER_DEFS[key]))];
+    return [...new Set(keys.map(String).filter(key=>defs[key]))];
   }
 
   function init(){
@@ -55,37 +65,67 @@
     let filterControls=new Map();
 
     function productPanels(){return Array.from(sheet.querySelectorAll('.extra-section-panel'));}
+    function allCards(){return productPanels().flatMap(panel=>Array.from(panel.querySelectorAll('.chandelier-card')));}
     function tabForPanel(panel){return Array.from(tabsHost.querySelectorAll('.extra-section-tab')).find(tab=>tab.dataset.target===panel.id)||null;}
     function sectionName(panel){return tabForPanel(panel)?.querySelector('strong')?.textContent?.trim()||'قسم';}
     function cardSpecs(card){try{return JSON.parse(card.dataset.filterSpecs||'{}')||{};}catch(_){return{};}}
     function cardValues(card,key){
-      if(key==='availability')return [String(card.dataset.availability||'')].filter(Boolean);
-      const def=FILTER_DEFS[key];return valueTokens(cardSpecs(card)[key],def?.unit||'');
+      if(key==='availability')return[String(card.dataset.availability||'')].filter(Boolean);
+      const def=filterDefinitions()[key];return valueTokens(cardSpecs(card)[key],def?.unit||'');
+    }
+    function cardMatchesSearch(card){
+      const panel=card.closest('.extra-section-panel'),name=panel?sectionName(panel):'';
+      const query=normalize(input.value);
+      return !query||normalize([card.dataset.productName,card.dataset.productModel,card.textContent,name].join(' ')).includes(query);
+    }
+    function cardMatchesFilters(card,exceptKey=''){
+      for(const [key,select] of filterControls){
+        if(key===exceptKey||!select.value)continue;
+        if(!cardValues(card,key).includes(select.value))return false;
+      }
+      return true;
+    }
+    function sortedValues(values){
+      return [...values].sort((a,b)=>{const an=parseFloat(a),bn=parseFloat(b);return Number.isFinite(an)&&Number.isFinite(bn)?an-bn:a.localeCompare(b,'ar');});
+    }
+    function choicesFor(key,def,cards,current=''){
+      const possible=new Set();
+      cards.filter(card=>cardMatchesSearch(card)&&cardMatchesFilters(card,key)).forEach(card=>cardValues(card,key).forEach(value=>possible.add(value)));
+      let rows=def.fixed?def.fixed.filter(([value])=>possible.has(value)||value===current):sortedValues(possible).map(value=>[value,value]);
+      if(current&&!rows.some(([value])=>value===current)){
+        const fixedLabel=def.fixed?.find(([value])=>value===current)?.[1]||current;
+        rows=[...rows,[current,fixedLabel]];
+      }
+      return rows;
+    }
+    function setOptions(select,def,rows,current){
+      select.replaceChildren();
+      const all=document.createElement('option');all.value='';all.textContent=def.all;select.appendChild(all);
+      rows.forEach(([value,label])=>{const option=document.createElement('option');option.value=value;option.textContent=label;select.appendChild(option);});
+      select.value=rows.some(([value])=>value===current)?current:'';
+      select.style.display=def.fixed||rows.length?'':'none';
+    }
+    function syncDependentOptions(){
+      const defs=filterDefinitions(),cards=allCards();
+      for(const [key,select] of filterControls){
+        const def=defs[key];if(!def)continue;
+        const current=select.value;
+        setOptions(select,def,choicesFor(key,def,cards,current),current);
+      }
     }
 
     function buildFilters(){
       const previous=new Map([...filterControls].map(([key,select])=>[key,select.value]));
       filterControls=new Map();filterWrap.replaceChildren();
-      const cards=productPanels().flatMap(panel=>Array.from(panel.querySelectorAll('.chandelier-card')));
-      const keys=selectedFilterKeys();
-
+      const defs=filterDefinitions(),keys=selectedFilterKeys(),cards=allCards();
       keys.forEach(key=>{
-        const def=FILTER_DEFS[key],select=document.createElement('select');
+        const def=defs[key],select=document.createElement('select');
         select.id=`catalogFilter_${key}`;select.className='catalog-search-input';select.setAttribute('aria-label',`فلترة حسب ${def.label}`);
         Object.assign(select.style,{flex:'1 1 150px',maxWidth:'240px'});
-        const all=document.createElement('option');all.value='';all.textContent=def.all;select.appendChild(all);
-        let values=[];
-        if(def.fixed) values=def.fixed;
-        else{
-          const set=new Set();cards.forEach(card=>cardValues(card,key).forEach(value=>set.add(value)));
-          values=[...set].sort((a,b)=>{const an=parseFloat(a),bn=parseFloat(b);return Number.isFinite(an)&&Number.isFinite(bn)?an-bn:a.localeCompare(b,'ar');}).map(v=>[v,v]);
-        }
-        values.forEach(([value,label])=>{const option=document.createElement('option');option.value=value;option.textContent=label;select.appendChild(option);});
-        select.value=values.some(([value])=>value===previous.get(key))?previous.get(key):'';
-        if(!def.fixed&&!values.length)select.style.display='none';
-        select.addEventListener('change',applyFilter);filterControls.set(key,select);filterWrap.appendChild(select);
+        filterControls.set(key,select);filterWrap.appendChild(select);
+        setOptions(select,def,choicesFor(key,def,cards,previous.get(key)||''),previous.get(key)||'');
+        select.addEventListener('change',applyFilter);
       });
-
       const clear=document.createElement('button');clear.id='catalogFilterClear';clear.type='button';clear.className='catalog-download';clear.textContent='مسح الفلاتر';
       clear.addEventListener('click',()=>{filterControls.forEach(select=>{select.value='';});applyFilter();});
       filterWrap.appendChild(clear);
@@ -111,17 +151,12 @@
     }
     function activateTab(tab){if(tab&&!tab.classList.contains('active'))tab.click();}
     function filtersActive(){return[...filterControls.values()].some(select=>select.value);}
-    function syncClearButton(){
-      const clear=document.getElementById('catalogFilterClear');if(clear)clear.style.display=filtersActive()?'inline-flex':'none';
-    }
-    function cardMatchesFilters(card){
-      for(const [key,select] of filterControls){if(select.value&&!cardValues(card,key).includes(select.value))return false;}
-      return true;
-    }
+    function syncClearButton(){const clear=document.getElementById('catalogFilterClear');if(clear)clear.style.display=filtersActive()?'inline-flex':'none';}
 
     function applyFilter(){
       const panels=productPanels(),query=normalize(input.value),active=Boolean(query||filtersActive()),hasProducts=panels.length>0;
-      input.disabled=!hasProducts;input.placeholder=hasProducts?'ابحث في جميع الأقسام (الاسم أو الكود أو المواصفات)…':'لا توجد أقسام منتجات قابلة للبحث';syncClearButton();
+      input.disabled=!hasProducts;input.placeholder=hasProducts?'ابحث في جميع الأقسام (الاسم أو الكود أو المواصفات)…':'لا توجد أقسام منتجات قابلة للبحث';
+      syncDependentOptions();syncClearButton();
       if(!hasProducts){countLabel.hidden=true;return;}
       if(!active){resetView();countLabel.hidden=true;return;}
 
@@ -130,8 +165,7 @@
       panels.forEach(panel=>{
         const tab=tabForPanel(panel),name=sectionName(panel);let sectionMatches=0;
         panel.querySelectorAll('.chandelier-card').forEach(card=>{
-          const searchable=normalize([card.dataset.productName,card.dataset.productModel,card.textContent,name].join(' '));
-          const match=(!query||searchable.includes(query))&&cardMatchesFilters(card);
+          const match=cardMatchesSearch(card)&&cardMatchesFilters(card);
           card.classList.toggle('catalog-search-hidden',!match);
           if(match){sectionMatches++;totalMatches++;showSectionMarker(card,name);}else clearSectionMarker(card);
         });

@@ -1,3 +1,13 @@
+## v111M — 2026-10-10 — dedicated custom/dependent search filters
+
+- Moved catalog filter management out of Site Settings into its own Owner-only **Search Filters** admin section.
+- Added reusable custom filter definitions stored in `site_settings.catalog_custom_filters`.
+- Owner-created custom filters automatically become available as product specification types, allowing the same stable key to be assigned across products.
+- Public filter definitions now merge standard and Owner-created filters.
+- Filter choices are dependent: each dropdown recalculates its available values from products matching the text query and the other active filters.
+- Added `20261010213000_catalog_custom_filters.sql` and updated the v111 upgrade/setup SQL.
+- Added runtime/static/mobile/live coverage for the new module and behavior.
+
 ## v111L — 2026-10-10 — owner-selected catalog filters
 
 - Added owner-controlled catalog filter selection in the site settings panel.

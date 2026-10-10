@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test:browser": "playwright test --config=playwright.config.mjs",
-    "test:static": "node tests/smoke.mjs && node tests/leads-module.mjs && node tests/permissions-module.mjs && node tests/settings-module.mjs && node tests/products-modules.mjs && node tests/thumbnails.mjs && node tests/duplicate-product.mjs && node tests/quote-list.mjs && node tests/static-pages.mjs",
+    "test:static": "node tests/smoke.mjs && node tests/leads-module.mjs && node tests/permissions-module.mjs && node tests/settings-module.mjs && node tests/search-filters-module.mjs && node tests/products-modules.mjs && node tests/thumbnails.mjs && node tests/duplicate-product.mjs && node tests/quote-list.mjs && node tests/static-pages.mjs",
     "build:check": "node scripts/build.mjs --check",
     "build": "node scripts/build.mjs"
   },
