@@ -62,8 +62,9 @@ const [admin,media,products,form,importJs]=adminTexts;
 
 assert.ok(app.length>1000);
 assert.match(pwa,/beforeinstallprompt/);
-assert.match(loader,/isAdminPage/);
-assert.match(loader,/admin\.js/);
+assert.match(loader,/URLSearchParams\(location\.search\)/);
+assert.match(loader,/admin\.js\?v=/);
+assert.match(loader,/public-sync\.js\?v=/);
 assert.match(admin,/FL_ADMIN_CORE/);
 assert.match(admin,/createClient/);
 assert.doesNotMatch(admin,/const XLSX_IMPORT_CDN/);
