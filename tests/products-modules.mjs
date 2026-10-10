@@ -69,6 +69,8 @@ vm.runInContext(read('admin-import.js'),context,{filename:'admin-import.js'});
 assert.equal(typeof context.window.FL_ADMIN_IMPORT?.openProductExcelImport,'function');
 assert.equal(typeof context.window.FL_ADMIN_IMPORT?.downloadExcelTemplate,'function');
 
+const adminSource=read('admin.js');
+const appSource=read('app.js');
 const formSource=read('admin-product-form.js');
 const listSource=read('admin-products.js');
 const importSource=read('admin-import.js');
@@ -79,5 +81,14 @@ assert.match(listSource,/availability:productAvailability\(source\.availability\
 assert.match(importSource,/حالة التوفر/);
 assert.match(importSource,/normalizeImportAvailability/);
 assert.match(importSource,/availability:row\.availability/);
+assert.match(adminSource,/PRODUCT_SPEC_ALIAS_GROUPS/);
+assert.match(adminSource,/الواط/);
+assert.match(adminSource,/resolveProductSpecDefinition/);
+assert.match(adminSource,/data-flex-spec-type/);
+assert.match(formSource,/data-flex-spec-type/);
+assert.match(formSource,/syncSpecRow/);
+assert.match(importSource,/normalizeKnownSpecValue/);
+assert.match(appSource,/canonicalProductSpecKey/);
+assert.match(appSource,/PRODUCT_SPEC_ALIAS_LOOKUP/);
 
 console.log('PRODUCT_MODULES_RUNTIME_OK');

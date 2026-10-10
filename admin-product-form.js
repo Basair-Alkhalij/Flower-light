@@ -53,10 +53,20 @@
 
     const flexibleSpecs=document.getElementById('flFlexibleSpecs');
     const addProductSpec=document.getElementById('flAddProductSpec');
+    const syncSpecRow=row=>{
+      if(!row) return;
+      const type=row.querySelector('[data-flex-spec-type]');
+      const custom=row.querySelector('[data-flex-spec-label]');
+      if(!type || !custom) return;
+      const isCustom=type.value==='__custom__';
+      custom.hidden=!isCustom;
+      custom.setAttribute('aria-hidden',isCustom?'false':'true');
+    };
     const refreshSpecRemoveButtons=()=>{
       if(!flexibleSpecs) return;
       const rows=[...flexibleSpecs.querySelectorAll('[data-flex-spec-row]')];
       rows.forEach(row=>{
+        syncSpecRow(row);
         const button=row.querySelector('[data-flex-spec-remove]');
         if(button) button.hidden=rows.length<=1;
       });
@@ -67,7 +77,13 @@
       if(count>=30){notify('الحد الأقصى 30 صفة للمنتج');return;}
       flexibleSpecs.insertAdjacentHTML('beforeend',productSpecEditorRowHtml(null));
       refreshSpecRemoveButtons();
-      flexibleSpecs.lastElementChild?.querySelector('[data-flex-spec-label]')?.focus();
+      flexibleSpecs.lastElementChild?.querySelector('[data-flex-spec-type]')?.focus();
+    });
+    flexibleSpecs?.addEventListener('change',event=>{
+      if(!event.target.matches?.('[data-flex-spec-type]')) return;
+      const row=event.target.closest('[data-flex-spec-row]');
+      syncSpecRow(row);
+      if(event.target.value==='__custom__') row?.querySelector('[data-flex-spec-label]')?.focus();
     });
     flexibleSpecs?.addEventListener('click',event=>{
       const button=event.target.closest?.('[data-flex-spec-remove]');

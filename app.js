@@ -134,6 +134,40 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     bulb_count: 'عدد اللمبات'
   };
 
+  const PRODUCT_SPEC_ALIAS_KEYS = new Map([
+    ['القدرة','wattage'],['القدره','wattage'],['الواط','wattage'],['وات','wattage'],['power','wattage'],['watt','wattage'],['w','wattage'],
+    ['اللومن','lumens'],['لومن','lumens'],['lumen','lumens'],['lm','lumens'],['التدفق الضوئي','lumens'],['شدة الاضاءة','lumens'],['شدة الإضاءة','lumens'],
+    ['حرارة اللون','cct'],['حراره اللون','cct'],['درجة حرارة اللون','cct'],['درجه حراره اللون','cct'],['كلفن','cct'],['kelvin','cct'],['k','cct'],
+    ['الفولت','voltage'],['الجهد','voltage'],['فولت','voltage'],['volt','voltage'],['v','voltage'],
+    ['درجة الحماية ip','ip_rating'],['درجه الحمايه ip','ip_rating'],['درجة الحماية','ip_rating'],['درجه الحمايه','ip_rating'],['ip','ip_rating'],
+    ['المقاس','dimensions'],['المقاسات','dimensions'],['الأبعاد','dimensions'],['الابعاد','dimensions'],['size','dimensions'],
+    ['اللون','color'],['colour','color'],['الخامة','material'],['الخامه','material'],
+    ['زاوية الإضاءة','beam_angle'],['زاويه الاضاءه','beam_angle'],['beam angle','beam_angle'],
+    ['التردد','frequency'],['hz','frequency'],['الضمان','warranty'],
+    ['قاعدة اللمبة','bulb_base'],['قاعده اللمبه','bulb_base'],['bulb base','bulb_base'],['سوكت','bulb_base'],
+    ['عدد اللمبات','bulb_count'],['عدد اللمبة','bulb_count'],['عدد اللمبه','bulb_count'],['bulb count','bulb_count'],
+    ['كود المنتج','sku'],['رقم المنتج','sku'],['رمز المنتج','sku']
+  ]);
+  function normalizeProductSpecAlias(value) {
+    return String(value || '').trim().toLowerCase()
+      .replace(/[\u064B-\u0652]/g, '').replace(/[إأآا]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
+      .replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  const PRODUCT_SPEC_ALIAS_LOOKUP = (() => {
+    const map = new Map();
+    Object.keys(PRODUCT_SPEC_LABELS).forEach(key => map.set(normalizeProductSpecAlias(key), key));
+    Object.entries(PRODUCT_SPEC_LABELS).forEach(([key, label]) => map.set(normalizeProductSpecAlias(label), key));
+    PRODUCT_SPEC_ALIAS_KEYS.forEach((key, alias) => map.set(normalizeProductSpecAlias(alias), key));
+    return map;
+  })();
+  function canonicalProductSpecKey(rawKey, label) {
+    const direct = String(rawKey || '').trim();
+    if (Object.hasOwn(PRODUCT_SPEC_LABELS, direct)) return direct;
+    return PRODUCT_SPEC_ALIAS_LOOKUP.get(normalizeProductSpecAlias(direct))
+      || PRODUCT_SPEC_ALIAS_LOOKUP.get(normalizeProductSpecAlias(label))
+      || direct;
+  }
+
   const WHATSAPP_META_SHOW_DESCRIPTION = '__whatsapp_show_description';
   const WHATSAPP_META_SHOW_SPECS = '__whatsapp_show_specifications';
 
@@ -152,9 +186,10 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     }
     return rows.map((row, index) => {
       if (!row || typeof row !== 'object') return null;
-      const key = String(row.key || `custom_${index + 1}`).trim();
-      if (key === WHATSAPP_META_SHOW_DESCRIPTION || key === WHATSAPP_META_SHOW_SPECS || key === PRICING_META_KEY) return null;
-      const label = String(row.label || PRODUCT_SPEC_LABELS[key] || key).trim();
+      const rawKey = String(row.key || `custom_${index + 1}`).trim();
+      if (rawKey === WHATSAPP_META_SHOW_DESCRIPTION || rawKey === WHATSAPP_META_SHOW_SPECS || rawKey === PRICING_META_KEY) return null;
+      const key = canonicalProductSpecKey(rawKey, row.label);
+      const label = String(PRODUCT_SPEC_LABELS[key] || row.label || key).trim();
       const value = String(row.value ?? '').trim();
       const unit = String(row.unit || '').trim();
       if (!label || !value) return null;
