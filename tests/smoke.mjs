@@ -533,22 +533,36 @@ assert.match(catalogSearch,/لا توجد نتائج مطابقة للبحث و�
 assert.match(catalogSearch,/site-catalog-tab/);
 
 
-// v111L / task 6: owner-selected dynamic catalog filters.
+// v111M / task 6: dedicated, reusable and dependent search filters.
 const catalogFilterMigration=read('supabase/migrations/20261010203000_catalog_filter_selection.sql');
+const customFilterMigration=read('supabase/migrations/20261010213000_catalog_custom_filters.sql');
+const searchFiltersAdmin=read('admin-search-filters.js');
 assert.match(sql,/catalog_filter_keys text\[\] not null default/i);
+assert.match(sql,/catalog_custom_filters jsonb not null default/i);
 assert.match(v111Upgrade,/catalog_filter_keys/);
-assert.match(catalogFilterMigration,/catalog_filter_keys/);
+assert.match(v111Upgrade,/catalog_custom_filters/);
 assert.match(catalogFilterMigration,/CATALOG_FILTER_SELECTION_V111L_OK/);
-assert.match(adminSettings,/flCatalogFilterSettingsForm/);
-assert.match(adminSettings,/catalog_filter_keys/);
+assert.match(customFilterMigration,/CATALOG_CUSTOM_FILTERS_V111M_OK/);
+assert.doesNotMatch(adminSettings,/flCatalogFilterSettingsForm/);
+assert.match(searchFiltersAdmin,/فلاتر البحث/);
+assert.match(searchFiltersAdmin,/إضافة فلتر جديد/);
+assert.match(searchFiltersAdmin,/catalog_custom_filters/);
+assert.match(searchFiltersAdmin,/catalog_filter_keys/);
+assert.match(admin,/search-filters/);
+assert.match(admin,/productSpecFields/);
 assert.match(publicSync,/catalog_filter_keys/);
+assert.match(publicSync,/catalog_custom_filters/);
+assert.match(read('site-loader.js'),/admin-search-filters\.js/);
 const catalogSearchFilters=read('catalog-search.js');
 assert.match(app,/dataset\.filterSpecs/);
 assert.match(catalogSearchFilters,/catalog_filter_keys/);
-assert.match(catalogSearchFilters,/FILTER_DEFS/);
+assert.match(catalogSearchFilters,/catalog_custom_filters/);
+assert.match(catalogSearchFilters,/BASE_FILTER_DEFS/);
 assert.match(catalogSearchFilters,/catalogFilter_/);
 assert.match(catalogSearchFilters,/catalogFilterClear/);
 assert.match(catalogSearchFilters,/cardMatchesFilters/);
+assert.match(catalogSearchFilters,/choicesFor/);
+assert.match(catalogSearchFilters,/exceptKey/);
 assert.match(catalogSearchFilters,/flowerlight:site-settings/);
 
 console.log('FLOWER_LIGHT_FINAL_SMOKE_OK');
