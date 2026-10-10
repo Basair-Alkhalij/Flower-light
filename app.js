@@ -713,6 +713,9 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
   function createProductCard(item, type, collection, index) {
     const figure = document.createElement('figure');
     figure.className = `${type}-card`;
+    figure.dataset.productId = String(item?.id || '');
+    figure.dataset.productName = String(item?.name || '');
+    figure.dataset.productModel = String(item?.model || '');
 
     const thumb = document.createElement('div');
     thumb.className = `${type}-thumb`;

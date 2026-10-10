@@ -520,4 +520,16 @@ assert.match(productImport,/حالة التوفر/);
 assert.match(quoteList,/availability !== 'available'/);
 assert.match(read('styles/products.css'),/\.product-availability-badge\.is-out_of_stock/);
 
+
+// v111I / task 6: global catalog search. Specification filters remain deferred
+// until product specification keys are normalized across the catalog.
+const catalogSearch=read('catalog-search.js');
+assert.match(index,/aria-label="بحث في جميع أقسام المنتجات"/);
+assert.match(app,/dataset\.productName/);
+assert.match(app,/dataset\.productModel/);
+assert.match(catalogSearch,/querySelectorAll\('\.extra-section-panel'\)/);
+assert.match(catalogSearch,/catalog-search-section-label/);
+assert.match(catalogSearch,/لا توجد نتائج مطابقة في جميع الأقسام/);
+assert.match(catalogSearch,/site-catalog-tab/);
+
 console.log('FLOWER_LIGHT_FINAL_SMOKE_OK');
