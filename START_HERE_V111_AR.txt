@@ -1,0 +1,32 @@
+FLOWER LIGHT / BASAIR GULF — v111A (1.1.1)
+
+هذه النسخة تنفذ المهمة 1 والمهمة 2 فقط فوق v110 المستقرة.
+
+تم في الكود:
+- إزالة v=87 من روابط مشاركة المنتجات والأقسام.
+- إبقاء تنظيف معامل v القديم من الروابط الواردة.
+- نقل إعداد GA4 إلى config.js وإبقاؤه معطلاً ما لم يوضع Measurement ID حقيقي.
+- تحديث سياسة الخصوصية لتذكر Google Analytics 4 عند تفعيله.
+- التحقق آلياً من أن share-image.jpg بأبعاد 1200x630.
+- التحقق من hostname الإنتاجي المستخدم مع Turnstile في Edge Function.
+
+لا توجد ترقية SQL جديدة لهذه النسخة. قاعدة v110 تكفي. لا تشغّل SUPABASE_SETUP.sql على قاعدة حية.
+
+المتبقي يدوياً لإكمال معيار قبول المهمة 1:
+1) أنشئ/افتح GA4 Web data stream.
+2) ضع Measurement ID الحقيقي (G-...) في config.js داخل FLOWER_LIGHT_ANALYTICS_CONFIG.measurementId.
+3) بعد النشر تحقق من GA4 > Reports > Realtime.
+4) اختبر رابط الموقع في واتساب/تيليجرام للتأكد من معاينة الصورة والعنوان.
+5) أبقِ Sign-ups = OFF وMFA/TOTP مفعلاً للمالك (كانا مفعّلين في إعداد v110).
+
+اختبارات الإصدار:
+- npm ci --no-audit --no-fund
+- npm run build:check
+- npm run test:static
+- npm run build
+- npx playwright install chromium
+- PowerShell: $env:FL_TEST_DIST="1"
+- npm run test:browser
+
+GA4 Measurement ID: G-WQRZWGY367
+بعد النشر افتح GA4 Realtime وتأكد من وصول الزيارة.

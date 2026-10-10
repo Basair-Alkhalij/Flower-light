@@ -10,3 +10,11 @@ window.FLOWER_LIGHT_SUPABASE = {
   turnstileSiteKey: '0x4AAAAAAFQBEMBlCMKy0NKI',
   leadSubmissionFunction: 'submit-customer-lead'
 };
+
+
+// Google Analytics 4 is optional. Paste the Web data stream Measurement ID (G-...) here.
+// Leave blank to keep analytics fully disabled. This ID is public and is safe in browser code.
+window.FLOWER_LIGHT_ANALYTICS_CONFIG = {
+  measurementId: 'G-WQRZWGY367',
+  debug: false
+};

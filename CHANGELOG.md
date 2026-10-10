@@ -1,3 +1,22 @@
+## v111A — 2026-10-08 — production settings + clean share URLs
+
+- Moved the optional GA4 Measurement ID setting to `config.js`; analytics remains disabled until a real `G-...` ID is supplied.
+- Updated `privacy.html` to explicitly disclose Google Analytics 4 when enabled.
+- Added static checks for the current Turnstile production hostname and exact 1200×630 social preview image dimensions.
+- Removed the obsolete `v=87` parameter from public product/category share URLs while continuing to strip legacy `v` parameters from incoming URLs.
+- Bumped package version to `1.1.1`. No database schema migration is required for v111A.
+
+## v110 — 2026-10-07 — technical cleanup
+
+- Split large runtime files further: GA4 moved from `app.js` to `analytics.js`, the lazy PDF catalog viewer moved to `catalog-pdf-viewer.js`, and the datasheet designer moved from `admin.js` to `admin-datasheet.js`.
+- Split the monolithic stylesheet into `styles/core.css`, `styles/products.css`, `styles/responsive.css`, `styles/admin.css`, and `styles/business-bank.css`; `style.css` is now only the source entrypoint and production build emits one minified CSS file.
+- Reduced central source sizes to about 110 KB for `app.js` and 136 KB for `admin.js`, with explicit build size budgets to prevent regressions.
+- Production build now self-hosts the exact pinned Supabase browser bundle as `dist/supabase-vendor.js`; production `index.html` no longer loads Supabase from a CDN at runtime.
+- Consolidated the post-v105 database upgrade path into `supabase/UPGRADE_EXISTING_V110.sql`; duplicate v106/v108 wrapper SQL files were moved to `legacy/sql/` while canonical migrations remain in `supabase/migrations/`.
+- Updated README/start documentation to v110 and clarified that `legacy/` is archival only.
+- Updated GitHub Actions/static checks for the new modules. Pages deployment remains gated on static tests, production build, Chromium installation, and Playwright against `dist` before deploy.
+- Confirmed the previously configured production controls from the setup session: public Sign-ups OFF and owner Supabase MFA/TOTP enabled.
+
 ## v109 — 2026-10-07
 
 - Public bank accounts are now collapsed by default behind a single **الحسابات البنكية** row, matching the compact public-card controls.

@@ -17,6 +17,11 @@
     analyticsScript.async = false;
     document.body.appendChild(analyticsScript);
 
+    const datasheetScript = document.createElement('script');
+    datasheetScript.src = 'admin-datasheet.js?v=__FL_VERSION__';
+    datasheetScript.async = false;
+    document.body.appendChild(datasheetScript);
+
     // Module split part 2: customer leads section (also needs admin.js first).
     const leadsScript = document.createElement('script');
     leadsScript.src = 'admin-leads.js?v=__FL_VERSION__';
