@@ -5,11 +5,16 @@
 begin;
 
 alter table public.site_settings
-  add column if not exists quote_list_enabled boolean not null default true;
+  add column if not exists quote_list_enabled boolean not null default true,
+  add column if not exists catalog_filter_keys text[] not null default array['availability','wattage','cct']::text[];
 
 update public.site_settings
 set quote_list_enabled=true
 where id=1 and quote_list_enabled is null;
+
+update public.site_settings
+set catalog_filter_keys=array['availability','wattage','cct']::text[]
+where id=1 and catalog_filter_keys is null;
 
 alter table public.products
   add column if not exists availability text not null default 'available';
@@ -36,7 +41,7 @@ comment on column public.products.availability is
 
 commit;
 
-select id, quote_list_enabled, updated_at
+select id, quote_list_enabled, catalog_filter_keys, updated_at
 from public.site_settings
 where id=1;
 
