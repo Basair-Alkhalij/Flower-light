@@ -14,7 +14,7 @@
   }
   const categories=liveArray('categories');
   const products=liveArray('products');
-  const { esc,notify,openModal,closeModal,modalBody,MAX_PRODUCT_IMAGES,PRODUCT_SPEC_FIELDS,resolveProductSpecDefinition,normalizeSpecifications,productPricingTiers,productWhatsAppOption,WHATSAPP_META_SHOW_DESCRIPTION,WHATSAPP_META_SHOW_SPECS,pricingMetaRow,adminGalleryRows,imageUrl,newCategorySlug,nextProductSort,isStoragePath,storagePathUsedByOtherProduct,bucket,loadCatalogAdminData,syncPublicProductsFromAdminCache,uploadProductImagePair,productStoragePairPaths }=core;
+  const { esc,notify,openModal,closeModal,modalBody,MAX_PRODUCT_IMAGES,PRODUCT_SPEC_FIELDS,resolveProductSpecDefinition,normalizeKnownSpecValue,normalizeSpecifications,productPricingTiers,productWhatsAppOption,WHATSAPP_META_SHOW_DESCRIPTION,WHATSAPP_META_SHOW_SPECS,pricingMetaRow,adminGalleryRows,imageUrl,newCategorySlug,nextProductSort,isStoragePath,storagePathUsedByOtherProduct,bucket,loadCatalogAdminData,syncPublicProductsFromAdminCache,uploadProductImagePair,productStoragePairPaths }=core;
   const XLSX_IMPORT_CDN='https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
   const XLSX_IMPORT_SRI='sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT';
   const JSZIP_IMPORT_CDN='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
@@ -230,9 +230,9 @@
   function parseImportSpec(header,value,index){
     let label=importText(header).replace(/^\s*(?:مواصفه|مواصفة|spec)\s*[:：-]\s*/i,'').trim();if(!label||importText(value)==='')return null;
     let unit='';const match=label.match(/[\(\[]\s*([^\)\]]+)\s*[\)\]]\s*$/);if(match){unit=match[1].trim();label=label.slice(0,match.index).trim();}
-    const def=knownSpecDefinition(label);if(!unit&&def?.unit)unit=def.unit;
-    const text=importText(value);if(unit&&new RegExp(`${unit.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\s*$`,'i').test(text))unit='';
-    return {key:def?.key||`excel_${index+1}`,label:def?.label||label,value:text,unit};
+    const def=knownSpecDefinition(label);
+    const normalized=normalizeKnownSpecValue?.(importText(value),def,unit) || {value:importText(value),unit};
+    return {key:def?.key||`excel_${index+1}`,label:def?.label||label,value:normalized.value,unit:normalized.unit};
   }
 
   function outerZipImageLookup(zip){
