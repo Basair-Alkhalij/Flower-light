@@ -324,6 +324,46 @@ test('legacy query deep links still open product and category targets',async({pa
 });
 
 
+
+test('catalog search finds product names across all sections and shows the section',async({page})=>{
+  await installSupabaseMock(page);
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await injectCatalogFixtures(page);
+  await page.evaluate(()=>{
+    const first=window.FLOWER_LIGHT_PRODUCTS.extraSections[0].items[0];
+    window.FLOWER_LIGHT_PRODUCTS.extraSections.push({
+      id:'sec-outdoor',slug:'outdoor-lights',name:'كشافات خارجية',description:'قسم خارجي',sort_order:10,items:[{
+        ...first,
+        id:'prod-outdoor',
+        name:'كشاف خارجي مميز',
+        model:'OUT-200',
+        caption:'إنارة خارجية قوية',
+        category:'كشافات خارجية',
+        category_id:'sec-outdoor',
+        category_slug:'outdoor-lights'
+      }]
+    });
+    window.flRenderProducts();
+  });
+  await page.locator('#openProducts').click();
+
+  await expect(page.locator('.extra-section-tab').filter({hasText:'جداريات'})).toBeVisible();
+  await expect(page.locator('.extra-section-tab').filter({hasText:'كشافات خارجية'})).toBeVisible();
+
+  await page.locator('#catalogSearchInput').fill('كشاف خارجي مميز');
+  await expect(page.locator('#catalogSearchCount')).toHaveText('1 نتيجة · 1 قسم');
+  await expect(page.locator('.extra-section-tab').filter({hasText:'جداريات'})).toBeHidden();
+  await expect(page.locator('.extra-section-tab').filter({hasText:'كشافات خارجية'})).toHaveClass(/active/);
+  await expect(page.locator('.catalog-panel.active .catalog-search-section-label')).toContainText('كشافات خارجية');
+  await expect(page.locator('.catalog-panel.active .chandelier-card:not(.catalog-search-hidden)')).toHaveCount(1);
+
+  await page.locator('#catalogSearchInput').fill('');
+  await expect(page.locator('#catalogSearchCount')).toBeHidden();
+  await expect(page.locator('.extra-section-tab').filter({hasText:'جداريات'})).toBeVisible();
+  await expect(page.locator('.extra-section-tab').filter({hasText:'كشافات خارجية'})).toBeVisible();
+  await expect(page.locator('.catalog-search-section-label')).toHaveCount(0);
+});
+
 test('laptop product dialog and lightbox stay inside the viewport',async({page})=>{
   await page.setViewportSize({width:1366,height:768});
   await installSupabaseMock(page);
