@@ -63,7 +63,7 @@ async function injectCatalogFixtures(page){
       id:'sec-test',slug:'wall-lights',name:'جداريات',description:'قسم تجريبي',sort_order:0,items:[{
         id:'prod-test',name:'جداري تجريبي',model:'WL-TEST',caption:'منتج تجريبي',alt:'جداري تجريبي',category:'جداريات',category_id:'sec-test',category_slug:'wall-lights',
         image:image1,image_thumb:thumb1,image_path:'one',gallery:[{image:image1,thumb:thumb1,image_path:'one'},{image:image2,thumb:thumb2,image_path:'two'}],
-        specifications:[{key:'custom_1',label:'الواط',value:'12W',unit:''}],price:100,wholesale_price:80,wholesale_min_qty:10,availability:'available',is_visible:true
+        specifications:[{key:'custom_1',label:'الواط',value:'12W',unit:''},{key:'custom_2',label:'حرارة اللون',value:'3000K',unit:''}],price:100,wholesale_price:80,wholesale_min_qty:10,availability:'available',is_visible:true
       }]
     }]};
     window.flRenderProducts();
@@ -363,6 +363,68 @@ test('catalog search finds product names across all sections and shows the secti
   await expect(page.locator('.extra-section-tab').filter({hasText:'جداريات'})).toBeVisible();
   await expect(page.locator('.extra-section-tab').filter({hasText:'كشافات خارجية'})).toBeVisible();
   await expect(page.locator('.catalog-search-section-label')).toHaveCount(0);
+});
+
+
+test('catalog filters combine availability, wattage, CCT and search on mobile',async({page})=>{
+  await page.setViewportSize({width:360,height:800});
+  await installSupabaseMock(page);
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await injectCatalogFixtures(page);
+  await page.evaluate(()=>{
+    const first=window.FLOWER_LIGHT_PRODUCTS.extraSections[0].items[0];
+    window.FLOWER_LIGHT_PRODUCTS.extraSections.push({
+      id:'sec-outdoor-filter',slug:'outdoor-filter',name:'كشافات خارجية',description:'قسم خارجي',sort_order:10,items:[{
+        ...first,
+        id:'prod-filter-24',
+        name:'كشاف خارجي 24 وات',
+        model:'OUT-24',
+        caption:'كشاف بقدرة مختلفة',
+        availability:'out_of_stock',
+        category:'كشافات خارجية',
+        category_id:'sec-outdoor-filter',
+        category_slug:'outdoor-filter',
+        specifications:[
+          {key:'wattage',label:'القدرة',value:'24',unit:'W'},
+          {key:'cct',label:'حرارة اللون',value:'4000',unit:'K'}
+        ]
+      }]
+    });
+    window.flRenderProducts();
+  });
+  await page.locator('#openProducts').click();
+
+  await expect(page.locator('#catalogAvailabilityFilter')).toBeVisible();
+  await expect(page.locator('#catalogWattageFilter')).toBeVisible();
+  await expect(page.locator('#catalogCctFilter')).toBeVisible();
+  await expect(page.locator('#catalogWattageFilter option[value="12W"]')).toHaveCount(1);
+  await expect(page.locator('#catalogWattageFilter option[value="24W"]')).toHaveCount(1);
+  await expect(page.locator('#catalogCctFilter option[value="3000K"]')).toHaveCount(1);
+  await expect(page.locator('#catalogCctFilter option[value="4000K"]')).toHaveCount(1);
+
+  await page.locator('#catalogWattageFilter').selectOption('24W');
+  await expect(page.locator('#catalogSearchCount')).toHaveText('1 نتيجة · 1 قسم');
+  await expect(page.locator('.extra-section-tab').filter({hasText:'كشافات خارجية'})).toHaveClass(/active/);
+
+  await page.locator('#catalogAvailabilityFilter').selectOption('out_of_stock');
+  await page.locator('#catalogCctFilter').selectOption('4000K');
+  await expect(page.locator('#catalogSearchCount')).toHaveText('1 نتيجة · 1 قسم');
+  await expect(page.locator('.catalog-panel.active .chandelier-card:not(.catalog-search-hidden)')).toHaveCount(1);
+
+  await page.locator('#catalogSearchInput').fill('جداري');
+  await expect(page.locator('#catalogSearchCount')).toHaveText('لا توجد نتائج مطابقة للبحث والفلاتر');
+  await page.locator('#catalogSearchInput').fill('كشاف');
+  await expect(page.locator('#catalogSearchCount')).toHaveText('1 نتيجة · 1 قسم');
+
+  await page.locator('#catalogFilterClear').click();
+  await expect(page.locator('#catalogWattageFilter')).toHaveValue('');
+  await expect(page.locator('#catalogCctFilter')).toHaveValue('');
+  await expect(page.locator('#catalogAvailabilityFilter')).toHaveValue('');
+  await expect(page.locator('#catalogSearchInput')).toHaveValue('كشاف');
+  await expect(page.locator('#catalogSearchCount')).toHaveText('1 نتيجة · 1 قسم');
+
+  const fit=await page.locator('#catalogFilterWrap').evaluate(el=>({scroll:el.scrollWidth,client:el.clientWidth}));
+  expect(fit.scroll).toBeLessThanOrEqual(fit.client+1);
 });
 
 test('laptop product dialog and lightbox stay inside the viewport',async({page})=>{
