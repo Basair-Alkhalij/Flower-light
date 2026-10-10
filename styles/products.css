@@ -398,7 +398,7 @@
 .fl-limited-offer-check small{color:#8b7c67;font-size:11px;font-weight:600;line-height:1.5}
 
 .product-image-button{position:relative;overflow:hidden}
-.product-availability-badge{position:absolute;left:10px;bottom:10px;z-index:5;padding:5px 9px;border-radius:999px;background:#e9f8ef;color:#176a42;font-size:11px;font-weight:900;pointer-events:none}.product-availability-badge.is-out_of_stock{background:#fff0f0;color:#a83232}.product-availability-badge.is-coming_soon{background:#fff6df;color:#8b5a00}
+.product-availability-badge{position:absolute;left:10px;bottom:10px;z-index:5;display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border:1px solid #cfe7d8;border-radius:9px;background:#f4fbf6;color:#1d7a49;font-size:11px;font-weight:900;line-height:1.2;box-shadow:none;pointer-events:none}.product-availability-badge::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;flex:0 0 7px}.product-availability-badge.is-out_of_stock{background:#fff7f7;color:#b42318;border-color:#f0cccc}.product-availability-badge.is-coming_soon{background:#fffaf0;color:#9a6700;border-color:#efdba9}
 .product-limited-offer-badge{
   position:absolute;
   top:12px;
@@ -925,8 +925,8 @@
 .quote-list-qty-value[type=number]{-moz-appearance:textfield}
 .fl-quote-bar{
   position:fixed;z-index:14500;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);
-  min-width:min(360px,calc(100vw - 24px));min-height:52px;padding:10px 16px;border:1px solid #f2b23b;border-radius:16px;
-  background:linear-gradient(180deg,#ffb72a,#f6a300);color:#201408;box-shadow:0 4px 12px rgba(176,103,0,.12);
+  min-width:min(360px,calc(100vw - 24px));min-height:52px;padding:10px 16px;border:1px solid #f0b951;border-radius:17px;
+  background:linear-gradient(135deg,#ff9700,#ffb52e);color:#201408;box-shadow:0 14px 36px rgba(81,49,4,.24);
   display:flex;align-items:center;justify-content:center;gap:10px;font:inherit;font-weight:900;cursor:pointer;
 }
 .fl-quote-bar[hidden]{display:none!important}
