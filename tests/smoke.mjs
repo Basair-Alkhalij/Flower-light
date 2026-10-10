@@ -532,4 +532,17 @@ assert.match(catalogSearch,/catalog-search-section-label/);
 assert.match(catalogSearch,/لا توجد نتائج مطابقة في جميع الأقسام/);
 assert.match(catalogSearch,/site-catalog-tab/);
 
+
+// v111K / task 6: dynamic availability, wattage and CCT filters.
+const catalogSearchFilters=read('catalog-search.js');
+assert.match(app,/dataset\.filterWattage/);
+assert.match(app,/dataset\.filterCct/);
+assert.match(catalogSearchFilters,/catalogAvailabilityFilter/);
+assert.match(catalogSearchFilters,/catalogWattageFilter/);
+assert.match(catalogSearchFilters,/catalogCctFilter/);
+assert.match(catalogSearchFilters,/catalogFilterClear/);
+assert.match(catalogSearchFilters,/matchAvailability/);
+assert.match(catalogSearchFilters,/matchWattage/);
+assert.match(catalogSearchFilters,/matchCct/);
+
 console.log('FLOWER_LIGHT_FINAL_SMOKE_OK');
