@@ -1,0 +1,23 @@
+name: Package v111F source
+
+on:
+  push:
+    branches:
+      - task-4d-direct-quantity-input
+  workflow_dispatch:
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/upload-artifact@v4
+        with:
+          name: basair-gulf-flower-light-v111F-source
+          path: |
+            .
+            !.git/**
+            !node_modules/**
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
