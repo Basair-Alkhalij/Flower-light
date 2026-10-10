@@ -17,4 +17,4 @@ jobs:
           node-version: 22
       - run: node tests/live-site-smoke.mjs
         env:
-          FL_SITE_URL: ${{ github.event.deployment_status.target_url || vars.FL_SITE_URL }}
+          FL_SITE_URL: ${{ vars.FL_SITE_URL || 'https://basair-alkhalij.github.io/Flower-light/' }}
