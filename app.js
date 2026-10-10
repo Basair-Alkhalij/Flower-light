@@ -335,6 +335,7 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     const value = list.find(item => item?.type === 'whatsapp' && item?.is_visible !== false)?.value || '';
     return normalizeWhatsAppNumber(value);
   }
+  window.flPrimaryWhatsAppNumber = primaryWhatsAppNumber;
 
   function productWhatsAppMessage(item) {
     const profile = window.FLOWER_LIGHT_PROFILE || {};
@@ -771,6 +772,8 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     const actions = document.createElement('div');
     actions.className = 'product-card-actions';
     actions.append(pdfButton, shareButton, whatsappLink);
+    const quoteControl = window.FL_QUOTE_LIST?.createAddControl?.(item);
+    if (quoteControl) actions.appendChild(quoteControl);
     figure.appendChild(actions);
     return figure;
   }
@@ -894,6 +897,7 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     window.clearTimeout(publicToastTimer);
     publicToastTimer = window.setTimeout(() => toast.classList.remove('show'), duration);
   }
+  window.flShowPublicToast = showPublicToast;
 
   // -------------------------------------------------------------------------
   function sectionPdfEntries(section) {

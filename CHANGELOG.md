@@ -1,3 +1,11 @@
+## v111C — 2026-10-10 — multi-product quote list
+
+- Added a local-only quote list for up to 30 products with quantities from 1–9999, persisted in `localStorage` under `fl_quote_list_v1`.
+- Added per-product “أضف لقائمة الطلب” controls, a safe-area-aware floating list bar, and an accessible dialog for quantity edits, optional customer name/notes, removal and clearing.
+- Added one structured WhatsApp message for all selected products, with a conservative 1800-character URL limit and analytics events `quote_list_add` / `quote_list_send` that send item count only.
+- Added runtime/static/browser coverage for storage failure, limits, message formatting, persistence across reload, and WhatsApp URL generation.
+- `quote_requests` remains untouched: the schema is historical/retired and no active UI reference was found, but live row count was not verified, so no destructive migration is included.
+
 ## v111B — 2026-10-10 — static product/category pages for SEO and sharing
 
 - Added build-time `scripts/generate-static-pages.mjs` using the same public Supabase tables/visibility rules as `public-sync.js`.

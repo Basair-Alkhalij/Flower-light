@@ -38,6 +38,7 @@ const publicAssets={
   app:quotedAsset(html,'app.js'),
   pwa:quotedAsset(html,'pwa-install.js'),
   loader:quotedAsset(html,'site-loader.js'),
+  quote:quotedAsset(html,'quote-list.js'),
   css:quotedAsset(html,'style.css'),
   manifest:quotedAsset(html,'manifest.webmanifest'),
 };
@@ -45,7 +46,7 @@ console.log('Detected live public assets',publicAssets);
 
 const publicResponses=await Promise.all(Object.values(publicAssets).map(path=>get(path)));
 const publicTexts=await Promise.all(publicResponses.map(response=>response.text()));
-const [app,pwa,loader,css,manifestText]=publicTexts;
+const [app,pwa,loader,quoteList,css,manifestText]=publicTexts;
 
 const adminAssets={
   admin:quotedAsset(loader,'admin.js'),
@@ -65,6 +66,8 @@ assert.match(pwa,/beforeinstallprompt/);
 assert.match(loader,/URLSearchParams\(location\.search\)/);
 assert.match(loader,/admin\.js\?v=/);
 assert.match(loader,/public-sync\.js\?v=/);
+assert.match(quoteList,/fl_quote_list_v1/);
+assert.match(quoteList,/quote_list_send/);
 assert.match(admin,/FL_ADMIN_CORE/);
 assert.match(admin,/createClient/);
 assert.doesNotMatch(admin,/const XLSX_IMPORT_CDN/);

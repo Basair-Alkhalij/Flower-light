@@ -78,6 +78,7 @@ assert.doesNotMatch(css, /\\n\\n/);
 const responsiveQueries = [...css.matchAll(/@media\s*([^\{]+)\{/g)]
   .map(match => match[1].trim().replace(/\s+/g, ' '));
 assert.deepEqual(responsiveQueries, [
+  '(max-width:520px)',
   '(max-width: 760px)',
   '(max-width: 430px)',
   '(min-width: 761px)',
@@ -452,5 +453,23 @@ assert.match(app,/new URL\(`c\/\$\{encodeURIComponent\(key\)\}\/`/);
 const pagesWorkflow=read('.github/workflows/pages.yml');
 assert.match(pagesWorkflow,/cron: '0 \*\/6 \* \* \*'/);
 assert.match(pagesWorkflow,/workflow_dispatch:/);
+
+
+// v111 task 4: multi-product quote list.
+const quoteList=read('quote-list.js');
+assert.match(read('index.html'),/quote-list\.js\?v=__FL_VERSION__/);
+assert.match(sw,/quote-list\.js\?v=__FL_VERSION__/);
+assert.match(read('scripts/build.mjs'),/'quote-list\.js'/);
+assert.match(app,/FL_QUOTE_LIST\?\.createAddControl/);
+assert.match(app,/flPrimaryWhatsAppNumber/);
+assert.match(app,/flShowPublicToast/);
+assert.match(quoteList,/fl_quote_list_v1/);
+assert.match(quoteList,/MAX_ITEMS\s*=\s*30/);
+assert.match(quoteList,/MAX_QTY\s*=\s*9999/);
+assert.match(quoteList,/MAX_URL_LENGTH\s*=\s*1800/);
+assert.match(quoteList,/quote_list_add/);
+assert.match(quoteList,/quote_list_send/);
+assert.match(quoteList,/role="dialog"/);
+assert.match(read('styles/products.css'),/\.fl-quote-bar/);
 
 console.log('FLOWER_LIGHT_FINAL_SMOKE_OK');
