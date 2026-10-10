@@ -1,3 +1,11 @@
+## v111F — 2026-10-10 — direct quote quantity entry
+
+- Replaced read-only quantity numbers with numeric inputs on product cards and inside the quote-list dialog.
+- Users can type quantities directly while keeping the existing + / − controls.
+- Quantity inputs enforce 1–9999, select their value on focus, and commit on change/Enter.
+- Added browser and static smoke coverage for direct quantity entry.
+- No database change is required.
+
 ## v111E — 2026-10-10 — balanced product action layout
 
 - Keeps Download + Share as the first 2-column row.
