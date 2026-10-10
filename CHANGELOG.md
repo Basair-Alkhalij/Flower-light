@@ -1,3 +1,14 @@
+## v111J — 2026-10-10 — canonical product specification keys
+
+- Replaced free-form specification-name entry in the admin product editor with standardized specification types plus an explicit custom option.
+- Added canonical alias resolution for legacy Arabic/English names (for example الواط / القدرة / Power -> `wattage`, and كلفن / حرارة اللون / CCT -> `cct`).
+- Public product rendering now canonicalizes recognized legacy labels at runtime, so existing products are filter-ready without a destructive database rewrite.
+- Saving an edited product persists recognized specifications with canonical keys and units where defined.
+- Duplicate canonical specification types are rejected in the editor to avoid ambiguous future filters.
+- Excel import reuses the same canonical resolver and value/unit normalization.
+- Added static/module and Chromium browser coverage for legacy alias normalization.
+- No database change is required.
+
 ## v111I — 2026-10-10 — global catalog search
 
 - Expanded the existing `catalog-search.js` search from the active category to every rendered product section.
