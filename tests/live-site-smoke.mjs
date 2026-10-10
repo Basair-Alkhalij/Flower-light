@@ -30,8 +30,7 @@ function quotedAsset(html,file){
 
 const html=await (await get('')).text();
 assert.match(html,/Basair Gulf Flower Light/i);
-assert.match(html,/لوحة المدير\s*\|\s*بصائر الخليج/);
-assert.match(html,/لوحة الأدمن\s*\|\s*بصائر الخليج/);
+assert.doesNotMatch(html,/[?&]admin=/i);
 assert.match(html,/share-image\.jpg/i);
 assert.doesNotMatch(html,/https:\/\/basairalkhalij\.github\.io/i);
 
@@ -78,4 +77,15 @@ assert.equal(manifest.display,'standalone');
 assert.ok(manifest.icons?.some(icon=>String(icon.sizes||'').includes('512x512')));
 const share=await get('share-image.jpg');
 assert.match(share.headers.get('content-type')||'',/image\/jpeg/i);
+
+const sitemapText=await (await get('sitemap.xml')).text();
+assert.match(sitemapText,/\/p\/[^<]+\//);
+assert.match(sitemapText,/\/c\/[^<]+\//);
+const firstStaticPath=sitemapText.match(/<loc>(https:\/\/[^<]+\/(?:p|c)\/[^<]+\/)<\/loc>/)?.[1];
+assert.ok(firstStaticPath,'No generated product/category page found in sitemap.xml');
+const staticHtml=await (await get(firstStaticPath)).text();
+assert.match(staticHtml,/<meta property="og:title"/i);
+assert.match(staticHtml,/<meta property="og:image"/i);
+assert.match(staticHtml,/<link rel="canonical"/i);
+
 console.log('FLOWER_LIGHT_FINAL_LIVE_OK');
