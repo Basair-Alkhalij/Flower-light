@@ -415,6 +415,7 @@ assert.match(bankAdmin,/business_bank_accounts/);
 const bankInfo=read('bank-info.js');
 assert.match(bankInfo,/get_public_bank_accounts/);
 assert.match(bankInfo,/fl-bank-copy/);
+assert.match(bankInfo,/pageshow[\s\S]*event\.persisted/);
 assert.match(sw,/bank-info\.js\?v=__FL_VERSION__/);
 
 assert.match(turnstileMigration, /updated_at < v_now - interval '7 days'/);
