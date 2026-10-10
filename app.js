@@ -718,6 +718,7 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     thumb.className = `${type}-thumb`;
 
     const imageButton = createZoomButton(item, 'lazy', collection, index);
+    imageButton.querySelector('.image-zoom-badge')?.remove();
     const availability = normalizeProductAvailability(item?.availability);
     figure.dataset.availability = availability;
     const availabilityBadge = document.createElement('span');
