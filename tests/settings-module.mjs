@@ -45,20 +45,20 @@ mkEl('flQuoteListEnabled').checked=true; mkEl('flQuoteListSettingsSave');
 await listeners['flQuoteListSettingsForm:submit']({preventDefault(){}});
 assert.equal(JSON.stringify(upserts[1]),JSON.stringify({id:1,quote_list_enabled:true}));
 assert.equal(win.FLOWER_LIGHT_SITE_SETTINGS.quote_list_enabled,true);
-assert.equal(rerenders,4);
+assert.equal(rerenders,2);
 // toggle the lead gate on and save
 mkEl('flRequireCustomerLead').checked=true; mkEl('flCustomerLeadGateSave');
 await listeners['flCustomerLeadGateSettingsForm:submit']({preventDefault(){}});
 assert.equal(JSON.stringify(upserts[2]),JSON.stringify({id:1,require_customer_lead:true}));
 assert.equal(win.FLOWER_LIGHT_SITE_SETTINGS.require_customer_lead,true);
-assert.equal(rerenders,2);
+assert.equal(rerenders,3);
 
 // footer number
 mkEl('flDesignFooterNumber').value='  0559999999  '; mkEl('flDesignFooterLabel').value='مندوب الجملة'; mkEl('flDesignFooterNumberSave');
 await listeners['flDesignFooterNumberSettingsForm:submit']({preventDefault(){}});
 assert.equal(JSON.stringify(upserts[3]),JSON.stringify({id:1,design_footer_number:'0559999999',design_footer_label:'مندوب الجملة'}));
 assert.equal(win.FLOWER_LIGHT_SITE_SETTINGS.design_footer_number,'0559999999');
-assert.equal(rerenders,3);
+assert.equal(rerenders,4);
 
 // barcode: saving with nothing selected must not hit the database
 mkEl('flMasterBarcodeFile').files=[]; mkEl('flMasterBarcodeSave');
