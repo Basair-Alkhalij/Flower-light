@@ -437,6 +437,10 @@ test('catalog filters combine availability, wattage, CCT and search on mobile',a
     window.dispatchEvent(new CustomEvent('flowerlight:site-settings',{detail:window.FLOWER_LIGHT_SITE_SETTINGS}));
   });
   await expect(page.locator('#catalogFilter_custom_filter_mount')).toBeVisible();
+  // The text query "كشاف" is still active, so the custom filter must also depend on it.
+  await expect(page.locator('#catalogFilter_custom_filter_mount option[value="سطحي"]')).toHaveCount(1);
+  await expect(page.locator('#catalogFilter_custom_filter_mount option[value="جداري"]')).toHaveCount(0);
+  await page.locator('#catalogSearchInput').fill('');
   await expect(page.locator('#catalogFilter_custom_filter_mount option[value="جداري"]')).toHaveCount(1);
   await expect(page.locator('#catalogFilter_custom_filter_mount option[value="سطحي"]')).toHaveCount(1);
   await expect(page.locator('#catalogFilter_wattage')).toHaveCount(0);
