@@ -68,7 +68,7 @@
     }
 
     function resetSearchView() {
-      tabsHost.querySelectorAll('.catalog-tab').forEach(tab => { tab.hidden = false; });
+      tabsHost.querySelectorAll('.catalog-tab').forEach(tab => tab.classList.remove('catalog-search-hidden'));
       productPanels().forEach(panel => {
         panel.querySelectorAll('.chandelier-card').forEach(card => {
           card.classList.remove('catalog-search-hidden');
@@ -107,7 +107,7 @@
       let matchingSections = 0;
       let firstMatchingTab = null;
 
-      tabsHost.querySelectorAll('.site-catalog-tab').forEach(tab => { tab.hidden = true; });
+      tabsHost.querySelectorAll('.site-catalog-tab').forEach(tab => tab.classList.add('catalog-search-hidden'));
 
       panels.forEach(panel => {
         const tab = tabForPanel(panel);
@@ -133,14 +133,14 @@
         });
 
         if (tab) {
-          tab.hidden = sectionMatches === 0;
+          tab.classList.toggle('catalog-search-hidden', sectionMatches === 0);
           if (sectionMatches && !firstMatchingTab) firstMatchingTab = tab;
         }
         if (sectionMatches) matchingSections += 1;
       });
 
       const activeTab = tabsHost.querySelector('.catalog-tab.active');
-      if (totalMatches > 0 && (!activeTab || activeTab.hidden)) {
+      if (totalMatches > 0 && (!activeTab || activeTab.classList.contains('catalog-search-hidden'))) {
         activateTab(firstMatchingTab);
       } else if (totalMatches === 0 && activeTab?.classList.contains('site-catalog-tab')) {
         activateTab(tabsHost.querySelector('.extra-section-tab'));
