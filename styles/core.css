@@ -515,7 +515,7 @@
     .catalog-search-input:focus{outline:2px solid var(--brand);outline-offset:1px}
     .catalog-search-input:disabled{opacity:.55;cursor:not-allowed}
     .catalog-search-count{font-size:12px;font-weight:800;color:var(--muted);white-space:nowrap}
-    .chandelier-card.catalog-search-hidden{display:none}
+    .catalog-tab.catalog-search-hidden,.chandelier-card.catalog-search-hidden{display:none}
     .chandeliers-intro{
       padding:0 14px 14px;color:#6e6256;font-size:13px;font-weight:600;
     }
