@@ -807,7 +807,6 @@
   }
   window.flLoadCloudProducts = loadCloudProducts;
 
-  // Public data starts empty and is populated only from Supabase.
   window.FLOWER_LIGHT_PROFILE = {};
   window.FLOWER_LIGHT_CONTACTS = [];
   window.FLOWER_LIGHT_SITE_CATALOGS = [];
@@ -817,7 +816,6 @@
   renderPublicProfile();
   if (db) { publicSiteSettingsPromise=loadPublicSiteSettings(); loadPublicProfile(); loadPublicSiteCatalog(); loadCloudProducts(); }
 
-  // Customer lead gate: visitors enter their details once before opening products.
   const leadGate=document.getElementById('flLeadGate');
   const leadForm=document.getElementById('flLeadForm');
   const leadClose=document.getElementById('flLeadClose');
@@ -1282,25 +1280,18 @@
     }));
   }
 
-  // Shared surface for split-out admin modules (STAGE88 module split, part 1).
-  // Exposed here, after esc/notify/layout/db all exist and before renderApp's
-  // first call, so any module file loaded right after admin.js can use it.
-  // `view` and `db` are exposed via getters so modules always see the live
-  // value instead of a one-time snapshot.
   window.FL_ADMIN_CORE = {
     esc,
     notify,
     layout,
     get db(){ return db; },
     get view(){ return view; },
-    // Added for the leads module (module split, part 2).
     shell,
     body,
     allowedAdminViews,
     leadPhoneDigits,
     normalizeLeadPhone,
     vcardEscape,
-    // Added for the permissions module (module split, part 3).
     adminViewItems,
     delegatablePermissionKeys,
     normalizePermissionList,
@@ -1310,7 +1301,6 @@
     get managedAdmin2Permissions(){ return managedAdmin2Permissions; },
     set managedAdmin2Permissions(value){ managedAdmin2Permissions=value; },
     set view(value){ view=value; },
-    // Added for the settings module (module split, part 4).
     imageUrl,
     isStoragePath,
     bucket,
@@ -1369,7 +1359,6 @@
     set selectedProductNode(value){ selectedProductNode=String(value||''); },
   };
 
-  // Render a split-out section; if its script failed to load, say so instead of showing a blank panel.
   function renderSplitSection(globalName,method){
     const fn=window[globalName]?.[method];
     if(typeof fn==='function')return fn();
@@ -1377,8 +1366,6 @@
     console.error('[admin] split module unavailable: '+globalName+'.'+method);
   }
 
-  // Split-out modules load right after admin.js; wait (briefly) for one to register
-  // itself before using it, so a slow script never breaks the first data load.
   function whenModule(name,timeoutMs=5000){
     return new Promise(resolve=>{
       const started=Date.now();
