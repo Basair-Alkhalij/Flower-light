@@ -568,8 +568,10 @@ assert.match(catalogSearchFilters,/flowerlight:site-settings/);
 
 
 // v111O / task 7: system dark mode without changing export canvases.
-assert.match(css,/prefers-color-scheme:dark/);
-assert.match(css,/color-scheme:dark/);
+assert.match(read('theme-dark.css'),/color-scheme:dark/);
+assert.match(read('theme-mode.js'),/flowerlight:public-theme/);
+assert.match(index,/id="flThemeSwitch"/);
+assert.match(index,/id="flDarkThemeCss"/);
 assert.match(index,/name="color-scheme" content="light dark"/);
 assert.match(index,/theme-color" content="#111827" media="\(prefers-color-scheme: dark\)"/);
 assert.match(index,/theme-color" content="#ff9f0a" media="\(prefers-color-scheme: light\)"/);
