@@ -31,8 +31,10 @@ create extension if not exists pgcrypto;
 create table if not exists public.categories (
   id uuid primary key default gen_random_uuid(),
   name text not null,
+  name_en text not null default '',
   slug text not null unique,
   description text not null default '',
+  description_en text not null default '',
   sort_order integer not null default 0,
   is_visible boolean not null default true,
   created_at timestamptz not null default now(),
@@ -43,6 +45,9 @@ create table if not exists public.products (
   id uuid primary key default gen_random_uuid(),
   category_id uuid not null references public.categories(id) on delete cascade,
   name text not null,
+  name_en text not null default '',
+  caption_en text not null default '',
+  specifications_en jsonb not null default '[]'::jsonb,
   model text not null default '',
   caption text not null default '',
   image_path text not null default '',
@@ -4273,3 +4278,7 @@ commit;
 notify pgrst,'reload schema';
 select 'BANK_ACCOUNTS_V108_OK' as status;
 
+
+-- v116: bilingual columns on previously initialized schemas (idempotent).
+alter table public.categories add column if not exists name_en text not null default '', add column if not exists description_en text not null default '';
+alter table public.products add column if not exists name_en text not null default '', add column if not exists caption_en text not null default '', add column if not exists specifications_en jsonb not null default '[]'::jsonb;
