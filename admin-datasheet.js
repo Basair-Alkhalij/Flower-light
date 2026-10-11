@@ -107,6 +107,9 @@
         ? await renderer.createSinglePage(item,image,0,1,{scale:exportScale})
         : await renderer.createPage(item,{images:[{image,image_path:''}],singleMode:true,currentIndex:0,totalImages:1,scale:exportScale});
       const {canvas,failedImages}=page;
+      // A datasheet without its product photo looks valid but is unusable.
+      // Stop the export rather than silently downloading a placeholder.
+      if(failedImages)throw new Error('تعذر قراءة صورة المنتج. استخدم صورة JPG أو PNG أو WebP واضحة ثم حاول مرة أخرى.');
       const fileBase=`${renderer.safeFilePart?.(model||name)||'product'}-datasheet`;
       if(choice==='jpg'){
         await renderer.downloadCanvasAsJpg(canvas,`${fileBase}.jpg`,renderer.qualities?.jpg||0.94);
@@ -117,7 +120,7 @@
         const blob=pdf.output('blob');
         renderer.triggerBlobDownload(blob,`${fileBase}.pdf`);
       }
-      notify(failedImages?'تم إنشاء الداتا شيت، لكن تعذر إدراج الصورة.':'تم تصميم وتحميل الداتا شيت بنفس القالب المعتمد');
+      notify('تم تصميم وتحميل الداتا شيت بنفس القالب المعتمد');
     }catch(error){
       console.warn('[Admin datasheet] generation failed',error);
       notify('تعذر تصميم الداتا شيت: '+(error?.message||error));
