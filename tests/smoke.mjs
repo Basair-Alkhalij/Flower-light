@@ -583,4 +583,16 @@ assert.match(index,/theme-color" content="#111827" media="\(prefers-color-scheme
 assert.match(index,/theme-color" content="#ff9f0a" media="\(prefers-color-scheme: light\)"/);
 assert.doesNotMatch(read('styles/responsive.css'),/site-catalog-page canvas/);
 
+// Task 8: error listeners and a safe analytics fallback without GA4 setup.
+const analyticsSource = read('analytics.js');
+assert.match(analyticsSource, /unhandledrejection/);
+assert.match(analyticsSource, /js_error/);
+assert.match(analyticsSource, /MAX_SESSION_ERRORS = 5/);
+const noAnalyticsWindow = {
+  FLOWER_LIGHT_ANALYTICS_CONFIG: { measurementId: '' },
+  addEventListener() {},
+};
+vm.runInNewContext(analyticsSource, { window: noAnalyticsWindow, console });
+assert.doesNotThrow(() => noAnalyticsWindow.flTrack('js_error', { message: 'TypeError', source: 'app.js', line: 1 }));
+
 console.log('FLOWER_LIGHT_FINAL_SMOKE_OK');
