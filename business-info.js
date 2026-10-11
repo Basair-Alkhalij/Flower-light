@@ -4,7 +4,7 @@
   const status=document.getElementById('flBusinessStatus');
   if(!container || new URLSearchParams(location.search).has('admin'))return;
   const legacyFields=[['legal_name','الاسم التجاري'],['commercial_registration','السجل التجاري'],['tax_number','الرقم الضريبي'],['contact_phone','للتواصل']];
-  const onPrivacy=/\/privacy\.html$/i.test(location.pathname);
+  const onPrivacy=/\/privacy(?:-en)?\.html$/i.test(location.pathname);
   let pending=false;
 
   function normalizedFields(data){
