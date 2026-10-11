@@ -444,7 +444,7 @@
           const item=phone||whatsapp||entry.items[0];
           return `<a class="info-item" href="${esc(contactHref(item))}" ${item.type==='whatsapp'?'target="_blank" rel="noopener noreferrer"':''} data-track="contact_${esc(item.type)}"><span class="info-icon">${contactIcon(item.type)}</span><span class="info-main"><span class="info-label">${esc(contactDisplayLabel(item))}</span><span class="info-value">${esc(item.value)}</span></span><svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a>`;
         }
-        const label=phone.label||whatsapp.label||'تواصل';
+        const label=contactDisplayLabel(phone)||contactDisplayLabel(whatsapp)||(english?'Contact':'تواصل');
         const value=phone.value||whatsapp.value||'';
         return `<button class="info-item" type="button" data-contact-choice="${index}" aria-label="${esc(label)}${english?', choose call or WhatsApp':'، اختر اتصال أو واتساب'}"><span class="info-icon">${contactIcon('phone')}</span><span class="info-main"><span class="info-label">${esc(label)} · ${english?'Call or WhatsApp':'اتصال أو واتساب'}</span><span class="info-value">${esc(value)}</span></span><svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>`;
       }).join('');
