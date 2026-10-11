@@ -31,6 +31,7 @@ const SHELL_URLS = [
   './pwa-install.js?v=__FL_VERSION__',
   './config.js?v=__FL_VERSION__',
   './public-sync.js?v=__FL_VERSION__',
+  './supabase-vendor.js?v=__FL_VERSION__',
   './catalog-search.js?v=__FL_VERSION__',
   './company-logo.png?v=__FL_VERSION__',
   './manifest.webmanifest',
@@ -85,6 +86,7 @@ function isShellRequest(url) {
     path.endsWith('/pwa-install.js') ||
     path.endsWith('/config.js') ||
     path.endsWith('/public-sync.js') ||
+    path.endsWith('/supabase-vendor.js') ||
     path.endsWith('/catalog-search.js') ||
     path.endsWith('/company-logo.png') ||
     path.endsWith('/manifest.webmanifest') ||
