@@ -1,3 +1,12 @@
+## v114 — 2026-10-11 — anonymous JavaScript error monitoring
+
+- Add global `error` and `unhandledrejection` handlers in `analytics.js` sending `js_error` through existing GA4 integration.
+- Bound telemetry to five reports per browser session; continue safely when sessionStorage or GA4 is unavailable.
+- Report only sanitized exception category, filename basename, and line; never send raw messages, stacks, query strings, URLs, or user data.
+- Ignore extension-script errors and non-JavaScript resource errors.
+- Cover sanitization, cap across reload, blocked storage, and missing GA4 configuration with an isolated VM test and smoke assertions.
+- Update public release identifier to 1.1.4 (v114). No database migrations.
+
 ## v113 — 2026-10-11 — anchor theme button in hero
 
 - Move the visitor theme toggle from `.page` into `#siteHero` to anchor positioning to the card header, not the page box.
