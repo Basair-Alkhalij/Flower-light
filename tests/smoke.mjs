@@ -587,6 +587,10 @@ assert.doesNotMatch(read('styles/responsive.css'),/site-catalog-page canvas/);
 // v115: public English/Arabic locale module loaded before public UI.
 assert.match(index,/site-i18n\.js\?v=__FL_VERSION__/);
 assert.match(index,/id="flLanguageSwitch"/);
+assert.match(read('privacy-en.html'),/lang="en" dir="ltr"/);
+assert.match(read('privacy-en.html'),/Privacy Policy \| Basair Gulf/);
+assert.match(read('privacy.html'),/href="privacy-en.html"/);
+assert.match(read('site-i18n.js'),/privacy-en\\.html/);
 assert.match(read('site-i18n.js'),/flowerlight:public-language/);
 assert.match(read('site-i18n.js'),/MutationObserver/);
 assert.match(sw,/site-i18n\.js\?v=__FL_VERSION__/);
