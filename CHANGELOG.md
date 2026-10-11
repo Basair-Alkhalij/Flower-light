@@ -1,3 +1,12 @@
+## v115 — 2026-10-11 — Arabic/English visitor-facing interface
+
+- Add a compact language button beneath the theme toggle in the public hero.
+- Localize visitor labels, actions, search/filter values, dialogs, lead forms, bank/business panels, and quote-list UI, including dynamically rendered elements.
+- Persist user-selected language and set semantic `lang`/`dir` appropriately.
+- Localize quotation request WhatsApp message headings without modifying any product/user data.
+- Leave Owner/Admin consoles and Supabase-authored product/category content unchanged; future English product fields require curated source data.
+- Include `site-i18n.js` in the build checks, service-worker precache, release version and unit/browser tests; no SQL migration.
+
 ## v114 — 2026-10-11 — anonymous JavaScript error monitoring
 
 - Add global `error` and `unhandledrejection` handlers in `analytics.js` sending `js_error` through existing GA4 integration.
