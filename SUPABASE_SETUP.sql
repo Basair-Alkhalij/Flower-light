@@ -197,7 +197,9 @@ create table if not exists public.site_profile (
   id smallint primary key default 1 check (id = 1),
   full_name text not null default '',
   brand_name text not null default '',
+  brand_name_en text not null default '',
   company_name text not null default '',
+  company_name_en text not null default '',
   job_title_ar text not null default '',
   job_title_en text not null default '',
   logo_path text not null default '',
@@ -210,6 +212,7 @@ create table if not exists public.contact_items (
   id uuid primary key default gen_random_uuid(),
   type text not null check (type in ('phone','whatsapp','website','email','location')),
   label text not null default '',
+  label_en text not null default '',
   value text not null,
   sort_order integer not null default 0,
   is_visible boolean not null default true,
@@ -4282,3 +4285,7 @@ select 'BANK_ACCOUNTS_V108_OK' as status;
 -- v116: bilingual columns on previously initialized schemas (idempotent).
 alter table public.categories add column if not exists name_en text not null default '', add column if not exists description_en text not null default '';
 alter table public.products add column if not exists name_en text not null default '', add column if not exists caption_en text not null default '', add column if not exists specifications_en jsonb not null default '[]'::jsonb;
+
+-- v117 public card bilingual labels for existing initialized schemas.
+alter table public.site_profile add column if not exists brand_name_en text not null default '', add column if not exists company_name_en text not null default '';
+alter table public.contact_items add column if not exists label_en text not null default '';
