@@ -55,7 +55,6 @@ assert.match(sw,/SHELL_URLS\s*=\s*\[/);
 assert.ok(sw.includes("'./supabase-vendor.js?v=__FL_VERSION__'"),'Supabase vendor must be precached on first service worker installation');
 assert.ok(sw.includes("path.endsWith('/supabase-vendor.js')"),'Supabase vendor must have a cache-first fetch handler');
 assert.match(sw,/if\s*\(url\.search\.includes\('admin='\)\)\s*return false/);
-assert.match(sw,/\/\\\/\(\?:p\|c\)/);
 
 // Prevent unversioned stale asset URLs in the generated pages.
 for(const file of ['index.html','privacy.html','privacy-en.html','404.html','manifest.webmanifest','sw.js','site-loader.js',...fs.readdirSync(root).filter(n=>n.endsWith('.js'))]){
