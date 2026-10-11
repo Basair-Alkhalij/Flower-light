@@ -61,3 +61,16 @@ transition:.16s ease}
 .fl-lead-turnstile{min-height:65px;display:flex;justify-content:center;align-items:center;margin-top:4px;overflow:hidden}
 .fl-lead-turnstile[hidden]{display:none!important}
 
+
+/* v120: compact, accessible admin navigation; retain the full sidebar on desktop. */
+.fl-admin-nav-wrap{min-width:0;align-self:start;position:sticky;top:82px}
+.fl-admin-nav-wrap .fl-cloud-nav{position:static;top:auto}
+.fl-admin-mobile-nav,.fl-admin-mobile-nav-label{display:none}
+.fl-cloud-nav button[aria-current="page"]{font-weight:900}
+@media (max-width:760px){
+  .fl-admin-nav-wrap{position:static;top:auto;width:100%;min-width:0}
+  .fl-admin-nav-wrap .fl-cloud-nav{display:none}
+  .fl-admin-mobile-nav-label{display:block;font-size:12px;font-weight:800;margin:0 0 6px;color:#4c596f}
+  .fl-admin-mobile-nav{display:block;width:100%;min-height:46px;max-width:100%;border:1px solid #e3e8f0;border-radius:12px;background:#fff;color:#263248;padding:0 12px;font:inherit;font-weight:700}
+  .fl-admin-mobile-nav:focus-visible{outline:3px solid #ffbf54;outline-offset:2px}
+}
