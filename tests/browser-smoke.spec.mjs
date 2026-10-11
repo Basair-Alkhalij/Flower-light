@@ -885,13 +885,19 @@ test('theme toggle stays at upper-right of card on phone and desktop',async({pag
     await page.setViewportSize({width,height:900});
     await page.goto(base,{waitUntil:'domcontentloaded'});
     const button=page.locator('#flThemeSwitch');
-    await expect(button).toBeVisible();
+    await expect(page.locator('#siteHero > #flThemeSwitch')).toBeVisible();
     const card=await page.locator('#publicCard').boundingBox();
+    const hero=await page.locator('#siteHero').boundingBox();
     const toggle=await button.boundingBox();
     expect(card).not.toBeNull();
+    expect(hero).not.toBeNull();
     expect(toggle).not.toBeNull();
     expect(toggle.x).toBeGreaterThan(card.x+card.width/2);
-    expect(Math.abs((toggle.x+toggle.width)-(card.x+card.width))).toBeLessThan(54);
+    expect(Math.abs((toggle.x+toggle.width)-(hero.x+hero.width))).toBeLessThan(45);
+    expect(toggle.y).toBeGreaterThanOrEqual(hero.y);
+    expect(toggle.y+toggle.height).toBeLessThan(hero.y+hero.height);
+    const brand=await page.locator('#siteBrandRow').boundingBox();
+    if(brand)expect(Math.abs((toggle.y+toggle.height/2)-(brand.y+brand.height/2))).toBeLessThan(35);
     const logo=await page.locator('#siteLogo').boundingBox();
     if(logo)expect(toggle.x).toBeGreaterThan(logo.x+logo.width+8);
   }
