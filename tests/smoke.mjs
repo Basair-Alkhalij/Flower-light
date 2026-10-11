@@ -625,4 +625,18 @@ assert.match(app,/localizedSection/);
 assert.match(app,/Products in/);
 assert.match(read('catalog-search.js'),/dataset.categorySearch/);
 
+// v117: localized public card profile/contact labels and safe migration.
+const publicCardSql=read('supabase/UPGRADE_EXISTING_V117.sql');
+for(const column of ['brand_name_en','company_name_en','label_en'])assert.match(publicCardSql,new RegExp(column));
+assert.match(publicCardSql,/PUBLIC_CARD_I18N_V117_OK/);
+assert.match(read('admin.js'),/flProfileBrandEn/);
+assert.match(read('admin.js'),/flProfileCompanyEn/);
+assert.match(read('admin.js'),/flContactLabelEn/);
+assert.match(read('public-sync.js'),/contactDisplayLabel/);
+assert.match(read('public-sync.js'),/flowerlight:language-change/);
+assert.match(read('public-sync.js'),/Explore/);
+assert.match(read('bank-info.js'),/bank accounts/);
+assert.match(read('bank-info.js'),/flowerlight:language-change/);
+assert.match(read('business-info.js'),/translateLabel/);
+
 console.log('FLOWER_LIGHT_FINAL_SMOKE_OK');
