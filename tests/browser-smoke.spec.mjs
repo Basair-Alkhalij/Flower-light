@@ -987,10 +987,10 @@ test('v116 bilingual category, product name and technical specs follow visitor l
   });
   await page.locator('#openProducts').click();
   await expect(page.locator('.extra-section-tab strong')).toContainText('جداريات');
-  await expect(page.locator('.extra-section-intro')).toContainText('قسم تجريبي');
+  await expect(page.locator('.extra-section-panel .extra-section-intro')).toContainText('قسم تجريبي');
   await page.locator('#flLanguageSwitch').click();
   await expect(page.locator('.extra-section-tab strong')).toHaveText('Wall Lighting');
-  await expect(page.locator('.extra-section-intro')).toHaveText('English section description');
+  await expect(page.locator('.extra-section-panel .extra-section-intro')).toHaveText('English section description');
   await expect(page.locator('.chandelier-card')).toContainText('Wattage');
   await expect(page.locator('.chandelier-card')).toContainText('Black');
   await expect(page.locator('.category-download-button')).toContainText('Download category Wall Lighting');
@@ -1002,5 +1002,5 @@ test('v116 bilingual category, product name and technical specs follow visitor l
   await page.locator('#flLanguageSwitch').click();
   await expect(page.locator('.extra-section-tab strong')).toHaveText('جداريات');
   await expect(page.locator('.chandelier-card')).toContainText('أسود');
-  await expect(page.locator('.extra-section-intro')).toContainText('قسم تجريبي');
+  await expect(page.locator('.extra-section-panel .extra-section-intro')).toContainText('قسم تجريبي');
 });
