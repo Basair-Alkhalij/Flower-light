@@ -87,6 +87,7 @@ assert.deepEqual(responsiveQueries, [
   '(max-width:420px)',
   '(prefers-reduced-motion:reduce)',
   '(max-width:420px)',
+  '(max-width:420px)',
   '(max-width: 760px)',
   '(max-width: 520px)',
   '(max-width:520px)',
@@ -582,6 +583,14 @@ assert.match(index,/name="color-scheme" content="light dark"/);
 assert.match(index,/theme-color" content="#111827" media="\(prefers-color-scheme: dark\)"/);
 assert.match(index,/theme-color" content="#ff9f0a" media="\(prefers-color-scheme: light\)"/);
 assert.doesNotMatch(read('styles/responsive.css'),/site-catalog-page canvas/);
+
+// v115: public English/Arabic locale module loaded before public UI.
+assert.match(index,/site-i18n\.js\?v=__FL_VERSION__/);
+assert.match(index,/id="flLanguageSwitch"/);
+assert.match(read('site-i18n.js'),/flowerlight:public-language/);
+assert.match(read('site-i18n.js'),/MutationObserver/);
+assert.match(sw,/site-i18n\.js\?v=__FL_VERSION__/);
+assert.match(read('scripts/build.mjs'),/site-i18n\.js/);
 
 // Task 8: error listeners and a safe analytics fallback without GA4 setup.
 const analyticsSource = read('analytics.js');
