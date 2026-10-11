@@ -1,14 +1,23 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4'
 
-const allowedOrigins = new Set([
+// ALLOWED_ORIGINS:begin
+// Custom domain optional: configure Supabase secret ALLOWED_ORIGINS="https://www.example.com,https://example.com".
+// Only clean HTTPS origins (no paths, no query, no credentials) are accepted from this secret.
+const defaultOrigins = [
   'https://basair-alkhalij.github.io',
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'http://localhost:4173',
   'http://127.0.0.1:4173',
-])
+]
+const extraOrigins = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
+  .split(',')
+  .map((value) => value.trim().replace(/\/+$/, ''))
+  .filter((value) => /^https:\/\/[a-z0-9]([a-z0-9.-]*[a-z0-9])?(:\d{1,5})?$/i.test(value))
+const allowedOrigins = new Set([...defaultOrigins, ...extraOrigins])
+// ALLOWED_ORIGINS:end
 
-const allowedTurnstileHosts = new Set(['basair-alkhalij.github.io', 'localhost', '127.0.0.1'])
+const allowedTurnstileHosts = new Set(['basair-alkhalij.github.io', 'localhost', '127.0.0.1', ...extraOrigins.map((origin) => new URL(origin).hostname)])
 
 function corsHeaders(origin: string | null) {
   const headers: Record<string, string> = {
