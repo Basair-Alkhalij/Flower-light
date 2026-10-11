@@ -639,4 +639,13 @@ assert.match(read('bank-info.js'),/bank accounts/);
 assert.match(read('bank-info.js'),/flowerlight:language-change/);
 assert.match(read('business-info.js'),/translateLabel/);
 
+// Production safety: never submit personal data without server-verified Turnstile.
+assert.doesNotMatch(sync,/db\\.from\\(['"]customer_leads['"]\\)\\.insert/);
+assert.match(sync,/if\\(!turnstileSiteKey\\)/);
+assert.match(sync,/db\\.functions\\.invoke\\(leadSubmissionFunction/);
+const securityAudit=read('supabase/SECURITY_AUDIT_READONLY_V117.sql');
+const statements=securityAudit.split('\\n').filter(line=>!/^\\s*--/.test(line)).join('\\n');
+assert.doesNotMatch(statements,/\\b(?:INSERT|UPDATE|DELETE|ALTER|DROP|GRANT|REVOKE|CREATE|TRUNCATE|EXECUTE)\\s+(?:INTO|TABLE|FROM|ON|POLICY|FUNCTION|ROLE|SCHEMA|INDEX)\\b/i);
+assert.match(securityAudit,/anon_can_insert_customer_leads/);
+
 console.log('FLOWER_LIGHT_FINAL_SMOKE_OK');
