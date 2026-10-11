@@ -1,0 +1,10 @@
+BASAIR GULF / FLOWER LIGHT — ابدأ من هنا (v118a)
+
+1) اقرأ README.md لمعرفة بنية المشروع.
+2) عند رفع الموقع استخدم .github/workflows/pages.yml وراجع GitHub Actions.
+3) ترقية Supabase: اقرأ supabase/README.md قبل اختيار SQL المناسب.
+4) قاعدة الإنتاج الحالية لا تحتاج ترقية SQL v118.
+5) الاختبار: npm ci ثم npm run build:check و npm run test:static و npm run build و npm run test:browser.
+6) عند الانتقال إلى نطاق خاص اتبع docs/CUSTOM_DOMAIN_CHECKLIST_AR.md.
+7) لا تحفظ أسرار Supabase أو Cloudflare في الملفات العامة.
+8) راجع CHANGELOG.md و docs/RELEASE_NOTES_AR.md لسجل التغييرات.
