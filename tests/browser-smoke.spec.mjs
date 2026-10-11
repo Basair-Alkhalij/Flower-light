@@ -1133,3 +1133,21 @@ test('acceptance: downloading product JPG produces a valid nonempty JPEG file',a
   expect([...buffer.subarray(0,3)]).toEqual([255,216,255]);
   expect([...buffer.subarray(-2)]).toEqual([255,217]);
 });
+
+
+test('acceptance: product PDF export produces a real readable PDF header',async({page})=>{
+  await installSupabaseMock(page);
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await injectCatalogFixtures(page);
+  await page.locator('#openProducts').click();
+  await page.locator('.product-download-pdf-button').click();
+  await expect(page.locator('#exportChoiceModal')).toHaveClass(/open/);
+  const downloadPromise=page.waitForEvent('download',{timeout:26000});
+  await page.locator('#exportChoicePdf').click();
+  const download=await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/-product\.pdf$/);
+  const path=await download.path();
+  const bytes=fs.readFileSync(path);
+  expect(bytes.length).toBeGreaterThan(10000);
+  expect(bytes.subarray(0,5).toString('latin1')).toBe('%PDF-');
+});
