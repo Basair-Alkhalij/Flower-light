@@ -150,6 +150,9 @@
       const payload={
         category_id:source.category_id,
         name:`${source.name||'منتج'} - نسخة`,
+        name_en:source.name_en?(`${source.name_en} - Copy`):'',
+        caption_en:source.caption_en||'',
+        specifications_en:Array.isArray(source.specifications_en)?source.specifications_en:[],
         model:source.model||'',
         caption:source.caption||'',
         image_path:copiedPaths[0],

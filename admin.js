@@ -291,14 +291,19 @@
     const customLabel=def?'':String(spec?.label||'');
     return `<div class="fl-flex-spec-row" data-flex-spec-row>
       <div class="fl-cloud-field"><label>نوع المواصفة</label><select data-flex-spec-type>${options}<option value="__custom__" ${selectedKey==='__custom__'?'selected':''}>مواصفة أخرى</option></select><input data-flex-spec-label value="${esc(customLabel)}" placeholder="اكتب اسم المواصفة" ${selectedKey==='__custom__'?'':'hidden'}></div>
-      <div class="fl-cloud-field"><label>القيمة</label><input data-flex-spec-value value="${esc(specificationEditorValue(spec))}" placeholder="${esc(def?.placeholder||'مثال: قيمة المواصفة')}"></div>
+      <div class="fl-cloud-field"><label>القيمة</label><input data-flex-spec-value value="${esc(specificationEditorValue(spec))}" placeholder="${esc(def?.placeholder||'مثال: قيمة المواصفة')}"></div><div class="fl-cloud-field"><label>Specification (English)</label><input dir="ltr" data-flex-spec-label-en maxlength="150" value="${esc(spec?.label_en||'')}" placeholder="e.g. Wattage"></div><div class="fl-cloud-field"><label>Value (English)</label><input dir="ltr" data-flex-spec-value-en maxlength="250" value="${esc(spec?.value_en||'')}" placeholder="e.g. 12W"></div>
       <button class="fl-flex-spec-remove" data-flex-spec-remove type="button" aria-label="حذف الصفة">حذف</button>
     </div>`;
   }
 
   function productSpecsFormHtml(prod){
     const specs=normalizeSpecifications(prod?.specifications);
-    const rows=(specs.length?specs:[null]).map(spec=>productSpecEditorRowHtml(spec)).join('');
+    const english=Array.isArray(prod?.specifications_en)?prod.specifications_en:[];
+    const merged=specs.map((spec,index)=>{
+      const en=english.find(row=>row?.key===spec.key)||english[index];
+      return {...spec,label_en:en?.label||'',value_en:en?.value||''};
+    });
+    const rows=(merged.length?merged:[null]).map(spec=>productSpecEditorRowHtml(spec)).join('');
     const showInWhatsApp=productWhatsAppOption(prod?.specifications,WHATSAPP_META_SHOW_SPECS);
     return `<div class="fl-product-spec-section full"><div class="fl-product-spec-head"><div><div class="fl-field-label-inline"><strong>المواصفات الفنية</strong><label class="fl-whatsapp-include-toggle"><input id="flProdWhatsAppShowSpecs" type="checkbox" ${showInWhatsApp?'checked':''}><span>إظهار في رسالة واتساب</span></label></div><small>اختر نوع المواصفة من القائمة لتوحيدها بين المنتجات. استخدم «مواصفة أخرى» فقط عند الحاجة.</small></div><button class="fl-cloud-btn fl-add-spec-btn" id="flAddProductSpec" type="button">+ إضافة صفة</button></div><div id="flFlexibleSpecs" class="fl-flex-spec-list">${rows}</div></div>`;
   }
@@ -1223,17 +1228,18 @@
       if(primaryIndex>0){const [primary]=gallery.splice(primaryIndex,1);gallery.unshift(primary);}
       const primaryPath=gallery[0]?.image_path||p.image_path||p.image_url||'';
       grouped.get(p.category_id)?.push({
-        id:p.id,name:p.name||'',model:p.model||'',caption:p.caption||'',alt:p.caption||p.name||'',category:'',category_id:p.category_id||'',category_slug:'',
+        id:p.id,name:p.name||'',name_en:String(p.name_en||''),model:p.model||'',caption:p.caption||'',caption_en:String(p.caption_en||''),alt:p.caption||p.name||'',category:'',category_id:p.category_id||'',category_slug:'',
         image:imageUrl(primaryPath),image_thumb:imageUrl(productThumbnailPath(primaryPath)),image_path:primaryPath,
         gallery:gallery.map((row,index)=>({id:row.id||'',image_path:row.image_path,image:imageUrl(row.image_path),thumb:imageUrl(productThumbnailPath(row.image_path)),is_primary:index===0,sort_order:index*10})),
-        specifications:Array.isArray(p.specifications)?p.specifications:[],price:p.price==null?null:Number(p.price),wholesale_price:p.wholesale_price==null?null:Number(p.wholesale_price),
+        specifications:Array.isArray(p.specifications)?p.specifications:[],
+        specifications_en:Array.isArray(p.specifications_en)?p.specifications_en:[],price:p.price==null?null:Number(p.price),wholesale_price:p.wholesale_price==null?null:Number(p.wholesale_price),
         wholesale_min_qty:p.wholesale_min_qty==null?null:Number(p.wholesale_min_qty),availability:['available','out_of_stock','coming_soon'].includes(String(p.availability||''))?String(p.availability):'available',limited_offer:p.limited_offer===true,catalog_pdf_path:'',catalog_pdf_url:'',sort_order:p.sort_order||0,is_visible:true
       });
     });
     const extraSections=visibleCats.map(c=>{
       const items=grouped.get(c.id)||[];
       items.forEach(item=>{item.category=c.name;item.category_id=c.id;item.category_slug=c.slug||c.id;});
-      return {id:c.id,name:c.name,slug:c.slug,description:c.description||'',sort_order:c.sort_order||0,items};
+      return {id:c.id,name:c.name,name_en:String(c.name_en||''),slug:c.slug,description:c.description||'',description_en:String(c.description_en||''),sort_order:c.sort_order||0,items};
     });
     window.FLOWER_LIGHT_PRODUCTS={catalog:[],chandeliers:[],balfon:[],extraSections};
     window.flRenderProducts?.();
@@ -1944,7 +1950,7 @@
   }
 
   async function openCategoryForm(cat=null){
-    openModal(cat?'تعديل القسم':'إضافة قسم',`<form id="flCategoryForm"><div class="fl-cloud-form"><div class="fl-cloud-field"><label>اسم القسم</label><input id="flCatName" required value="${esc(cat?.name||'')}" placeholder="مثال: جداريات"></div><div class="fl-cloud-field"><label>الترتيب</label><input id="flCatSort" type="number" min="0" step="1" value="${Number(cat?.sort_order||0)}"></div><div class="fl-cloud-field full"><label>الوصف</label><input id="flCatDesc" value="${esc(cat?.description||'')}" placeholder="وصف قصير اختياري"></div><label class="fl-cloud-check full"><input id="flCatVisible" type="checkbox" ${cat?.is_visible===false?'':'checked'}> إظهار القسم للزوار</label></div><div class="fl-cloud-dialog-actions"><button class="fl-cloud-btn primary" id="flCatSave" type="submit">حفظ</button><button class="fl-cloud-btn" id="flCatCancel" type="button">إلغاء</button></div></form>`);
+    openModal(cat?'تعديل القسم':'إضافة قسم',`<form id="flCategoryForm"><div class="fl-cloud-form"><div class="fl-cloud-field"><label>اسم القسم (عربي)</label><input id="flCatName" required value="${esc(cat?.name||'')}" placeholder="مثال: جداريات"></div><div class="fl-cloud-field"><label>Category name (English)</label><input id="flCatNameEn" dir="ltr" maxlength="200" value="${esc(cat?.name_en||'')}" placeholder="e.g. Wall lights"></div><div class="fl-cloud-field"><label>الترتيب</label><input id="flCatSort" type="number" min="0" step="1" value="${Number(cat?.sort_order||0)}"></div><div class="fl-cloud-field full"><label>الوصف (عربي)</label><input id="flCatDesc" value="${esc(cat?.description||'')}" placeholder="وصف قصير اختياري"></div><div class="fl-cloud-field full"><label>Description (English)</label><input id="flCatDescEn" dir="ltr" maxlength="2000" value="${esc(cat?.description_en||'')}" placeholder="English description (optional)"></div><label class="fl-cloud-check full"><input id="flCatVisible" type="checkbox" ${cat?.is_visible===false?'':'checked'}> إظهار القسم للزوار</label></div><div class="fl-cloud-dialog-actions"><button class="fl-cloud-btn primary" id="flCatSave" type="submit">حفظ</button><button class="fl-cloud-btn" id="flCatCancel" type="button">إلغاء</button></div></form>`);
     document.getElementById('flCatCancel').addEventListener('click',closeModal);
     document.getElementById('flCategoryForm').addEventListener('submit',async e=>{
       e.preventDefault();
@@ -1954,7 +1960,7 @@
       const duplicate=categories.some(c=>c.id!==cat?.id && String(c.name||'').trim().toLowerCase()===name.toLowerCase());
       if(duplicate){notify('يوجد قسم بهذا الاسم مسبقًا');return;}
       save.disabled=true;save.textContent='جاري الحفظ...';
-      const payload={name,description:document.getElementById('flCatDesc').value.trim(),sort_order:Number(document.getElementById('flCatSort').value)||0,is_visible:document.getElementById('flCatVisible').checked};
+      const payload={name,name_en:document.getElementById('flCatNameEn').value.trim(),description:document.getElementById('flCatDesc').value.trim(),description_en:document.getElementById('flCatDescEn').value.trim(),sort_order:Number(document.getElementById('flCatSort').value)||0,is_visible:document.getElementById('flCatVisible').checked};
       if(!cat) payload.slug=newCategorySlug();
       const res=cat?await db.from('categories').update(payload).eq('id',cat.id).select().single():await db.from('categories').insert(payload).select().single();
       if(res.error){

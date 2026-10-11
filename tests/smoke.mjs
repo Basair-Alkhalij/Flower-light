@@ -608,4 +608,21 @@ const noAnalyticsWindow = {
 vm.runInNewContext(analyticsSource, { window: noAnalyticsWindow, console });
 assert.doesNotThrow(() => noAnalyticsWindow.flTrack('js_error', { message: 'TypeError', source: 'app.js', line: 1 }));
 
+// v116: authoritative bilingual product/category fields, preserving Arabic originals.
+const bilingualSql=read('supabase/UPGRADE_EXISTING_V116.sql');
+for(const field of ['name_en','description_en','caption_en','specifications_en'])assert.match(bilingualSql,new RegExp(field));
+assert.match(index,/flLanguageSwitch/);
+assert.match(admin,/flCatNameEn/);
+assert.match(admin,/flCatDescEn/);
+assert.match(read('admin-product-form.js'),/flProdNameEn/);
+assert.match(read('admin-product-form.js'),/flProdCaptionEn/);
+assert.match(read('admin-product-form.js'),/collectEnglishProductSpecifications/);
+assert.match(read('admin-products.js'),/specifications_en/);
+assert.match(read('public-sync.js'),/description_en/);
+assert.match(read('public-sync.js'),/specifications_en/);
+assert.match(app,/localizedProduct/);
+assert.match(app,/localizedSection/);
+assert.match(app,/Products in/);
+assert.match(read('catalog-search.js'),/dataset.categorySearch/);
+
 console.log('FLOWER_LIGHT_FINAL_SMOKE_OK');

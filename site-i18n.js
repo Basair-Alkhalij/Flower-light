@@ -86,6 +86,10 @@
   "كتالوج": "Catalog",
   "كتالوج PDF": "PDF catalog",
   "قسم": "Category",
+  "منتجات قسم": "Category products",
+  "منتجات قسم ثريات": "Chandelier products",
+  "منتجات قسم كشافات شارع": "Street lighting products",
+  "تحميل قسم": "Download category",
   "القسم": "Category",
   "غير مصنف": "Uncategorized",
   "المواصفات الفنية": "Technical specifications",
@@ -221,6 +225,7 @@
     if (exact) return string.replace(trimmed,exact);
     const patterns=[
       [/^(\d+) منتج$/,'$1 products'],
+      [/^منتجات قسم (.+)$/,'Products in $1'],
       [/^من (\d+) قطعة فأكثر$/,'From $1 pieces'],
       [/^تحميل قسم (.+)$/,'Download category $1'],
       [/^مشاركة قسم (.+)$/,'Share category $1'],

@@ -189,7 +189,8 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
       const rawKey = String(row.key || `custom_${index + 1}`).trim();
       if (rawKey === WHATSAPP_META_SHOW_DESCRIPTION || rawKey === WHATSAPP_META_SHOW_SPECS || rawKey === PRICING_META_KEY) return null;
       const key = canonicalProductSpecKey(rawKey, row.label);
-      const label = String(PRODUCT_SPEC_LABELS[key] || row.label || key).trim();
+      const rawLabel = String(PRODUCT_SPEC_LABELS[key] || row.label || key).trim();
+      const label = window.FL_I18N?.lang==='en' ? String(window.FL_I18N.translate(row.label||rawLabel)||rawLabel) : rawLabel;
       const value = String(row.value ?? '').trim();
       const unit = String(row.unit || '').trim();
       if (!label || !value) return null;
@@ -431,12 +432,29 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     return String(section?.slug || section?.id || '').trim();
   }
 
+  // Localized presentation is derived from source fields; never overwrite Supabase Arabic records.
+  const englishCatalog=()=>window.FL_I18N?.lang==='en';
+  const localizedProduct=item=>{
+    if(!englishCatalog())return item;
+    const enSpecs=Array.isArray(item?.specifications_en)?item.specifications_en:[];
+    const arabicSpecs=Array.isArray(item?.specifications)?item.specifications:[];
+    const specs=arabicSpecs.map(spec=>{
+      const translated=enSpecs.find(row=>String(row?.key||'')===String(spec?.key||''));
+      return translated?.label&&translated?.value?{...spec,label:translated.label,value:translated.value,unit:translated.unit||''} : spec;
+    });
+    return {...item,name_ar:item.name,name:item.name_en||item.name,caption:item.caption_en||item.caption,alt:item.caption_en||item.caption||item.name_en||item.name,specifications:specs};
+  };
+  const localizedSection=section=>{
+    if(!englishCatalog())return section;
+    return {...section,name_ar:section.name,name:section.name_en||section.name,description:section.description_en||section.description,items:(section.items||[]).map(localizedProduct)};
+  };
+
   function categoryDisplayDescription(section) {
     const name = String(section?.name || 'القسم').trim() || 'القسم';
     const description = String(section?.description || '').trim();
     const legacyImportDescription = /^تم\s+(?:إنشاؤه|انشاؤه|إنشاءة|انشاءة)\s+من\s+استيراد\s+(?:excel|إكسل|اكسل)$/i;
     return !description || legacyImportDescription.test(description)
-      ? `منتجات قسم ${name}`
+      ? (englishCatalog()?`Products in ${name}`:`منتجات قسم ${name}`)
       : description;
   }
 
@@ -546,7 +564,7 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     const button = document.createElement('button');
     button.className = 'category-share-button';
     button.type = 'button';
-    button.setAttribute('aria-label', `مشاركة قسم ${section?.name || 'المنتجات'}`);
+    button.setAttribute('aria-label', englishCatalog()?`Share category ${section?.name||'Products'}`:`مشاركة قسم ${section?.name || 'المنتجات'}`);
     button.innerHTML = `${shareIconSvg()}<span>مشاركة القسم</span>`;
     button.addEventListener('click', async () => {
       await shareLink({
@@ -571,8 +589,8 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     button.type = 'button';
     button.disabled = !hasProducts;
     button.dataset.hasProducts = hasProducts ? 'true' : 'false';
-    button.setAttribute('aria-label', `تحميل قسم ${name} بصيغة PDF أو صور JPG`);
-    button.innerHTML = `${categoryDownloadIconSvg()}<span>تحميل قسم ${esc(name)}</span>`;
+    button.setAttribute('aria-label', englishCatalog()?`Download category ${name} as PDF or JPG`:`تحميل قسم ${name} بصيغة PDF أو صور JPG`);
+    button.innerHTML = `${categoryDownloadIconSvg()}<span>${englishCatalog()?'Download category':'تحميل قسم'} ${esc(name)}</span>`;
     button.addEventListener('click', () => handleSectionDownloadChoice(section, button));
     return button;
   }
@@ -749,7 +767,7 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     const figure = document.createElement('figure');
     figure.className = `${type}-card`;
     figure.dataset.productId = String(item?.id || '');
-    figure.dataset.productName = String(item?.name || '');
+    figure.dataset.productName = [item?.name_ar,item?.name,item?.name_en].filter(Boolean).join(' ');
     figure.dataset.productModel = String(item?.model || '');
     figure.dataset.filterSpecs=JSON.stringify(Object.fromEntries(productSpecifications(item).map(spec=>[spec.key,specificationDisplayValue(spec)])));
 
@@ -878,7 +896,7 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     });
     $$('.extra-section-panel', sheet).forEach((node) => node.remove());
 
-    const sections = Array.isArray(data.extraSections) ? data.extraSections : [];
+    const sections = (Array.isArray(data.extraSections) ? data.extraSections : []).map(localizedSection);
     const siteCatalogs=(Array.isArray(window.FLOWER_LIGHT_SITE_CATALOGS)?window.FLOWER_LIGHT_SITE_CATALOGS:[]).filter(c=>String(c?.pdf_url||'').trim());
     const combined=[
       ...sections.map((section,index)=>({type:'section',data:section,index,sort_order:Number(section?.sort_order)||0,created_at:String(section?.created_at||'')})),
@@ -905,7 +923,7 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
       tab.setAttribute('aria-pressed', active ? 'true' : 'false');
       tab.innerHTML = `<strong></strong><small></small>`;
       tab.querySelector('strong').textContent = section.name || 'قسم';
-      tab.querySelector('small').textContent = `${Array.isArray(section.items) ? section.items.length : 0} منتج`;
+      tab.querySelector('small').textContent = englishCatalog()?`${Array.isArray(section.items) ? section.items.length : 0} products`:`${Array.isArray(section.items) ? section.items.length : 0} منتج`;
       tab.addEventListener('click', () => {
         setCatalogPanel(safeId);
         updatePublicUrl({ category: categoryKey(section) });
@@ -916,6 +934,7 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
       const panel = document.createElement('section');
       panel.className = `catalog-panel extra-section-panel${active?' active':''}`;
       panel.id = safeId;
+      panel.dataset.categorySearch=[section.name_ar,section.name,section.name_en,section.description,section.description_en].filter(Boolean).join(' ');
 
       const sectionHeader = document.createElement('div');
       sectionHeader.className = 'extra-section-head';
@@ -2148,6 +2167,7 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
   }
 
   window.flRenderProducts = renderProducts;
+  window.addEventListener('flowerlight:language-change',()=>renderProducts());
 
 
   const imageLightbox = $('#imageLightbox');

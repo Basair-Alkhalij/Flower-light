@@ -60,7 +60,7 @@ for(const file of ['index.html','privacy.html','manifest.webmanifest','site-load
 }
 
 const budgets={
-  'admin.js':140_000,
+  'admin.js':144_000,
   'app.js':120_000,
   'public-sync.js':65_000,
 };
