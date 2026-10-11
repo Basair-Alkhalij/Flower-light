@@ -1,3 +1,10 @@
+## v120b — 2026-10-11 — stabilize catalog initialization on built Pages
+
+- Expose the initial catalog fetch promise as `window.flPublicCatalogReady`; this adds no extra database requests.
+- Make the legacy category deep-link smoke test await the real initial request instead of issuing a competing second fetch that could delete its fixtures.
+- Bump release to `1.1.11` to ensure corrected assets are installed on existing devices.
+- No change to permissions, product data or page layouts.
+
 ## v120 — 2026-10-11 — first mobile-performance and modularization pass
 
 - Defer building all product-card DOM nodes until visitors open the catalog; deep product/category links still resolve automatically, and admin mode retains immediate rendering.

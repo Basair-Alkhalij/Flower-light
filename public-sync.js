@@ -738,7 +738,11 @@
   window.FLOWER_LIGHT_SITE_SETTINGS = { require_customer_lead: true, master_barcode_path: '', master_barcode_url: '', design_footer_number: '', design_footer_label: '', pwa_install_enabled: false, quote_list_enabled: true, catalog_filter_keys: ['availability','wattage','cct'], catalog_custom_filters: [] };
   window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extraSections: [] };
   renderPublicProfile();
-  if (db) { publicSiteSettingsPromise=loadPublicSiteSettings(); loadPublicProfile(); loadPublicSiteCatalog(); loadCloudProducts(); }
+  // Expose the *initial* catalog synchronization promise so bootstraps and tests
+  // can wait for it without issuing a second overlapping Supabase query.
+  let initialCatalogLoad=Promise.resolve(false);
+  if (db) { publicSiteSettingsPromise=loadPublicSiteSettings(); loadPublicProfile(); loadPublicSiteCatalog(); initialCatalogLoad=loadCloudProducts(); }
+  window.flPublicCatalogReady=initialCatalogLoad;
 
   // Customer lead gate: visitors enter their details once before opening products.
   const leadGate=document.getElementById('flLeadGate');
