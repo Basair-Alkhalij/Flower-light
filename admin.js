@@ -1776,7 +1776,6 @@
     contacts=contacts.filter(c=>c.id!==id);await loadPublicProfile();renderContacts();notify('تم حذف وسيلة التواصل');
   }
 
-  function vcardEscape(value){return String(value||'').replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/;/g,'\\;').replace(/,/g,'\\,');}
   function sectionAdminRows(){
     const combined=[
       ...categories.map(c=>({type:'category',sort_order:Number(c.sort_order)||0,created_at:c.created_at||'',row:c})),
