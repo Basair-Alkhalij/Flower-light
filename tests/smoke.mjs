@@ -571,6 +571,8 @@ assert.match(catalogSearchFilters,/flowerlight:site-settings/);
 assert.match(read('theme-dark.css'),/color-scheme:dark/);
 assert.match(read('theme-mode.js'),/flowerlight:public-theme/);
 assert.match(index,/id="flThemeSwitch"/);
+assert.match(read('styles/responsive.css'),/\.fl-theme-switch\{position:absolute;top:28px;right:24px;left:auto;/);
+assert.match(read('styles/responsive.css'),/@media\(max-width:420px\)\{\.fl-theme-switch\{right:19px;left:auto;/);
 assert.match(index,/id="flDarkThemeCss"/);
 assert.match(index,/name="color-scheme" content="light dark"/);
 assert.match(index,/theme-color" content="#111827" media="\(prefers-color-scheme: dark\)"/);
