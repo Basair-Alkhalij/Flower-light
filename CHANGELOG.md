@@ -1,3 +1,14 @@
+## v118a — 2026-10-11 — documentation, SQL and CSS maintenance
+
+- Bundle existing v111, v116, v117 and permission-only v118 migration bodies into `supabase/UPGRADE_TO_V118.sql` for installations on v110+, with six verification flags. **Production already satisfies these checks; do not rerun this file there.**
+- Add `tests/sql-unified.mjs` to guard divergence from the historical source migrations.
+- Add optional `ALLOWED_ORIGINS` for future HTTPS custom-domain support to both Edge Functions, including dynamically allowed Turnstile hostnames. Production Edge deployments remain unchanged until explicitly published.
+- Add `tests/edge-origins.mjs` to validate the origins list and preserve the configured default site URL.
+- Reformat long CSS declarations for readability, preserving tokens and selectors. Increase source-only budget to 150KB; the published CSS remains minified.
+- Move old validation reports and the historical v111 onboarding guide into `legacy/`.
+- Replace the long README with a short index, archive its full original content as `docs/RELEASE_NOTES_AR.md`, and add `START_HERE_AR.txt`, `supabase/README.md`, and `docs/CUSTOM_DOMAIN_CHECKLIST_AR.md`.
+- Retain already-merged Service Worker vendor precache and `tests/hygiene.mjs` changes. No change to live Supabase.
+
 ## v118 maintenance — service worker and code hygiene (no database change)
 
 - Precache the versioned self-hosted `supabase-vendor.js` from the first service-worker installation and handle its requests via the same-origin cache strategy.
