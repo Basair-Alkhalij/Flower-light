@@ -185,7 +185,7 @@ assert.match(adminProductBundle, /flAddPriceTier/);
 assert.match(adminProductBundle, /جملة الجملة/);
 assert.match(adminProductBundle, /data-price-tier-min/);
 assert.match(adminProductBundle, /data-price-tier-max/);
-assert.match(app, /سعر جملة الجملة/);
+assert.match(fs.readFileSync('catalog-pricing.js','utf8'), /سعر جملة الجملة/);
 assert.match(app, /priceTierRangeNote/);
 assert.doesNotMatch(app, /url\.searchParams\.set\('v', '87'\)/);
 assert.match(app, /\['admin','category','product','v'\]\.forEach\(key => url\.searchParams\.delete\(key\)\)/);
