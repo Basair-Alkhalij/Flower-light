@@ -1254,17 +1254,16 @@
     window.flRenderProducts?.();
   }
 
-  function navGroupHtml(label,items){
-    if(!items.length)return '';
-    return `<div class="fl-cloud-nav-group"><span class="fl-cloud-nav-label">${label}</span>${items.map(([key,text])=>`<button data-cloud-view="${key}" class="${view===key?'active':''}">${text}</button>`).join('')}</div>`;
-  }
-
+  // Navigation order and permission-aware markup live in admin-navigation.js.
   function navHtml(){
-    const allowed=allowedAdminViews();
-    const contentItems=[['overview','الرئيسية'],...adminViewItems.filter(([key])=>allowed.has(key))];
-    const ownerItems=isPrimaryAdmin?ownerSettingsViewItems:[];
-    const accountItems=isPrimaryAdmin?[['credentials','بيانات تسجيل الدخول'],['permissions','صلاحيات الأدمن']]:[];
-    return `<nav class="fl-cloud-nav">${navGroupHtml('إدارة المحتوى',contentItems)}${navGroupHtml('إعدادات المالك',ownerItems)}${navGroupHtml('الحسابات',accountItems)}</nav>`;
+    if (!window.FL_ADMIN_NAV) throw new Error('Admin navigation module not loaded');
+    return window.FL_ADMIN_NAV.render({
+      view,
+      allowed:allowedAdminViews(),
+      adminViewItems,
+      ownerSettingsViewItems,
+      isPrimaryAdmin
+    });
   }
 
   function layout(content,topTools=''){
@@ -1277,6 +1276,10 @@
       currentNav.addEventListener('scroll',()=>{cloudNavScrollLeft=currentNav.scrollLeft;},{passive:true});
       requestAnimationFrame(()=>{currentNav.scrollLeft=cloudNavScrollLeft;});
     }
+    body.querySelector('#flAdminViewSelect')?.addEventListener('change',event=>{
+      view=normalizeAdminView(event.target.value);
+      renderApp();
+    });
     body.querySelectorAll('[data-cloud-view]').forEach(button=>button.addEventListener('click',()=>{
       const nav=body.querySelector('.fl-cloud-nav');
       if(nav) cloudNavScrollLeft=nav.scrollLeft;

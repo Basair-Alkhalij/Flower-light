@@ -1220,3 +1220,40 @@ test.describe('datasheet local images with real production CSP',()=>{
     expect(result.rgba[2]).toBeLessThan(150);
   });
 });
+
+
+test('performance: catalog product cards are built on first open rather than the company-card load',async({page})=>{
+  await installSupabaseMock(page);
+  await page.goto(base,{waitUntil:'load'});
+  await injectCatalogFixtures(page);
+  expect(await page.locator('.chandelier-card').count()).toBe(0);
+  await page.locator('#openProducts').click();
+  await expect(page.locator('#catalogModal')).toHaveClass(/open/);
+  await expect(page.locator('.chandelier-card')).toHaveCount(1);
+  await expect(page.locator('.product-image-button img')).toHaveAttribute('loading','lazy');
+});
+
+test('admin navigation: mobile section chooser respects permissions and replaces scroll menu',async({page})=>{
+  await installSupabaseMock(page);
+  await page.setViewportSize({width:390,height:844});
+  await page.goto(new URL('?admin=1',base).href,{waitUntil:'load'});
+  await page.waitForFunction(()=>Boolean(window.FL_ADMIN_NAV?.render));
+  const count=await page.evaluate(()=>{
+    const nav=window.FL_ADMIN_NAV.render({
+      view:'products',isPrimaryAdmin:false,
+      allowed:new Set(['overview','products','leads']),
+      adminViewItems:[['products','المنتجات'],['leads','جهات اتصال العملاء'],['sections','الأقسام']],
+      ownerSettingsViewItems:[['site-settings','إعدادات الموقع']]
+    });
+    const host=document.createElement('div');
+    host.innerHTML=nav;
+    document.body.appendChild(host);
+    return host.querySelectorAll('#flAdminViewSelect option').length;
+  });
+  expect(count).toBe(3);
+  await expect(page.locator('#flAdminViewSelect')).toBeVisible();
+  await expect(page.locator('.fl-admin-nav-wrap .fl-cloud-nav')).toBeHidden();
+  await expect(page.locator('#flAdminViewSelect option[value="site-settings"]')).toHaveCount(0);
+  await page.locator('#flAdminViewSelect').selectOption('leads');
+  await expect(page.locator('#flAdminViewSelect')).toHaveValue('leads');
+});

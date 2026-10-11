@@ -97,6 +97,7 @@ assert.deepEqual(responsiveQueries, [
   '(max-width:420px)',
   '(max-width: 760px)',
   '(max-width: 520px)',
+  '(max-width:760px)',
   '(max-width:520px)',
 ]);
 assert.match(cssComparable, /Consolidated responsive architecture/);
@@ -104,7 +105,10 @@ assert.match(admin, /ownerSettingsViewItems/);
 assert.match(admin, /site-settings/);
 assert.match(admin, /business-settings/);
 assert.match(admin, /template-settings/);
-assert.match(admin, /fl-cloud-nav-group/);
+assert.match(read('admin-navigation.js'), /fl-cloud-nav-group/);
+assert.match(read('admin-navigation.js'), /flAdminViewSelect/);
+assert.match(app, /catalogRenderPending/);
+assert.match(read('catalog-gallery.js'), /normalizedProductGallery/);
 assert.match(admin, /primaryRecoverySettingsCardHtml\(\)/);
 assert.match(cssComparable, /\.fl-overview-shortcuts/);
 assert.match(cssComparable, /\.fl-price-tier-row\{[\s\S]*?grid-template-columns:minmax\(96px,1\.05fr\)/);

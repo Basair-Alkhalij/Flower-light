@@ -4,6 +4,13 @@
   const isAdminPage = adminPanel === '1' || adminPanel === '2';
   // On the assistant URL, remove the Owner panel button before the admin bundle runs.
   if (adminPanel === '2') document.getElementById('flCloudPrimaryAdmin')?.remove();
+  if(isAdminPage){
+    // Register navigation before the main admin module initializes.
+    const navScript=document.createElement('script');
+    navScript.src='admin-navigation.js?v=__FL_VERSION__';
+    navScript.async=false;
+    document.body.appendChild(navScript);
+  }
   const script = document.createElement('script');
   script.src = isAdminPage ? 'admin.js?v=__FL_VERSION__' : 'public-sync.js?v=__FL_VERSION__';
   script.async = false;

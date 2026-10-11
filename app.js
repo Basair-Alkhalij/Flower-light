@@ -630,23 +630,9 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     return link;
   }
 
-  function normalizedProductGallery(item) {
-    const rows = Array.isArray(item?.gallery) ? item.gallery : [];
-    const result = [];
-    const seen = new Set();
-    const add = (image, imagePath = '', thumb = '') => {
-      const src = String(image || '').trim();
-      const path = String(imagePath || '').trim();
-      const thumbSrc = String(thumb || '').trim() || src;
-      const key = path || src;
-      if (!src || !key || seen.has(key) || result.length >= 4) return;
-      seen.add(key);
-      result.push({ image: src, thumb: thumbSrc, image_path: path });
-    };
-    add(item?.image, item?.image_path, item?.image_thumb);
-    rows.forEach(row => add(row?.image, row?.image_path, row?.thumb));
-    return result;
-  }
+  // Pure gallery normalization lives in catalog-gallery.js.
+  const normalizedProductGallery = window.FL_CATALOG_GALLERY?.normalizedProductGallery;
+  if (typeof normalizedProductGallery !== 'function') throw new Error('Catalog gallery module not loaded');
 
   function createZoomButton(item, imageLoading = 'lazy', collection = [item], index = 0) {
     const button = document.createElement('button');
@@ -662,6 +648,8 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     image.alt = item.alt;
     image.loading = imageLoading;
     image.decoding = 'async';
+    // Later product cards should never compete with visible images on mobile.
+    if (index >= 4) image.fetchPriority = 'low';
 
     const badge = document.createElement('span');
     badge.className = 'image-zoom-badge';
@@ -2174,7 +2162,16 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
 
   catalogDownloadPdf?.addEventListener('click', handleCatalogDownloadChoice);
 
-  function renderProducts() {
+  // Do not construct all catalog product cards until the catalog is requested.
+  // This reduces initial DOM work for visitors who only need the company card.
+  let catalogRenderPending = false;
+  function renderProducts(force = false) {
+    if (!force && !isAdminUrl() && !catalogModal?.classList.contains('open')) {
+      catalogRenderPending = true;
+      scheduleDeepLinkResolution(); // Direct /p/ and /c/ links must still open.
+      return;
+    }
+    catalogRenderPending = false;
     const data = window.FLOWER_LIGHT_PRODUCTS || {extraSections:[]};
     renderExtraSections(data);
     if (catalogDownloadPdf) catalogDownloadPdf.disabled = catalogPdfBusy || catalogPdfEntries().length === 0;
@@ -2581,6 +2578,8 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     if (!catalogModal) return false;
     const allowed = await ensureProductsAccess();
     if (!allowed) return false;
+    // Create the fresh catalog BEFORE selecting the requested tab/deep link.
+    if (catalogRenderPending) renderProducts(true);
 
     catalogLastFocus = document.activeElement;
     const targetTab = panelId
