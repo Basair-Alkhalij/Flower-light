@@ -87,10 +87,10 @@ assert.deepEqual(responsiveQueries, [
   '(max-width:420px)',
   '(prefers-reduced-motion:reduce)',
   '(max-width:420px)',
+  '(max-width:420px)',
   '(max-width: 760px)',
   '(max-width: 520px)',
   '(max-width:520px)',
-  '(max-width:420px)',
 ]);
 assert.match(css, /Consolidated responsive architecture/);
 assert.match(admin, /ownerSettingsViewItems/);
