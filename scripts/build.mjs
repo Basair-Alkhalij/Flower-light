@@ -18,7 +18,7 @@ const DEFAULT_SITE_URL='https://basair-alkhalij.github.io/Flower-light/';
 
 const jsFiles=[
   'scripts/generate-static-pages.mjs',
-  'analytics.js','catalog-pdf-viewer.js','quote-list.js','app.js','public-sync.js','pwa-install.js','catalog-search.js','config.js','site-bootstrap.js','site-loader.js',
+  'analytics.js','catalog-pdf-viewer.js','quote-list.js','app.js','public-sync.js','pwa-install.js','catalog-search.js','config.js','site-bootstrap.js','site-loader.js','theme-mode.js',
   'admin.js','admin-analytics.js','admin-datasheet.js','admin-leads.js','admin-permissions.js','admin-settings.js','admin-search-filters.js','admin-business.js','admin-banks.js',
   'business-info.js','bank-info.js','admin-media.js','admin-products.js','admin-product-form.js','admin-import.js','sw.js'
 ];
