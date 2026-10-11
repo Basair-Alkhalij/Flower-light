@@ -1188,3 +1188,35 @@ test('security: missing Turnstile site key must never fall back to direct custom
   await page.locator('#flLeadClose').click();
   expect(await pending).toBe(false);
 });
+
+
+test.describe('datasheet local images with real production CSP',()=>{
+  // Production CSP permits data: in img-src but NOT connect-src.
+  // Prior code used fetch(data:image/...) and silently exported a placeholder.
+  test.use({bypassCSP:false});
+
+  test('an uploaded image is actually drawn into the JPG/PDF datasheet template',async({page})=>{
+    await installSupabaseMock(page);
+    await page.goto(base,{waitUntil:'load'});
+    await page.waitForFunction(()=>Boolean(window.flDatasheetPdf?.createSinglePage));
+    const result=await page.evaluate(async()=>{
+      const csp=document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content||'';
+      const swatch=document.createElement('canvas');
+      swatch.width=120;swatch.height=120;
+      swatch.getContext('2d').fillStyle='#ec136a';
+      swatch.getContext('2d').fillRect(0,0,120,120);
+      const image=swatch.toDataURL('image/png');
+      const source={name:'منتج اختبار صورة',model:'DS-IMG',caption:'',specifications:[]};
+      const {canvas,failedImages}=await window.flDatasheetPdf.createSinglePage(source,image,0,1,{scale:1});
+      const rgba=[...canvas.getContext('2d').getImageData(500,480,1,1).data];
+      return {failedImages,rgba,csp};
+    });
+    expect(result.csp).toMatch(/img-src[^;]*data:/);
+    expect(result.csp.match(/connect-src\s+([^;]+)/)?.[1]).not.toContain('data:');
+    expect(result.failedImages).toBe(0);
+    expect(result.rgba[0]).toBeGreaterThan(210);
+    expect(result.rgba[1]).toBeLessThan(65);
+    expect(result.rgba[2]).toBeGreaterThan(80);
+    expect(result.rgba[2]).toBeLessThan(150);
+  });
+});
