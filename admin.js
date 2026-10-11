@@ -1228,17 +1228,18 @@
       if(primaryIndex>0){const [primary]=gallery.splice(primaryIndex,1);gallery.unshift(primary);}
       const primaryPath=gallery[0]?.image_path||p.image_path||p.image_url||'';
       grouped.get(p.category_id)?.push({
-        id:p.id,name:p.name||'',model:p.model||'',caption:p.caption||'',alt:p.caption||p.name||'',category:'',category_id:p.category_id||'',category_slug:'',
+        id:p.id,name:p.name||'',name_en:String(p.name_en||''),model:p.model||'',caption:p.caption||'',caption_en:String(p.caption_en||''),alt:p.caption||p.name||'',category:'',category_id:p.category_id||'',category_slug:'',
         image:imageUrl(primaryPath),image_thumb:imageUrl(productThumbnailPath(primaryPath)),image_path:primaryPath,
         gallery:gallery.map((row,index)=>({id:row.id||'',image_path:row.image_path,image:imageUrl(row.image_path),thumb:imageUrl(productThumbnailPath(row.image_path)),is_primary:index===0,sort_order:index*10})),
-        specifications:Array.isArray(p.specifications)?p.specifications:[],price:p.price==null?null:Number(p.price),wholesale_price:p.wholesale_price==null?null:Number(p.wholesale_price),
+        specifications:Array.isArray(p.specifications)?p.specifications:[],
+        specifications_en:Array.isArray(p.specifications_en)?p.specifications_en:[],price:p.price==null?null:Number(p.price),wholesale_price:p.wholesale_price==null?null:Number(p.wholesale_price),
         wholesale_min_qty:p.wholesale_min_qty==null?null:Number(p.wholesale_min_qty),availability:['available','out_of_stock','coming_soon'].includes(String(p.availability||''))?String(p.availability):'available',limited_offer:p.limited_offer===true,catalog_pdf_path:'',catalog_pdf_url:'',sort_order:p.sort_order||0,is_visible:true
       });
     });
     const extraSections=visibleCats.map(c=>{
       const items=grouped.get(c.id)||[];
       items.forEach(item=>{item.category=c.name;item.category_id=c.id;item.category_slug=c.slug||c.id;});
-      return {id:c.id,name:c.name,slug:c.slug,description:c.description||'',sort_order:c.sort_order||0,items};
+      return {id:c.id,name:c.name,name_en:String(c.name_en||''),slug:c.slug,description:c.description||'',description_en:String(c.description_en||''),sort_order:c.sort_order||0,items};
     });
     window.FLOWER_LIGHT_PRODUCTS={catalog:[],chandeliers:[],balfon:[],extraSections};
     window.flRenderProducts?.();
