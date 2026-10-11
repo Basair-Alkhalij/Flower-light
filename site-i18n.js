@@ -216,10 +216,10 @@
     const exact=dictionary[trimmed];
     if (exact) return string.replace(trimmed,exact);
     const rules=[
-      [/^(\\d+) معلومات$/,'$1 specifications'],
-      [/^(\\d+) صور$/,'$1 images'],
-      [/^(\\d+) يوم$/,'$1 days'],
-      [/^قائمة الطلب \\((\\d+)\\)$/,'Order list ($1)'],
+      [/^(\d+) معلومات$/,'$1 specifications'],
+      [/^(\d+) صور$/,'$1 images'],
+      [/^(\d+) يوم$/,'$1 days'],
+      [/^قائمة الطلب \((\d+)\)$/,'Order list ($1)'],
       [/^تحميل قسم (.+)$/,'Download category $1'],
       [/^مشاركة (.+)$/,'Share $1'],
       [/^تحميل (.+)$/,'Download $1'],
@@ -229,7 +229,7 @@
       if(regex.test(trimmed)){
         const out=trimmed.replace(regex,result);
         // Do not display half-translated strings.
-        if(!/[\\u0600-\\u06ff]/.test(out))return string.replace(trimmed,out);
+        if(!/[\u0600-\u06ff]/.test(out))return string.replace(trimmed,out);
       }
     }
     return string;
