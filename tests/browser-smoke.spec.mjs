@@ -1008,3 +1008,58 @@ test('v116 bilingual category, product name and technical specs follow visitor l
   await expect(page.locator('.chandelier-card')).toContainText('أسود');
   await expect(page.locator('.extra-section-panel .extra-section-intro')).toContainText('قسم تجريبي');
 });
+
+
+test('v117 public card localizes profile contacts and marketing lines without losing Arabic',async({page})=>{
+  await installSupabaseMock(page);
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>typeof window.flLoadPublicProfile==='function');
+  await page.evaluate(()=>{
+    window.FLOWER_LIGHT_PROFILE={
+      brand_name:'flower light',brand_name_en:'Flower Light',
+      company_name:'شركة بصائر الخليج',company_name_en:'Basair Gulf',
+      full_name:'Saeed Naji',job_title_ar:'مدير مبيعات',job_title_en:'Sales Manager'
+    };
+    window.FLOWER_LIGHT_CONTACTS=[
+      {type:'phone',label:'فرع الفيصلية',label_en:'Al Faisaliyah branch',value:'0560933353',is_visible:true},
+      {type:'whatsapp',label:'فرع الفيصلية',label_en:'Al Faisaliyah branch',value:'0560933353',is_visible:true},
+      {type:'location',label:'الفرع الرئيسي',label_en:'Main branch',value:'https://maps.google.com/?q=KSA',is_visible:true}
+    ];
+    window.dispatchEvent(new CustomEvent('flowerlight:language-change',{detail:{language:'ar'}}));
+  });
+  await expect(page.locator('#siteCompanyName')).toHaveText('شركة بصائر الخليج');
+  await expect(page.locator('#siteJobTitleAr')).toHaveText('مدير مبيعات');
+  await expect(page.locator('#productsButtonSubtitle')).toHaveText('كتالوج منتجات flower light');
+  await expect(page.locator('#contactInfoList')).toContainText('فرع الفيصلية');
+  await page.locator('#flLanguageSwitch').click();
+  await expect(page.locator('html')).toHaveAttribute('lang','en');
+  await expect(page.locator('#siteCompanyName')).toHaveText('Basair Gulf');
+  await expect(page.locator('#siteBrandName')).toHaveText('Flower Light');
+  await expect(page.locator('#siteJobTitleAr')).toBeHidden();
+  await expect(page.locator('#siteJobTitleEn')).toHaveText('Sales Manager');
+  await expect(page.locator('#productsButtonSubtitle')).toHaveText('Explore Flower Light products');
+  await expect(page.locator('#catalogNote')).toHaveText('Browse Flower Light categories and products.');
+  await expect(page.locator('#contactInfoList')).toContainText('Al Faisaliyah branch');
+  await expect(page.locator('#contactInfoList')).toContainText('Call or WhatsApp');
+  await expect(page.locator('#quickActions')).toContainText('Al Faisaliyah branch');
+  await expect(page.locator('#siteFooter')).toContainText('Flower Light');
+  await page.locator('#flLanguageSwitch').click();
+  await expect(page.locator('#siteCompanyName')).toHaveText('شركة بصائر الخليج');
+  await expect(page.locator('#siteJobTitleAr')).toHaveText('مدير مبيعات');
+  await expect(page.locator('#productsButtonSubtitle')).toHaveText('كتالوج منتجات flower light');
+});
+
+test('v117 built-in marketing aliases translate without authoring English profile rows',async({page})=>{
+  await installSupabaseMock(page);
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>typeof window.flLoadPublicProfile==='function');
+  await page.evaluate(()=>{
+    window.FLOWER_LIGHT_PROFILE={brand_name:'Flower Light',company_name:'شركة بصائر الخليج',job_title_ar:'مدير مبيعات'};
+    window.FLOWER_LIGHT_CONTACTS=[];
+    window.dispatchEvent(new CustomEvent('flowerlight:language-change',{detail:{language:'ar'}}));
+  });
+  await page.locator('#flLanguageSwitch').click();
+  await expect(page.locator('#siteCompanyName')).toHaveText('Basair Gulf');
+  await expect(page.locator('#siteJobTitleAr')).toHaveText('Sales Manager');
+  await expect(page.locator('#productsButtonSubtitle')).toHaveText('Explore Flower Light products');
+});

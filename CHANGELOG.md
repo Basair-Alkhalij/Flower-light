@@ -1,3 +1,11 @@
+## v117 — 2026-10-11 — consistent English public digital card
+
+- Translate dynamic profile/contact labels and catalog hints at render time and on visitor language change.
+- Prefer author-entered English job title and optional English brand/company/contact labels, keeping source Arabic values.
+- Localize bank account count, controls, and official business field labels without altering financial or legal values.
+- Add safe schema migration for `site_profile.brand_name_en`, `company_name_en`, and `contact_items.label_en`.
+- Extend owner forms and browser tests for English/Arabic roundtrips and marketing fallbacks; update cache version to 117.
+
 ## v116 — 2026-10-11 — editable English category and product fields
 
 - Non-destructive SQL adds name_en/description_en to categories and name_en/caption_en/specifications_en to products.

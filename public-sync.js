@@ -265,7 +265,7 @@
     const phone=group.items.find(item=>item.type==='phone');
     const whatsapp=group.items.find(item=>item.type==='whatsapp');
     if(!phone || !whatsapp)return;
-    const label=phone.label||whatsapp.label||'تواصل';
+    const label=contactDisplayLabel(phone)||contactDisplayLabel(whatsapp)||(englishCard()?'Contact':'تواصل');
     const value=phone.value||whatsapp.value||'';
     contactChoiceLastFocus=trigger||document.activeElement;
     if(contactChoiceSubtitle)contactChoiceSubtitle.textContent=`${label} · ${value}`;
@@ -307,7 +307,7 @@
     const locations=(items||[]).filter(item=>item?.type==='location' && String(item.value||'').trim());
     if(!locationChoiceModal || !locationChoiceList || !locations.length)return;
     locationChoiceLastFocus=trigger||document.activeElement;
-    locationChoiceList.innerHTML=locations.map((item,index)=>`<button class="location-choice-item" type="button" data-location-index="${index}"><span class="location-choice-item-icon">${contactIcon('location')}</span><span><strong>${esc(item.label||`الفرع ${index+1}`)}</strong><small>${esc(item.value)}</small></span><svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>`).join('');
+    locationChoiceList.innerHTML=locations.map((item,index)=>`<button class="location-choice-item" type="button" data-location-index="${index}"><span class="location-choice-item-icon">${contactIcon('location')}</span><span><strong>${esc(cardBranchName(item,index))}</strong><small>${esc(item.value)}</small></span><svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>`).join('');
     locationChoiceList.querySelectorAll('[data-location-index]').forEach(button=>{
       button.addEventListener('click',()=>{
         const item=locations[Number(button.dataset.locationIndex)];
@@ -355,6 +355,17 @@
     return BUNDLED_SITE_LOGO;
   }
 
+  const englishCard=()=>window.FL_I18N?.lang==='en';
+  const cardText=value=>window.FL_I18N?.translate?.(value)||String(value||'');
+  const contactDisplayLabel=item=>{
+    const original=String(item?.label||contactLabels[item?.type]||'Contact').trim();
+    return englishCard()?(String(item?.label_en||'').trim()||cardText(original)):original;
+  };
+  const cardBranchName=(item,index=0)=>{
+    const fallback=englishCard()?`Branch ${index+1}`:`الفرع ${index+1}`;
+    return englishCard()?(String(item?.label_en||'').trim()||cardText(item?.label||fallback)):(item?.label||fallback);
+  };
+
   function renderPublicProfile(){
     const profile=window.FLOWER_LIGHT_PROFILE || {};
     const contacts=(Array.isArray(window.FLOWER_LIGHT_CONTACTS)?window.FLOWER_LIGHT_CONTACTS:[]).filter(c=>c.is_visible!==false && String(c.value||'').trim());
@@ -363,16 +374,20 @@
     const fullName=String(profile.full_name||'').trim();
     const jobAr=String(profile.job_title_ar||'').trim();
     const jobEn=String(profile.job_title_en||'').trim();
+    const english=englishCard();
+    const displayBrand=english?(String(profile.brand_name_en||'').trim()||cardText(brand)):brand;
+    const displayCompany=english?(String(profile.company_name_en||'').trim()||cardText(company)):company;
+    const publicName=displayBrand||displayCompany;
 
     const activeLogo=bundledSiteLogo();
     setImage('siteLogo',activeLogo,brand||company||'Logo');
     setImage('siteWatermark',activeLogo,'');
     setImage('sitePortrait',profile.portrait_path,fullName||'');
-    setText('siteBrandName',brand);
-    setText('siteCompanyName',company);
+    setText('siteBrandName',displayBrand);
+    setText('siteCompanyName',displayCompany);
     setText('siteFullName',fullName);
-    setText('siteJobTitleAr',jobAr);
-    setText('siteJobTitleEn',jobEn);
+    setText('siteJobTitleAr',(!english||!jobEn)?(english?cardText(jobAr):jobAr):'');
+    setText('siteJobTitleEn',english?(jobEn||''):(!jobAr?jobEn:''));
 
     const brandRow=document.getElementById('siteBrandRow');
     const brandText=document.getElementById('siteBrandText');
@@ -387,7 +402,7 @@
     const hero=document.getElementById('siteHero');
     if(hero) hero.classList.toggle('profile-empty',!(brand||company||activeLogo||profile.portrait_path||fullName||jobAr||jobEn));
 
-    const displayName=fullName||brand||company||'Digital Business Card';
+    const displayName=fullName||publicName||'Digital Business Card';
     document.title=displayName;
     const card=document.getElementById('publicCard');
     if(card) card.setAttribute('aria-label',fullName?`Digital business card for ${fullName}`:'Digital business card');
@@ -402,9 +417,9 @@
       if(firstWhatsApp)quickItems.push({kind:'direct',item:firstWhatsApp});
       if(locations.length)quickItems.push({kind:'locations',items:locations});
       quick.innerHTML=quickItems.map((entry,index)=>{
-        if(entry.kind==='locations') return `<button class="action" type="button" data-quick-locations="${index}" aria-label="الموقع الجغرافي، اختر الفرع">${contactIcon('location')}<span>المواقع</span></button>`;
+        if(entry.kind==='locations') return `<button class="action" type="button" data-quick-locations="${index}" aria-label="${english?'Location, choose a branch':'الموقع الجغرافي، اختر الفرع'}">${contactIcon('location')}<span>المواقع</span></button>`;
         const item=entry.item;
-        return `<a class="action" href="${esc(contactHref(item))}" data-contact-direct="1" data-track="contact_${esc(item.type)}" aria-label="${esc(item.label||contactLabels[item.type]||'Contact')}">${contactIcon(item.type)}<span>${esc(item.label||contactLabels[item.type]||'Contact')}</span></a>`;
+        return `<a class="action" href="${esc(contactHref(item))}" data-contact-direct="1" data-track="contact_${esc(item.type)}" aria-label="${esc(contactDisplayLabel(item))}">${contactIcon(item.type)}<span>${esc(contactDisplayLabel(item))}</span></a>`;
       }).join('');
       quick.querySelectorAll('[data-contact-direct]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();openContactUrl(link.getAttribute('href'));}));
       quick.querySelectorAll('[data-quick-locations]').forEach(button=>button.addEventListener('click',()=>openLocationChoice(locations,button)));
@@ -417,21 +432,21 @@
       list.innerHTML=displayContacts.map((entry,index)=>{
         if(entry.kind==='locations') {
           const count=entry.items.length;
-          return `<button class="info-item" type="button" data-location-choice="${index}" aria-label="الموقع الجغرافي، اختر الفرع"><span class="info-icon">${contactIcon('location')}</span><span class="info-main"><span class="info-label">الموقع الجغرافي</span><span class="info-value">${count>1?`اختر من ${count} فروع`:'اختر الفرع'}</span></span><svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>`;
+          return `<button class="info-item" type="button" data-location-choice="${index}" aria-label="${english?'Location, choose a branch':'الموقع الجغرافي، اختر الفرع'}"><span class="info-icon">${contactIcon('location')}</span><span class="info-main"><span class="info-label">${english?'Location':'الموقع الجغرافي'}</span><span class="info-value">${english?(count>1?`Choose from ${count} branches`:'Choose a branch'):(count>1?`اختر من ${count} فروع`:'اختر الفرع')}</span></span><svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>`;
         }
         if(entry.kind==='single') {
           const item=entry.item;
-          return `<a class="info-item" href="${esc(contactHref(item))}" data-contact-direct="1" data-track="contact_${esc(item.type)}"><span class="info-icon">${contactIcon(item.type)}</span><span class="info-main"><span class="info-label">${esc(item.label||contactLabels[item.type]||'Contact')}</span><span class="info-value">${esc(item.value)}</span></span><svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a>`;
+          return `<a class="info-item" href="${esc(contactHref(item))}" data-contact-direct="1" data-track="contact_${esc(item.type)}"><span class="info-icon">${contactIcon(item.type)}</span><span class="info-main"><span class="info-label">${esc(contactDisplayLabel(item))}</span><span class="info-value">${esc(item.value)}</span></span><svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a>`;
         }
         const phone=entry.items.find(item=>item.type==='phone');
         const whatsapp=entry.items.find(item=>item.type==='whatsapp');
         if(!(phone&&whatsapp)){
           const item=phone||whatsapp||entry.items[0];
-          return `<a class="info-item" href="${esc(contactHref(item))}" ${item.type==='whatsapp'?'target="_blank" rel="noopener noreferrer"':''} data-track="contact_${esc(item.type)}"><span class="info-icon">${contactIcon(item.type)}</span><span class="info-main"><span class="info-label">${esc(item.label||contactLabels[item.type]||'Contact')}</span><span class="info-value">${esc(item.value)}</span></span><svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a>`;
+          return `<a class="info-item" href="${esc(contactHref(item))}" ${item.type==='whatsapp'?'target="_blank" rel="noopener noreferrer"':''} data-track="contact_${esc(item.type)}"><span class="info-icon">${contactIcon(item.type)}</span><span class="info-main"><span class="info-label">${esc(contactDisplayLabel(item))}</span><span class="info-value">${esc(item.value)}</span></span><svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a>`;
         }
-        const label=phone.label||whatsapp.label||'تواصل';
+        const label=contactDisplayLabel(phone)||contactDisplayLabel(whatsapp)||(english?'Contact':'تواصل');
         const value=phone.value||whatsapp.value||'';
-        return `<button class="info-item" type="button" data-contact-choice="${index}" aria-label="${esc(label)}، اختر اتصال أو واتساب"><span class="info-icon">${contactIcon('phone')}</span><span class="info-main"><span class="info-label">${esc(label)} · اتصال أو واتساب</span><span class="info-value">${esc(value)}</span></span><svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>`;
+        return `<button class="info-item" type="button" data-contact-choice="${index}" aria-label="${esc(label)}${english?', choose call or WhatsApp':'، اختر اتصال أو واتساب'}"><span class="info-icon">${contactIcon('phone')}</span><span class="info-main"><span class="info-label">${esc(label)} · ${english?'Call or WhatsApp':'اتصال أو واتساب'}</span><span class="info-value">${esc(value)}</span></span><svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>`;
       }).join('');
       list.querySelectorAll('[data-contact-direct]').forEach(link=>{
         link.addEventListener('click',event=>{event.preventDefault();openContactUrl(link.getAttribute('href'));});
@@ -449,16 +464,15 @@
     if(save) save.hidden=!(fullName||brand||company||contacts.length);
 
     const footer=document.getElementById('siteFooter');
-    if(footer){const f=[brand||company,'DIGITAL BUSINESS CARD'].filter(Boolean).join(' · ');footer.textContent=f;footer.hidden=!f;}
+    if(footer){const f=[publicName,'DIGITAL BUSINESS CARD'].filter(Boolean).join(' · ');footer.textContent=f;footer.hidden=!f;}
 
     const sub=document.getElementById('productsButtonSubtitle');
-    if(sub) sub.textContent=(brand||company)?`كتالوج منتجات ${brand||company}`:'تصفح الأقسام والمنتجات';
+    if(sub) sub.textContent=publicName?(english?`Explore ${publicName} products`:`كتالوج منتجات ${publicName}`):(english?'Browse categories and products':'تصفح الأقسام والمنتجات');
     const kicker=document.getElementById('catalogKicker');
-    if(kicker){kicker.textContent=brand||company;kicker.hidden=!(brand||company);}
+    if(kicker){kicker.textContent=publicName;kicker.hidden=!publicName;}
     const note=document.getElementById('catalogNote');
     if(note){
-      const catalogName=(brand||company)?`أقسام ومنتجات ${brand||company}`:'الأقسام والمنتجات';
-      note.textContent=`استعرض ${catalogName}.`;
+      note.textContent=english?(publicName?`Browse ${publicName} categories and products.`:'Browse categories and products.'):(publicName?`استعرض أقسام ومنتجات ${publicName}.`:'استعرض الأقسام والمنتجات.');
     }
     window.flRenderProducts?.();
   }
@@ -547,6 +561,7 @@
     }
   }
   window.flLoadPublicProfile=loadPublicProfile;
+  window.addEventListener('flowerlight:language-change',()=>renderPublicProfile());
 
   async function loadPublicSiteCatalog(){
     if(!db){window.FLOWER_LIGHT_SITE_CATALOGS=[];window.FLOWER_LIGHT_SITE_CATALOG={};window.flRenderProducts?.();return false;}
