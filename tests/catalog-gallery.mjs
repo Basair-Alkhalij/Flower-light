@@ -5,7 +5,7 @@ const window={};
 vm.runInNewContext(fs.readFileSync(new URL('../catalog-gallery.js',import.meta.url),'utf8'),{window});
 const normalize=window.FL_CATALOG_GALLERY?.normalizedProductGallery;
 assert.equal(typeof normalize,'function');
-assert.equal(normalize({}),[].length);
+assert.equal(normalize({}).length,0);
 const items=normalize({image:'first.l.webp',image_path:'first',image_thumb:'first.s.webp',gallery:[
 {image:'first-copy.webp',image_path:'first'},{image:'second.l.webp',image_path:'second',thumb:'second.s.webp'},
 {image:'third.l.webp',image_path:'third'},{image:'fourth.l.webp',image_path:'fourth'},
