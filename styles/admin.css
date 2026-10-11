@@ -7,7 +7,19 @@
 .fl-overview-section-head h3{margin:0;color:#263248;font-size:16px}
 .fl-overview-section-head p{margin:0;color:#8791a3;font-size:12px}
 .fl-overview-shortcuts{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
-.fl-overview-shortcut{position:relative;min-width:0;min-height:82px;border:1px solid #e3e8f0;border-radius:15px;background:#fff;padding:13px 42px 13px 14px;text-align:right;font:inherit;cursor:pointer;box-shadow:0 5px 15px rgba(28,39,60,.035);transition:.16s ease}
+.fl-overview-shortcut{
+position:relative;
+min-width:0;
+min-height:82px;
+border:1px solid #e3e8f0;
+border-radius:15px;
+background:#fff;
+padding:13px 42px 13px 14px;
+text-align:right;
+font:inherit;
+cursor:pointer;
+box-shadow:0 5px 15px rgba(28,39,60,.035);
+transition:.16s ease}
 .fl-overview-shortcut:hover{border-color:#f0c878;background:#fffdf8;transform:translateY(-1px);box-shadow:0 9px 20px rgba(28,39,60,.07)}
 .fl-overview-shortcut strong{display:block;color:#263248;font-size:14px}
 .fl-overview-shortcut small{display:block;margin-top:5px;color:#7d8799;font-size:11px;line-height:1.5}

@@ -326,7 +326,22 @@ body.export-choice-open{overflow:hidden}
 .export-choice-head h3{margin:0;font-size:20px}.export-choice-head p{margin:6px 0 0;color:#6d6d6d;font-size:13px;line-height:1.6}
 .export-choice-close{width:42px;height:42px;border:0;border-radius:14px;background:#f2f4f7;font-size:26px;cursor:pointer;color:#333}
 .export-choice-actions{display:grid;grid-template-columns:1fr;gap:12px}
-.export-choice-action{width:100%;border:1px solid #eadfcf;background:#fffaf2;border-radius:18px;padding:15px 14px;display:grid;grid-template-columns:48px 1fr;grid-template-areas:"icon title" "icon note";column-gap:12px;row-gap:4px;align-items:center;text-align:right;cursor:pointer;font:inherit;color:#222}
+.export-choice-action{
+width:100%;
+border:1px solid #eadfcf;
+background:#fffaf2;
+border-radius:18px;
+padding:15px 14px;
+display:grid;
+grid-template-columns:48px 1fr;
+grid-template-areas:"icon title" "icon note";
+column-gap:12px;
+row-gap:4px;
+align-items:center;
+text-align:right;
+cursor:pointer;
+font:inherit;
+color:#222}
 .export-choice-action svg{grid-area:icon;width:28px;height:28px;justify-self:center;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;color:#b97200}
 .export-choice-action span{grid-area:title;font-weight:900;font-size:15px}
 .export-choice-action small{grid-area:note;color:#6d6d6d;font-size:12px;line-height:1.6}
