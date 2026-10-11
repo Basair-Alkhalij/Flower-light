@@ -1944,7 +1944,7 @@
   }
 
   async function openCategoryForm(cat=null){
-    openModal(cat?'تعديل القسم':'إضافة قسم',`<form id="flCategoryForm"><div class="fl-cloud-form"><div class="fl-cloud-field"><label>اسم القسم</label><input id="flCatName" required value="${esc(cat?.name||'')}" placeholder="مثال: جداريات"></div><div class="fl-cloud-field"><label>الترتيب</label><input id="flCatSort" type="number" min="0" step="1" value="${Number(cat?.sort_order||0)}"></div><div class="fl-cloud-field full"><label>الوصف</label><input id="flCatDesc" value="${esc(cat?.description||'')}" placeholder="وصف قصير اختياري"></div><label class="fl-cloud-check full"><input id="flCatVisible" type="checkbox" ${cat?.is_visible===false?'':'checked'}> إظهار القسم للزوار</label></div><div class="fl-cloud-dialog-actions"><button class="fl-cloud-btn primary" id="flCatSave" type="submit">حفظ</button><button class="fl-cloud-btn" id="flCatCancel" type="button">إلغاء</button></div></form>`);
+    openModal(cat?'تعديل القسم':'إضافة قسم',`<form id="flCategoryForm"><div class="fl-cloud-form"><div class="fl-cloud-field"><label>اسم القسم (عربي)</label><input id="flCatName" required value="${esc(cat?.name||'')}" placeholder="مثال: جداريات"></div><div class="fl-cloud-field"><label>Category name (English)</label><input id="flCatNameEn" dir="ltr" maxlength="200" value="${esc(cat?.name_en||'')}" placeholder="e.g. Wall lights"></div><div class="fl-cloud-field"><label>الترتيب</label><input id="flCatSort" type="number" min="0" step="1" value="${Number(cat?.sort_order||0)}"></div><div class="fl-cloud-field full"><label>الوصف (عربي)</label><input id="flCatDesc" value="${esc(cat?.description||'')}" placeholder="وصف قصير اختياري"></div><div class="fl-cloud-field full"><label>Description (English)</label><input id="flCatDescEn" dir="ltr" maxlength="2000" value="${esc(cat?.description_en||'')}" placeholder="English description (optional)"></div><label class="fl-cloud-check full"><input id="flCatVisible" type="checkbox" ${cat?.is_visible===false?'':'checked'}> إظهار القسم للزوار</label></div><div class="fl-cloud-dialog-actions"><button class="fl-cloud-btn primary" id="flCatSave" type="submit">حفظ</button><button class="fl-cloud-btn" id="flCatCancel" type="button">إلغاء</button></div></form>`);
     document.getElementById('flCatCancel').addEventListener('click',closeModal);
     document.getElementById('flCategoryForm').addEventListener('submit',async e=>{
       e.preventDefault();
@@ -1954,7 +1954,7 @@
       const duplicate=categories.some(c=>c.id!==cat?.id && String(c.name||'').trim().toLowerCase()===name.toLowerCase());
       if(duplicate){notify('يوجد قسم بهذا الاسم مسبقًا');return;}
       save.disabled=true;save.textContent='جاري الحفظ...';
-      const payload={name,description:document.getElementById('flCatDesc').value.trim(),sort_order:Number(document.getElementById('flCatSort').value)||0,is_visible:document.getElementById('flCatVisible').checked};
+      const payload={name,name_en:document.getElementById('flCatNameEn').value.trim(),description:document.getElementById('flCatDesc').value.trim(),description_en:document.getElementById('flCatDescEn').value.trim(),sort_order:Number(document.getElementById('flCatSort').value)||0,is_visible:document.getElementById('flCatVisible').checked};
       if(!cat) payload.slug=newCategorySlug();
       const res=cat?await db.from('categories').update(payload).eq('id',cat.id).select().single():await db.from('categories').insert(payload).select().single();
       if(res.error){
