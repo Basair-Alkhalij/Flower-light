@@ -902,3 +902,67 @@ test('theme toggle stays at upper-right of card on phone and desktop',async({pag
     if(logo)expect(toggle.x).toBeGreaterThan(logo.x+logo.width+8);
   }
 });
+
+
+test('visitor switches Arabic and English, preserving products and language choice',async({page})=>{
+  await installSupabaseMock(page);
+  await page.setViewportSize({width:390,height:844});
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  const switcher=page.locator('#flLanguageSwitch');
+  await expect(switcher).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('lang','ar');
+  await expect(page.locator('#openProducts strong')).toHaveText('منتجاتنا');
+  await switcher.click();
+  await expect(page.locator('html')).toHaveAttribute('lang','en');
+  await expect(page.locator('html')).toHaveAttribute('dir','ltr');
+  await expect(page.locator('#openProducts strong')).toHaveText('Our Products');
+  await expect(page.locator('#productsButtonSubtitle')).toHaveText('Browse categories and products');
+  await expect(switcher).toHaveText('العربية');
+  await injectCatalogFixtures(page);
+  await page.locator('#openProducts').click();
+  await expect(page.locator('#catalogModal')).toHaveClass(/open/);
+  await expect(page.locator('#catalogSearchInput')).toHaveAttribute('placeholder','Search categories (name, code or specifications)…');
+  await expect(page.locator('#catalogTitle')).toHaveText('Our Products');
+  // Content authored only in Arabic remains as supplied, never machine-invented.
+  await expect(page.locator('#catalogModal')).toContainText('منتج تجريبي');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('lang','en');
+  await expect(page.locator('#openProducts strong')).toHaveText('Our Products');
+  await page.locator('#flLanguageSwitch').click();
+  await expect(page.locator('html')).toHaveAttribute('lang','ar');
+  await expect(page.locator('#openProducts strong')).toHaveText('منتجاتنا');
+});
+
+test('language and appearance controls remain separated on mobile and desktop',async({page})=>{
+  await installSupabaseMock(page);
+  for(const width of [390,1280]){
+    await page.setViewportSize({width,height:900});
+    await page.goto(base,{waitUntil:'domcontentloaded'});
+    const language=await page.locator('#flLanguageSwitch').boundingBox();
+    const theme=await page.locator('#flThemeSwitch').boundingBox();
+    const hero=await page.locator('#siteHero').boundingBox();
+    expect(language).not.toBeNull();
+    expect(theme).not.toBeNull();
+    expect(hero).not.toBeNull();
+    expect(language.y).toBeGreaterThanOrEqual(theme.y+theme.height);
+    expect(language.x+language.width).toBeLessThanOrEqual(hero.x+hero.width+1);
+    expect(language.y+language.height).toBeLessThan(hero.y+hero.height);
+  }
+});
+
+
+test('privacy policy uses the selected language and links to the other language',async({page})=>{
+  await installSupabaseMock(page);
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await page.locator('#flLanguageSwitch').click();
+  const englishHref=await page.locator('#flLeadGate a[href$="privacy-en.html"]').getAttribute('href');
+  expect(englishHref).toBe('privacy-en.html');
+  await page.goto(new URL('privacy-en.html',base).href,{waitUntil:'domcontentloaded'});
+  await expect(page.locator('html')).toHaveAttribute('lang','en');
+  await expect(page.locator('h1')).toHaveText('Privacy Policy');
+  await expect(page.locator('.language-nav a')).toHaveAttribute('href','privacy.html');
+  await page.goto(new URL('privacy.html',base).href,{waitUntil:'domcontentloaded'});
+  await expect(page.locator('html')).toHaveAttribute('lang','ar');
+  await expect(page.locator('h1')).toHaveText('سياسة الخصوصية');
+  await expect(page.locator('.language-nav a')).toHaveAttribute('href','privacy-en.html');
+});

@@ -19,6 +19,7 @@ const SHELL_URLS = [
   './style.css?v=__FL_VERSION__',
   './theme-dark.css?v=__FL_VERSION__',
   './theme-mode.js?v=__FL_VERSION__',
+  './site-i18n.js?v=__FL_VERSION__',
   './analytics.js?v=__FL_VERSION__',
   './catalog-pdf-viewer.js?v=__FL_VERSION__',
   './quote-list.js?v=__FL_VERSION__',
@@ -72,6 +73,7 @@ function isShellRequest(url) {
     path.endsWith('/style.css') ||
     path.endsWith('/theme-dark.css') ||
     path.endsWith('/theme-mode.js') ||
+    path.endsWith('/site-i18n.js') ||
     path.endsWith('/analytics.js') ||
     path.endsWith('/catalog-pdf-viewer.js') ||
     path.endsWith('/quote-list.js') ||

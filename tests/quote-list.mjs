@@ -4,10 +4,11 @@ import assert from 'node:assert/strict';
 
 const src=fs.readFileSync(new URL('../quote-list.js',import.meta.url),'utf8');
 
-function load(storage){
+function load(storage,lang='ar'){
   const events=[];
   const win={
     localStorage:storage,
+    FL_I18N:{lang},
     FLOWER_LIGHT_PROFILE:{brand_name:'Flower Light'},
     FLOWER_LIGHT_CONTACTS:[{type:'whatsapp',value:'0560933353',is_visible:true}],
     flTrack:(name,params)=>events.push({name,params}),
@@ -66,5 +67,13 @@ const broken={
 const {api:blockedApi}=load(broken);
 assert.doesNotThrow(()=>blockedApi.add({id:'safe',name:'يعمل بدون تخزين'},1));
 assert.equal(blockedApi.items()[0].qty,1);
+
+
+const {api:englishApi}=load(storage,'en');
+const englishMessage=englishApi.quoteListWhatsAppMessage(rows,{name:'Sam',notes:'Please quote'}).replace(/[\u2066\u2069]/g,'');
+assert.match(englishMessage,/Hello, I would like a quotation for the following products:/);
+assert.match(englishMessage,/Name: Sam/);
+assert.match(englishMessage,/Notes: Please quote/);
+assert.match(englishMessage,/Brand: Flower Light/);
 
 console.log('QUOTE_LIST_RUNTIME_OK');

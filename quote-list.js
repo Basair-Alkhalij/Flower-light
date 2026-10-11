@@ -74,7 +74,8 @@
 
   function quoteListWhatsAppMessage(items, { name = '', notes = '' } = {}) {
     const rows = Array.isArray(items) ? items : [];
-    const lines = ['السلام عليكم، أرغب بعرض سعر للمنتجات التالية:'];
+    const english = window.FL_I18N?.lang === 'en';
+    const lines = [english ? 'Hello, I would like a quotation for the following products:' : 'السلام عليكم، أرغب بعرض سعر للمنتجات التالية:'];
     rows.forEach((row, index) => {
       const item = cleanItem(row, row?.qty);
       if (!item) return;
@@ -85,11 +86,11 @@
     });
     const cleanName = cleanText(name, 80);
     const cleanNotes = cleanText(notes, MAX_NOTES);
-    if (cleanName) lines.push(`الاسم: ${cleanName}`);
-    if (cleanNotes) lines.push(`ملاحظات: ${cleanNotes}`);
+    if (cleanName) lines.push(`${english ? 'Name' : 'الاسم'}: ${cleanName}`);
+    if (cleanNotes) lines.push(`${english ? 'Notes' : 'ملاحظات'}: ${cleanNotes}`);
     const profile = window.FLOWER_LIGHT_PROFILE || {};
     const brand = cleanText(profile.brand_name || profile.company_name || '', 100);
-    if (brand) lines.push(`العلامة التجارية: ${brand}`);
+    if (brand) lines.push(`${english ? 'Brand' : 'العلامة التجارية'}: ${brand}`);
     return lines.join('\n');
   }
 

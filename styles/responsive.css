@@ -316,3 +316,23 @@ body.pwa-install-open{overflow:hidden}
 .fl-theme-switch:focus-visible{outline:3px solid var(--brand);outline-offset:3px}
 .fl-theme-switch svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 @media(max-width:420px){.fl-theme-switch{right:18px;left:auto;top:20px;min-width:36px;height:36px;padding:0 8px}}
+
+/* Visitor language control remains opposite the logo, below the theme selector. */
+.fl-language-switch{position:absolute;top:85px;right:24px;z-index:6;display:inline-flex;align-items:center;justify-content:center;min-width:72px;min-height:30px;padding:4px 11px;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:999px;box-shadow:0 2px 10px rgba(0,0,0,.09);font:800 12px Tajawal,system-ui,sans-serif;cursor:pointer;white-space:nowrap;direction:ltr}
+.fl-language-switch:hover{border-color:var(--brand)}
+.fl-language-switch:focus-visible{outline:3px solid var(--brand);outline-offset:3px}
+@media(max-width:420px){.fl-language-switch{top:62px;right:18px;min-width:64px;min-height:28px;padding:4px 9px;font-size:11px}}
+/* Keep the product card geometry, but read visitor-facing dialogs naturally in English. */
+:root[data-fl-language="en"] .products-btn-copy,
+:root[data-fl-language="en"] .catalog-search-wrap,
+:root[data-fl-language="en"] .catalog-tabs,
+:root[data-fl-language="en"] .fl-lead-gate,
+:root[data-fl-language="en"] .fl-quote-dialog,
+:root[data-fl-language="en"] .contact-choice-sheet,
+:root[data-fl-language="en"] .location-choice-sheet,
+:root[data-fl-language="en"] .export-choice-sheet,
+:root[data-fl-language="en"] .fl-bank-accounts,
+:root[data-fl-language="en"] .fl-business-info{direction:ltr;text-align:left}
+:root[data-fl-language="en"] .fl-lead-note,
+:root[data-fl-language="en"] .fl-lead-form,
+:root[data-fl-language="en"] .catalog-search-input{direction:ltr;text-align:left}
