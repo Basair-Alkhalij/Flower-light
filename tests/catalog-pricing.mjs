@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const window={};
+vm.runInNewContext(fs.readFileSync(new URL('../catalog-pricing.js',import.meta.url),'utf8'),{window});
+const p=window.FL_CATALOG_PRICING;
+assert.equal(p.validPriceNumber(-1),null);
+assert.equal(p.validPriceQty(0),null);
+assert.equal(p.validPriceQty('5'),5);
+assert.equal(p.productPricingTiers({price:100,wholesale_price:75,wholesale_min_qty:10}).length,2);
+const tiers=[{type:'retail',price:110},{type:'wholesale',price:85,min_qty:12,max_qty:20}];
+const product={specifications:[{key:'__pricing_tiers_v2',value:JSON.stringify(tiers)}],price:999};
+assert.equal(p.productPricingTiers(product)[0].price,110);
+assert.equal(p.productPricingTiers(product)[1].max_qty,20);
+assert.equal(p.productPricingLines(product)[1].key,'wholesale');
+assert.equal(p.productPricingTiers({specifications:[{key:'__pricing_tiers_v2',value:'invalid'}],price:50})[0].price,50);
+console.log('CATALOG_PRICING_MODULE_OK');
