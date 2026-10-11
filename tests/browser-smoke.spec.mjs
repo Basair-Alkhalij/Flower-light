@@ -48,10 +48,7 @@ async function installSupabaseMock(page){
 }
 
 async function injectCatalogFixtures(page){
-  // Source mode and built Pages mode may load public-sync.js at different times.
-  // Wait for its initial catalog fetch before placing fixtures, so it cannot clear them afterwards.
-  await page.waitForFunction(()=>typeof window.flRenderProducts==='function' && typeof window.flLoadCloudProducts==='function');
-  await page.evaluate(()=>window.flLoadCloudProducts());
+  await page.waitForFunction(()=>typeof window.flRenderProducts==='function');
   await page.evaluate(()=>{
     localStorage.setItem('flower_light_customer_access_v1','1');
     window.FLOWER_LIGHT_SITE_SETTINGS={require_customer_lead:false};
@@ -367,6 +364,9 @@ test('legacy query deep links still open product and category targets',async({pa
   await page.locator('#closeProducts').click();
 
   await page.goto(`${base}?category=wall-lights`,{waitUntil:'load'});
+  // The app also fetches an empty Supabase catalog asynchronously; wait for that only here.
+  await page.waitForFunction(()=>typeof window.flLoadCloudProducts==='function');
+  await page.evaluate(()=>window.flLoadCloudProducts());
   await injectCatalogFixtures(page);
   // Fixtures load after app bootstrap; restore the intended query if initial routing ran too early.
   await page.evaluate(()=>{
