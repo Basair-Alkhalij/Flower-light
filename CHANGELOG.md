@@ -1,3 +1,12 @@
+## v120 — 2026-10-11 — first mobile-performance and modularization pass
+
+- Defer building all product-card DOM nodes until visitors open the catalog; deep product/category links still resolve automatically, and admin mode retains immediate rendering.
+- Lower browser network priority for offscreen catalog product thumbnails while keeping small WebP thumbnails and original product images.
+- Group admin navigation by catalog, contacts, owner settings and accounts; add a compact accessible section selector on mobile.
+- Extract pure product-gallery normalization into `catalog-gallery.js` and admin navigation into `admin-navigation.js`, with static tests and browser smoke verification. Larger PDF/auth logic remains untouched.
+- Precache the catalog-gallery module for offline PWA use. Admin navigation is always fetched fresh.
+- Bump to `1.1.10` to refresh deployed assets. No Supabase SQL, product data, or permissions changed.
+
 ## v119 — 2026-10-11 — Restore uploaded product images in datasheets
 
 - Fix missing photo in custom Datasheet JPG/PDF by directly decoding FileReader `data:image/*` inputs, instead of making CSP-blocked `fetch(data:...)` requests.
