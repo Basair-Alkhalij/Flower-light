@@ -662,6 +662,8 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     image.alt = item.alt;
     image.loading = imageLoading;
     image.decoding = 'async';
+    // Later product cards should never compete with visible images on mobile.
+    if (index >= 4) image.fetchPriority = 'low';
 
     const badge = document.createElement('span');
     badge.className = 'image-zoom-badge';
@@ -2174,7 +2176,16 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
 
   catalogDownloadPdf?.addEventListener('click', handleCatalogDownloadChoice);
 
-  function renderProducts() {
+  // Do not construct all catalog product cards until the catalog is requested.
+  // This reduces initial DOM work for visitors who only need the company card.
+  let catalogRenderPending = false;
+  function renderProducts(force = false) {
+    if (!force && !isAdminUrl() && !catalogModal?.classList.contains('open')) {
+      catalogRenderPending = true;
+      scheduleDeepLinkResolution(); // Direct /p/ and /c/ links must still open.
+      return;
+    }
+    catalogRenderPending = false;
     const data = window.FLOWER_LIGHT_PRODUCTS || {extraSections:[]};
     renderExtraSections(data);
     if (catalogDownloadPdf) catalogDownloadPdf.disabled = catalogPdfBusy || catalogPdfEntries().length === 0;
@@ -2581,6 +2592,8 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     if (!catalogModal) return false;
     const allowed = await ensureProductsAccess();
     if (!allowed) return false;
+    // Create the fresh catalog BEFORE selecting the requested tab/deep link.
+    if (catalogRenderPending) renderProducts(true);
 
     catalogLastFocus = document.activeElement;
     const targetTab = panelId
