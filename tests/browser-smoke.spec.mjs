@@ -949,3 +949,20 @@ test('language and appearance controls remain separated on mobile and desktop',a
     expect(language.y+language.height).toBeLessThan(hero.y+hero.height);
   }
 });
+
+
+test('privacy policy uses the selected language and links to the other language',async({page})=>{
+  await installSupabaseMock(page);
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await page.locator('#flLanguageSwitch').click();
+  const englishHref=await page.locator('#flLeadGate a[href$="privacy-en.html"]').getAttribute('href');
+  expect(englishHref).toBe('privacy-en.html');
+  await page.goto(new URL('privacy-en.html',base).href,{waitUntil:'domcontentloaded'});
+  await expect(page.locator('html')).toHaveAttribute('lang','en');
+  await expect(page.locator('h1')).toHaveText('Privacy Policy');
+  await expect(page.locator('.language-nav a')).toHaveAttribute('href','privacy.html');
+  await page.goto(new URL('privacy.html',base).href,{waitUntil:'domcontentloaded'});
+  await expect(page.locator('html')).toHaveAttribute('lang','ar');
+  await expect(page.locator('h1')).toHaveText('سياسة الخصوصية');
+  await expect(page.locator('.language-nav a')).toHaveAttribute('href','privacy-en.html');
+});
