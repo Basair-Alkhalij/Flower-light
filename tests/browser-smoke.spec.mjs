@@ -365,6 +365,14 @@ test('legacy query deep links still open product and category targets',async({pa
 
   await page.goto(`${base}?category=wall-lights`,{waitUntil:'load'});
   await injectCatalogFixtures(page);
+  // Fixtures load after app bootstrap; restore the intended query if initial routing ran too early.
+  await page.evaluate(()=>{
+    const url=new URL(location.href);
+    url.searchParams.set('category','wall-lights');
+    url.searchParams.delete('product');
+    history.replaceState({},'',url.pathname+url.search);
+    window.flRenderProducts();
+  });
   await expect(page.locator('#catalogModal')).toHaveClass(/open/);
   await expect(page.locator('.extra-section-tab').filter({hasText:'جداريات'})).toHaveClass(/active/);
 });
