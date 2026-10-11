@@ -78,6 +78,8 @@ drop trigger if exists customer_leads_rate_limit on public.customer_leads;
 drop function if exists public.enforce_customer_lead_rate_limit();
 
 -- Browser clients can no longer write leads directly. The Edge Function uses service_role after Turnstile validation.
-revoke insert on table public.customer_leads from anon;
+revoke insert on table public.customer_leads from anon, authenticated;
+drop policy if exists "Public create customer lead" on public.customer_leads;
+grant insert on table public.customer_leads to service_role;
 
 select 'TURNSTILE_CUSTOMER_LEADS_V104_OK' as status;
