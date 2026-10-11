@@ -97,8 +97,8 @@ assert.deepEqual(responsiveQueries, [
   '(max-width:420px)',
   '(max-width: 760px)',
   '(max-width: 520px)',
-  '(max-width:520px)',
   '(max-width:760px)',
+  '(max-width:520px)',
 ]);
 assert.match(cssComparable, /Consolidated responsive architecture/);
 assert.match(admin, /ownerSettingsViewItems/);
