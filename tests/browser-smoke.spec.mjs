@@ -364,9 +364,10 @@ test('legacy query deep links still open product and category targets',async({pa
   await page.locator('#closeProducts').click();
 
   await page.goto(`${base}?category=wall-lights`,{waitUntil:'load'});
-  // The app also fetches an empty Supabase catalog asynchronously; wait for that only here.
-  await page.waitForFunction(()=>typeof window.flLoadCloudProducts==='function');
-  await page.evaluate(()=>window.flLoadCloudProducts());
+  // Wait for the initial Supabase synchronization. A second RPC can race and
+  // overwrite fixtures AFTER the tab is already correctly displayed.
+  await page.waitForFunction(()=>Boolean(window.flPublicCatalogReady));
+  await page.evaluate(()=>window.flPublicCatalogReady);
   await injectCatalogFixtures(page);
   // Fixtures load after app bootstrap; restore the intended query if initial routing ran too early.
   await page.evaluate(()=>{
