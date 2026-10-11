@@ -189,7 +189,8 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
       const rawKey = String(row.key || `custom_${index + 1}`).trim();
       if (rawKey === WHATSAPP_META_SHOW_DESCRIPTION || rawKey === WHATSAPP_META_SHOW_SPECS || rawKey === PRICING_META_KEY) return null;
       const key = canonicalProductSpecKey(rawKey, row.label);
-      const label = String(PRODUCT_SPEC_LABELS[key] || row.label || key).trim();
+      const rawLabel = String(PRODUCT_SPEC_LABELS[key] || row.label || key).trim();
+      const label = window.FL_I18N?.lang==='en' ? String(window.FL_I18N.translate(row.label||rawLabel)||rawLabel) : rawLabel;
       const value = String(row.value ?? '').trim();
       const unit = String(row.unit || '').trim();
       if (!label || !value) return null;
@@ -441,11 +442,11 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
       const translated=enSpecs.find(row=>String(row?.key||'')===String(spec?.key||''));
       return translated?.label&&translated?.value?{...spec,label:translated.label,value:translated.value,unit:translated.unit||''} : spec;
     });
-    return {...item,name:item.name_en||item.name,caption:item.caption_en||item.caption,alt:item.caption_en||item.caption||item.name_en||item.name,specifications:specs};
+    return {...item,name_ar:item.name,name:item.name_en||item.name,caption:item.caption_en||item.caption,alt:item.caption_en||item.caption||item.name_en||item.name,specifications:specs};
   };
   const localizedSection=section=>{
     if(!englishCatalog())return section;
-    return {...section,name:section.name_en||section.name,description:section.description_en||section.description,items:(section.items||[]).map(localizedProduct)};
+    return {...section,name_ar:section.name,name:section.name_en||section.name,description:section.description_en||section.description,items:(section.items||[]).map(localizedProduct)};
   };
 
   function categoryDisplayDescription(section) {
@@ -766,7 +767,7 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     const figure = document.createElement('figure');
     figure.className = `${type}-card`;
     figure.dataset.productId = String(item?.id || '');
-    figure.dataset.productName = [item?.name,item?.name_en].filter(Boolean).join(' ');
+    figure.dataset.productName = [item?.name_ar,item?.name,item?.name_en].filter(Boolean).join(' ');
     figure.dataset.productModel = String(item?.model || '');
     figure.dataset.filterSpecs=JSON.stringify(Object.fromEntries(productSpecifications(item).map(spec=>[spec.key,specificationDisplayValue(spec)])));
 
@@ -933,7 +934,7 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
       const panel = document.createElement('section');
       panel.className = `catalog-panel extra-section-panel${active?' active':''}`;
       panel.id = safeId;
-      panel.dataset.categorySearch=[section.name,section.name_en,section.description,section.description_en].filter(Boolean).join(' ');
+      panel.dataset.categorySearch=[section.name_ar,section.name,section.name_en,section.description,section.description_en].filter(Boolean).join(' ');
 
       const sectionHeader = document.createElement('div');
       sectionHeader.className = 'extra-section-head';
