@@ -19,6 +19,7 @@ const adminImport = read('admin-import.js');
 const adminDatasheet = read('admin-datasheet.js');
 const adminProductBundle = [admin,adminMedia,adminProducts,adminProductForm,adminImport].join('\n');
 const sync = read('public-sync.js');
+assert.match(sync,/window\.flPublicCatalogReady\s*=\s*initialCatalogLoad/);
 const siteBootstrap = read('site-bootstrap.js');
 const siteLoader = read('site-loader.js');
 const submitLead = read('supabase/functions/submit-customer-lead/index.ts');
