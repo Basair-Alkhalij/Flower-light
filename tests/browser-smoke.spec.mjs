@@ -877,3 +877,22 @@ test('visitor can override system theme and saved choice survives reload',async(
   await expect(toggle).toContainText('تلقائي');
   expect(await page.evaluate(()=>localStorage.getItem('flowerlight:public-theme'))).toBeNull();
 });
+
+
+test('theme toggle stays at upper-right of card on phone and desktop',async({page})=>{
+  await installSupabaseMock(page);
+  for(const width of [390,1280]){
+    await page.setViewportSize({width,height:900});
+    await page.goto(base,{waitUntil:'domcontentloaded'});
+    const button=page.locator('#flThemeSwitch');
+    await expect(button).toBeVisible();
+    const card=await page.locator('#publicCard').boundingBox();
+    const toggle=await button.boundingBox();
+    expect(card).not.toBeNull();
+    expect(toggle).not.toBeNull();
+    expect(toggle.x).toBeGreaterThan(card.x+card.width/2);
+    expect(Math.abs((toggle.x+toggle.width)-(card.x+card.width))).toBeLessThan(54);
+    const logo=await page.locator('#siteLogo').boundingBox();
+    if(logo)expect(toggle.x).toBeGreaterThan(logo.x+logo.width+8);
+  }
+});
