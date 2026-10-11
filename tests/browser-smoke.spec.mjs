@@ -1063,3 +1063,73 @@ test('v117 built-in marketing aliases translate without authoring English profil
   await expect(page.locator('#siteJobTitleAr')).toHaveText('Sales Manager');
   await expect(page.locator('#productsButtonSubtitle')).toHaveText('Explore Flower Light products');
 });
+
+
+// Final acceptance audit (non-production tests): locale/theme/viewport matrix.
+for (const {width,colorScheme,language} of [
+  {width:360,colorScheme:'light',language:'ar'},
+  {width:390,colorScheme:'dark',language:'en'},
+  {width:1280,colorScheme:'light',language:'en'},
+  {width:1280,colorScheme:'dark',language:'ar'},
+]) {
+  test('acceptance: '+width+'px '+language+' '+colorScheme+' catalog and navigation stay usable',async({page})=>{
+    await page.setViewportSize({width,height:900});
+    await page.emulateMedia({colorScheme});
+    await installSupabaseMock(page);
+    await page.goto(base,{waitUntil:'domcontentloaded'});
+    await injectCatalogFixtures(page);
+    await expect(page.locator('#flThemeSwitch')).toBeVisible();
+    await expect(page.locator('#flLanguageSwitch')).toBeVisible();
+    if(language==='en'){
+      await page.locator('#flLanguageSwitch').click();
+      await expect(page.locator('#openProducts strong')).toHaveText('Our Products');
+    }else await expect(page.locator('#openProducts strong')).toHaveText('منتجاتنا');
+    await expect(page.locator('html')).toHaveAttribute('lang',language);
+    await expect(page.locator('html')).toHaveAttribute('dir',language==='en'?'ltr':'rtl');
+    await expect(page.locator('#flDarkThemeCss')).toHaveAttribute('media','(prefers-color-scheme: dark)');
+    await expect.poll(()=>page.evaluate(()=>getComputedStyle(document.documentElement).colorScheme))
+      .toContain(colorScheme);
+    await page.locator('#openProducts').click();
+    await expect(page.locator('#catalogModal')).toHaveClass(/open/);
+    await expect(page.locator('#catalogSearchInput')).toBeVisible();
+    await page.locator('#catalogSearchInput').fill('WL-TEST');
+    await expect(page.locator('.catalog-panel.active .chandelier-card:not(.catalog-search-hidden)')).toHaveCount(1);
+    await page.locator('#catalogSearchInput').fill('');
+    await expect(page.locator('.product-whatsapp-button')).toHaveAttribute('href',/^https:\/\/wa\.me\/966/);
+    const geometry=await page.evaluate(()=>{
+      const visible=id=>document.querySelector(id).getBoundingClientRect();
+      const toggle=visible('#flThemeSwitch'),locale=visible('#flLanguageSwitch');
+      return {
+        viewport:innerWidth,
+        rootWidth:document.documentElement.scrollWidth,
+        toggleInViewport:toggle.right<=innerWidth&&toggle.left>=0,
+        localeInViewport:locale.right<=innerWidth&&locale.left>=0,
+        noOverlap:toggle.bottom<=locale.top
+      };
+    });
+    expect(geometry.rootWidth).toBeLessThanOrEqual(geometry.viewport+2);
+    expect(geometry.toggleInViewport).toBe(true);
+    expect(geometry.localeInViewport).toBe(true);
+    expect(geometry.noOverlap).toBe(true);
+    await page.locator('#closeProducts').click();
+    await expect(page.locator('#catalogModal')).not.toHaveClass(/open/);
+  });
+}
+
+test('acceptance: downloading product JPG produces a valid nonempty JPEG file',async({page})=>{
+  await installSupabaseMock(page);
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await injectCatalogFixtures(page);
+  await page.locator('#openProducts').click();
+  await page.locator('.product-download-pdf-button').click();
+  await expect(page.locator('#exportChoiceModal')).toHaveClass(/open/);
+  const downloadPromise=page.waitForEvent('download',{timeout:25000});
+  await page.locator('#exportChoiceJpg').click();
+  const download=await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/-product\.jpg$/);
+  const path=await download.path();
+  const buffer=fs.readFileSync(path);
+  expect(buffer.length).toBeGreaterThan(10000);
+  expect([...buffer.subarray(0,3)]).toEqual([255,216,255]);
+  expect([...buffer.subarray(-2)]).toEqual([255,217]);
+});
