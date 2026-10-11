@@ -1,3 +1,13 @@
+FLOWER LIGHT / BASAIR GULF — v114 (1.1.4)
+
+المهمة 8: مراقبة أخطاء JavaScript عبر Google Analytics 4.
+- رصد أحداث error و unhandledrejection وإرسال js_error بدون أي نص استثناء خام أو معلومات مستخدم.
+- الحد الأعلى 5 بلاغات خلال جلسة التصفح، وتتجاهل أخطاء إضافات المتصفح.
+- أسماء الملفات فقط مع رقم السطر ووصف عام آمن.
+- عند تعطيل GA4 أو sessionStorage يستمر الموقع دون تعطل.
+- التحقق: npm ci ثم npm run build:check ثم npm run test:static ثم npm run build ثم npm run test:browser.
+- لا يحتاج إلى SQL أو تعديل Supabase، ويُدمج فرع المهمة بعد نجاح GitHub Actions.
+
 FLOWER LIGHT / BASAIR GULF — v112 (1.1.2)
 
 التغيير الأحدث:

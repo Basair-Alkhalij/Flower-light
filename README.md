@@ -1,9 +1,19 @@
-# بصائر الخليج — Flower Light v113
+# بصائر الخليج — Flower Light v114
 
 موقع GitHub Pages ثابت لإدارة وعرض منتجات Flower Light، مع Supabase للمصادقة والبيانات والتخزين وEdge Functions.
 
-**الإصدار الحالي:** v113 (`package.json` = `1.1.3`).
+**الإصدار الحالي:** v114 (`package.json` = `1.1.4`).
 
+
+## ما الجديد في v114 — المهمة 8: مراقبة أخطاء JavaScript
+
+- رصد أخطاء `window.error` والوعود غير المعالجة `unhandledrejection` في `analytics.js`.
+- تسجيل `js_error` في GA4 بقيم عامة: نوع الخطأ ووصف نمطي آمن (حتى 100 حرف)، اسم ملف المصدر فقط، ورقم السطر.
+- لا تُرسل رسائل الخطأ الأصلية أو محتويات stack أو الروابط، وذلك لتجنب تسريب أسماء وعناوين أو رموز حساسة.
+- حد أقصى خمسة بلاغات في كل جلسة متصفح باستخدام `sessionStorage`، مع معالجة تعذّر الوصول للتخزين أو تعطيل Google Analytics.
+- تجاهل مصادر `chrome-extension:` و`moz-extension:` وأخطاء تحميل الصور والملفات غير البرمجية.
+- اختبار مستقل في `tests/error-monitoring.mjs` مضاف إلى `npm run test:static`، واختبار غياب معرف Analytics في `tests/smoke.mjs`.
+- التطوير يجري عبر فرع `task-8-js-error-monitoring` وPull Request، ولا يتطلب SQL أو تغييرات Supabase.
 
 ## ما الجديد في v113 — ربط زر المظهر برأس البطاقة
 
