@@ -574,6 +574,8 @@ assert.match(index,/id="flThemeSwitch"/);
 assert.match(read('styles/responsive.css'),/\.fl-theme-switch\{position:absolute;top:28px;right:24px;left:auto;/);
 assert.match(read('styles/responsive.css'),/@media\(max-width:420px\)\{\.fl-theme-switch\{right:19px;left:auto;/);
 assert.match(index,/id="flDarkThemeCss"/);
+assert.match(sw,/theme-dark\.css\?v=__FL_VERSION__/);
+assert.match(sw,/theme-mode\.js\?v=__FL_VERSION__/);
 assert.match(index,/name="color-scheme" content="light dark"/);
 assert.match(index,/theme-color" content="#111827" media="\(prefers-color-scheme: dark\)"/);
 assert.match(index,/theme-color" content="#ff9f0a" media="\(prefers-color-scheme: light\)"/);
