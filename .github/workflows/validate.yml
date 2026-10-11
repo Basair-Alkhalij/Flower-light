@@ -40,6 +40,8 @@ jobs:
       - run: node --check scripts/generate-static-pages.mjs
       - run: node --check tests/static-pages.mjs
       - run: node --check tests/hygiene.mjs
+      - run: node --check tests/catalog-gallery.mjs
+      - run: node --check tests/admin-navigation.mjs
       - run: node --check tests/sql-unified.mjs
       - run: node --check tests/edge-origins.mjs
       - run: node --check tests/browser-smoke.spec.mjs
