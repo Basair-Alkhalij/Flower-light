@@ -1,3 +1,11 @@
+## v112 — 2026-10-11 — theme selector position and cache refresh
+
+- Positioned the visitor theme selector at the upper-right edge, opposite the Flower Light logo, for mobile and desktop.
+- Bumped package and lockfile from 1.1.1 to 1.1.2, changing built asset query tokens and service-worker cache namespace from 111 to 112.
+- Precached theme-mode.js and theme-dark.css to support offline theme switching.
+- Added mobile/desktop positioning regression coverage.
+- No Supabase/SQL migrations; PDF/JPG export logic unchanged.
+
 ## v111O — 2026-10-10 — system dark mode
 
 - Added automatic public dark mode using `prefers-color-scheme: dark`.
