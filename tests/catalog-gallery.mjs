@@ -11,7 +11,7 @@ const items=normalize({image:'first.l.webp',image_path:'first',image_thumb:'firs
 {image:'third.l.webp',image_path:'third'},{image:'fourth.l.webp',image_path:'fourth'},
 {image:'fifth.l.webp',image_path:'fifth'}]});
 assert.equal(items.length,4);
-assert.deepEqual(items.map(i=>i.image_path),['first','second','third','fourth']);
+assert.deepEqual(Array.from(items,i=>i.image_path),['first','second','third','fourth']);
 assert.equal(items[0].thumb,'first.s.webp');
 assert.equal(items[1].thumb,'second.s.webp');
 console.log('CATALOG_GALLERY_MODULE_OK');
