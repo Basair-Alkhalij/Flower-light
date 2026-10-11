@@ -213,8 +213,19 @@
     const string=String(value??'');
     const trimmed=string.trim();
     if (!trimmed) return string;
+    if(trimmed==='استعرض الأقسام والمنتجات.')return string.replace(trimmed,'Browse categories and products.');
+    if(trimmed==='ر.س')return string.replace(trimmed,'SAR');
     const exact=dictionary[trimmed];
     if (exact) return string.replace(trimmed,exact);
+    const patterns=[
+      [/^(\d+) منتج$/,'$1 products'],
+      [/^من (\d+) قطعة فأكثر$/,'From $1 pieces'],
+      [/^تحميل قسم (.+)$/,'Download category $1'],
+      [/^مشاركة قسم (.+)$/,'Share category $1'],
+      [/^مشاركة (.+)$/,'Share $1'],
+      [/^تحميل (.+)$/,'Download $1']
+    ];
+    for(const [regex,result] of patterns)if(regex.test(trimmed))return string.replace(trimmed,trimmed.replace(regex,result));
     const rules=[
       [/^(\d+) معلومات$/,'$1 specifications'],
       [/^(\d+) صور$/,'$1 images'],
