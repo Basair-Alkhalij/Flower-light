@@ -1672,10 +1672,10 @@
         <form id="flProfileForm">
           <div class="fl-cloud-form">
             <div class="fl-cloud-field"><label>اسم الشخص</label><input id="flProfileName" value="${esc(profile.full_name||'')}" placeholder="مثال: محمد أحمد"></div>
-            <div class="fl-cloud-field"><label>اسم العلامة / المتجر</label><input id="flProfileBrand" value="${esc(profile.brand_name||'')}" placeholder="مثال: اسم المتجر أو العلامة"></div>
+            <div class="fl-cloud-field"><label>اسم العلامة / المتجر (عربي)</label><input id="flProfileBrand" value="${esc(profile.brand_name||'')}" placeholder="مثال: اسم المتجر أو العلامة"></div><div class="fl-cloud-field"><label>Brand name (English)</label><input id="flProfileBrandEn" maxlength="200" dir="ltr" value="${esc(profile.brand_name_en||'')}" placeholder="Flower Light"></div>
             <div class="fl-cloud-field"><label>المسمى الوظيفي بالعربي</label><input id="flProfileJobAr" value="${esc(profile.job_title_ar||'')}" placeholder="مثال: مدير مبيعات"></div>
             <div class="fl-cloud-field"><label>المسمى الوظيفي بالإنجليزي</label><input id="flProfileJobEn" value="${esc(profile.job_title_en||'')}" placeholder="مثال: Sales Manager"></div>
-            <div class="fl-cloud-field full"><label>اسم الشركة / السطر الثاني</label><input id="flProfileCompany" value="${esc(profile.company_name||'')}" placeholder="مثال: اسم الشركة"></div>
+            <div class="fl-cloud-field full"><label>اسم الشركة / السطر الثاني (عربي)</label><input id="flProfileCompany" value="${esc(profile.company_name||'')}" placeholder="مثال: اسم الشركة"></div><div class="fl-cloud-field full"><label>Company name (English)</label><input id="flProfileCompanyEn" maxlength="200" dir="ltr" value="${esc(profile.company_name_en||'')}" placeholder="Basair Gulf"></div>
             <div class="fl-cloud-field full">
               <div class="fl-profile-images">
                 <div class="fl-profile-image-card">${profileImagePreview(profile.logo_path,'logo')}<label><b>شعار الشركة</b><input id="flProfileLogo" type="file" accept="image/*"></label>${profile.logo_path?'<label class="fl-cloud-check"><input id="flRemoveLogo" type="checkbox"> حذف الشعار الحالي</label>':''}</div>
@@ -1720,7 +1720,9 @@
         id:1,
         full_name:document.getElementById('flProfileName').value.trim(),
         brand_name:document.getElementById('flProfileBrand').value.trim(),
+        brand_name_en:document.getElementById('flProfileBrandEn').value.trim(),
         company_name:document.getElementById('flProfileCompany').value.trim(),
+        company_name_en:document.getElementById('flProfileCompanyEn').value.trim(),
         job_title_ar:document.getElementById('flProfileJobAr').value.trim(),
         job_title_en:document.getElementById('flProfileJobEn').value.trim(),
         logo_path,portrait_path
@@ -1755,14 +1757,14 @@
     openModal(item?'تعديل وسيلة التواصل':'إضافة وسيلة تواصل',`<form id="flContactForm"><div class="fl-cloud-form">
       <div class="fl-cloud-field"><label>النوع</label><select id="flContactType"><option value="phone" ${type==='phone'?'selected':''}>جوال</option><option value="whatsapp" ${type==='whatsapp'?'selected':''}>واتساب</option><option value="website" ${type==='website'?'selected':''}>موقع إلكتروني</option><option value="email" ${type==='email'?'selected':''}>بريد إلكتروني</option><option value="location" ${type==='location'?'selected':''}>رابط موقع / خرائط</option></select></div>
       <div class="fl-cloud-field"><label>الترتيب</label><input id="flContactSort" type="number" min="0" step="1" value="${Number(item?.sort_order||0)}"></div>
-      <div class="fl-cloud-field full"><label>الاسم الظاهر (اختياري)</label><input id="flContactLabel" value="${esc(item?.label||'')}" placeholder="مثال: جوال المبيعات، واتساب الطلبات، الموقع الرسمي"></div>
+      <div class="fl-cloud-field full"><label>الاسم الظاهر (عربي)</label><input id="flContactLabel" value="${esc(item?.label||'')}" placeholder="مثال: جوال المبيعات، واتساب الطلبات، الموقع الرسمي"></div><div class="fl-cloud-field full"><label>Contact / branch label (English)</label><input id="flContactLabelEn" maxlength="200" dir="ltr" value="${esc(item?.label_en||'')}" placeholder="e.g. Al Faisaliyah branch"></div>
       <div class="fl-cloud-field full"><label>الرقم أو الرابط</label><input id="flContactValue" required value="${esc(item?.value||'')}" placeholder="مثال: 0570000000 أو https://example.com"></div>
       <label class="fl-cloud-check full"><input id="flContactVisible" type="checkbox" ${item?.is_visible===false?'':'checked'}> إظهار للزوار</label>
       </div><div class="fl-cloud-dialog-actions"><button class="fl-cloud-btn primary" type="submit">حفظ</button><button class="fl-cloud-btn" id="flContactCancel" type="button">إلغاء</button></div></form>`);
     document.getElementById('flContactCancel').addEventListener('click',closeModal);
     document.getElementById('flContactForm').addEventListener('submit',async e=>{
       e.preventDefault();
-      const payload={type:document.getElementById('flContactType').value,label:document.getElementById('flContactLabel').value.trim(),value:document.getElementById('flContactValue').value.trim(),sort_order:Number(document.getElementById('flContactSort').value)||0,is_visible:document.getElementById('flContactVisible').checked};
+      const payload={type:document.getElementById('flContactType').value,label:document.getElementById('flContactLabel').value.trim(),label_en:document.getElementById('flContactLabelEn').value.trim(),value:document.getElementById('flContactValue').value.trim(),sort_order:Number(document.getElementById('flContactSort').value)||0,is_visible:document.getElementById('flContactVisible').checked};
       const res=item?await db.from('contact_items').update(payload).eq('id',item.id):await db.from('contact_items').insert(payload);
       if(res.error){notify('تعذر الحفظ: '+res.error.message);return;}
       closeModal();await loadContactsAdminData();await loadPublicProfile();renderContacts();notify('تم حفظ وسيلة التواصل');
