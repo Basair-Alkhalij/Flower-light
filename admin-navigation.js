@@ -2,6 +2,8 @@
 (() => {
   'use strict';
   const mainViews=['sections','products','datasheet'];
+  const catalogSettings=['search-filters','template-settings'];
+  const companySettings=['site-settings','business-settings','bank-settings'];
   const contactViews=['leads','contacts','profile','analytics'];
   function esc(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function groups({view,allowed,adminViewItems,ownerSettingsViewItems,isPrimaryAdmin}){
@@ -14,7 +16,13 @@
       ['المتابعة والتواصل',from(contactViews)]
     ];
     if(isPrimaryAdmin){
-      result.push(['إعدادات الموقع',ownerSettingsViewItems||[]]);
+      const ownerItems=ownerSettingsViewItems||[];
+      const ownerFrom=keys=>keys.map(key=>ownerItems.find(row=>row[0]===key)).filter(Boolean);
+      result.push(['الفلاتر وقوالب المنتجات',ownerFrom(catalogSettings)]);
+      result.push(['الموقع والمنشأة',ownerFrom(companySettings)]);
+      const known=new Set([...catalogSettings,...companySettings]);
+      const other=ownerItems.filter(([key])=>!known.has(key));
+      if(other.length) result.push(['إعدادات إضافية',other]);
       result.push(['الحسابات والصلاحيات',[['credentials','بيانات تسجيل الدخول'],['permissions','صلاحيات الأدمن']]]);
     }
     return result.filter(([,items])=>items.length);
