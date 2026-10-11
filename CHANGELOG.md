@@ -1,3 +1,12 @@
+## v116 — 2026-10-11 — editable English category and product fields
+
+- Non-destructive SQL adds name_en/description_en to categories and name_en/caption_en/specifications_en to products.
+- Owner/admin forms support entering English catalog metadata and matching English specification labels/values.
+- Public Supabase sync retains both languages. Catalog renders localized projections and rerenders on language change while preserving original Arabic values and dual-language search.
+- Category heading, category download button and result counts are translated.
+- Existing unlocalized records fall back to Arabic until translations are entered.
+- Requires explicitly running the supplied v116 SQL upgrade on the existing Supabase project; no destructive migration.
+
 ## v115 — 2026-10-11 — Arabic/English visitor-facing interface
 
 - Add a compact language button beneath the theme toggle in the public hero.
