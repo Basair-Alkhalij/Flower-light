@@ -81,6 +81,7 @@ try {
   const sitemap = fs.readFileSync(path.join(outDir, 'sitemap.xml'), 'utf8');
   assert.ok(sitemap.includes('https://example.com/Flower-light/'));
   assert.ok(sitemap.includes('https://example.com/Flower-light/privacy.html'));
+  assert.ok(sitemap.includes('https://example.com/Flower-light/privacy-en.html'));
   assert.ok(sitemap.includes('https://example.com/Flower-light/p/prod-1/'));
   assert.ok(sitemap.includes('https://example.com/Flower-light/c/wall-lights/'));
   assert.ok(!sitemap.includes('prod-hidden'));
