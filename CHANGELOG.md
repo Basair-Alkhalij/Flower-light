@@ -1,3 +1,11 @@
+## v112 — 2026-10-11 — Mobile catalog rendering phase 1
+
+- Add `content-visibility:auto` and intrinsic sizing for offscreen catalog cards on mobile-sized screens to reduce unnecessary paint and layout work.
+- Preserve desktop layout, existing WebP thumbnails and native image lazy loading.
+- Add an end-to-end regression for mobile and desktop rendering.
+- Advance asset cache revision so installed PWAs receive refreshed styles.
+- No database, product or Supabase changes.
+
 ## v120b — 2026-10-11 — stabilize catalog initialization on built Pages
 
 - Expose the initial catalog fetch promise as `window.flPublicCatalogReady`; this adds no extra database requests.
