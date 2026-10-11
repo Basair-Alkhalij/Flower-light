@@ -1021,7 +1021,7 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     // them in img-src but intentionally excludes data: from connect-src, so
     // fetch(dataUrl) fails even though the same image can be displayed safely.
     // Decode these directly as <img>; keep the fetch/blob path for remote images.
-    if (/^data:image\\//i.test(String(src || ''))) {
+    if (/^data:image\//i.test(String(src || ''))) {
       const image = await new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => img.naturalWidth && img.naturalHeight
