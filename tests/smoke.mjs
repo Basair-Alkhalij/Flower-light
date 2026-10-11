@@ -87,6 +87,7 @@ const responsiveQueries = [...css.matchAll(/@media\s*([^\{]+)\{/g)]
   .map(match => match[1].trim().replace(/\s+/g, ' '));
 assert.deepEqual(responsiveQueries, [
   '(max-width:520px)',
+  '(max-width:760px)',
   '(max-width: 760px)',
   '(max-width: 430px)',
   '(min-width: 761px)',

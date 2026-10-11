@@ -1258,3 +1258,28 @@ test('admin navigation: mobile section chooser respects permissions and replaces
   await page.locator('#flAdminViewSelect').selectOption('leads');
   await expect(page.locator('#flAdminViewSelect')).toHaveValue('leads');
 });
+
+
+test('mobile catalog defers offscreen card painting without hiding products',async({page})=>{
+  await installSupabaseMock(page);
+  await page.setViewportSize({width:390,height:844});
+  await page.goto(base,{waitUntil:'load'});
+  await injectCatalogFixtures(page);
+  await page.locator('#openProducts').click();
+  await expect(page.locator('.extra-section-grid .chandelier-card')).toHaveCount(1);
+  const mobile=await page.locator('.extra-section-grid .chandelier-card').first().evaluate(node=>({
+    visibility:getComputedStyle(node).contentVisibility,
+    minHeight:getComputedStyle(node).containIntrinsicSize,
+    nativeLazy:node.querySelector('.product-image-button img')?.loading,
+    decoding:node.querySelector('.product-image-button img')?.decoding
+  }));
+  expect(mobile.visibility).toBe('auto');
+  expect(mobile.minHeight).toContain('450px');
+  expect(mobile.nativeLazy).toBe('lazy');
+  expect(mobile.decoding).toBe('async');
+  await page.locator('#closeProducts').click();
+  await page.setViewportSize({width:1280,height:800});
+  await page.locator('#openProducts').click();
+  const desktop=await page.locator('.extra-section-grid .chandelier-card').first().evaluate(node=>getComputedStyle(node).contentVisibility);
+  expect(desktop).toBe('visible');
+});

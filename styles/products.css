@@ -1954,3 +1954,13 @@ min-height:48px!important;
 grid-column:1/-1!important;
 }
 .quote-list-product-control[hidden]{display:none!important}
+
+
+/* Mobile catalog: defer layout/paint work for product cards outside the viewport.
+   Existing native lazy-loading continues to handle image network requests. */
+@media (max-width:760px){
+  .extra-section-grid .chandelier-card{
+    content-visibility:auto;
+    contain-intrinsic-size:auto 450px;
+  }
+}
