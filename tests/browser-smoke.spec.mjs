@@ -924,7 +924,7 @@ test('visitor switches Arabic and English, preserving products and language choi
   await expect(page.locator('#catalogSearchInput')).toHaveAttribute('placeholder','Search categories (name, code or specifications)…');
   await expect(page.locator('#catalogTitle')).toHaveText('Our Products');
   // Content authored only in Arabic remains as supplied, never machine-invented.
-  await expect(page.locator('#catalogModal')).toContainText('جداري تجريبي');
+  await expect(page.locator('#catalogModal')).toContainText('منتج تجريبي');
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('lang','en');
   await expect(page.locator('#openProducts strong')).toHaveText('Our Products');
