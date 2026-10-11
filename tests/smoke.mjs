@@ -27,6 +27,10 @@ const turnstileMigration = read('supabase/migrations/2026-10-06_turnstile_custom
 const adminWithSettings = `${admin}\n${read('admin-settings.js')}`;
 const cssEntry = read('style.css');
 const css = ['styles/core.css','styles/products.css','styles/responsive.css','styles/admin.css','styles/business-bank.css'].map(read).join('\n');
+
+const cssComparable = css.replace(/\s*([{};,])\s*/g,'$1');
+const cssComparableFile = file => read(file).replace(/\s*([{};,])\s*/g,'$1');
+
 const manageAdmin = read('supabase/functions/manage-admin-account/index.ts');
 const sql = read('SUPABASE_SETUP.sql');
 
@@ -92,23 +96,23 @@ assert.deepEqual(responsiveQueries, [
   '(max-width: 520px)',
   '(max-width:520px)',
 ]);
-assert.match(css, /Consolidated responsive architecture/);
+assert.match(cssComparable, /Consolidated responsive architecture/);
 assert.match(admin, /ownerSettingsViewItems/);
 assert.match(admin, /site-settings/);
 assert.match(admin, /business-settings/);
 assert.match(admin, /template-settings/);
 assert.match(admin, /fl-cloud-nav-group/);
 assert.match(admin, /primaryRecoverySettingsCardHtml\(\)/);
-assert.match(css, /\.fl-overview-shortcuts/);
-assert.match(css, /\.fl-price-tier-row\{[\s\S]*?grid-template-columns:minmax\(96px,1\.05fr\)/);
-assert.match(css, /\.fl-cloud-mini\{min-height:44px\}/);
-assert.match(css, /\.fl-cloud-dialog\.fl-product-dialog\{[\s\S]*?width:min\(980px,calc\(100vw - 32px\)\)/);
-assert.match(css, /\.image-lightbox\{[\s\S]*?align-items:flex-start!important/);
+assert.match(cssComparable, /\.fl-overview-shortcuts/);
+assert.match(cssComparable, /\.fl-price-tier-row\{[\s\S]*?grid-template-columns:minmax\(96px,1\.05fr\)/);
+assert.match(cssComparable, /\.fl-cloud-mini\{min-height:44px\}/);
+assert.match(cssComparable, /\.fl-cloud-dialog\.fl-product-dialog\{[\s\S]*?width:min\(980px,calc\(100vw - 32px\)\)/);
+assert.match(cssComparable, /\.image-lightbox\{[\s\S]*?align-items:flex-start!important/);
 assert.match(adminProductBundle, /classList\.add\('fl-product-dialog'\)/);
 assert.match(app, /imageLightbox\.scrollTop = 0/);
 assert.match(app, /actions\.append\(pdfButton, shareButton, whatsappLink\)/);
-assert.match(css, /\.product-card-actions \.product-whatsapp-button\{[\s\S]*?grid-column:1\/-1!important;/);
-assert.match(css, /\.image-lightbox-actions \.image-lightbox-whatsapp\{[\s\S]*?grid-column:1\/-1!important;/);
+assert.match(cssComparable, /\.product-card-actions \.product-whatsapp-button\{[\s\S]*?grid-column:1\/-1!important;/);
+assert.match(cssComparable, /\.image-lightbox-actions \.image-lightbox-whatsapp\{[\s\S]*?grid-column:1\/-1!important;/);
 assert.match(index, /imageLightboxDownloadPdf[\s\S]*imageLightboxShare[\s\S]*imageLightboxWhatsApp/);
 assert.ok(fs.statSync(path.join(root, 'share-image.jpg')).size > 1000, 'share image is missing or empty');
 const jpegDimensions=file=>{
@@ -472,12 +476,12 @@ assert.match(quoteList,/MAX_URL_LENGTH\s*=\s*1800/);
 assert.match(quoteList,/quote_list_add/);
 assert.match(quoteList,/quote_list_send/);
 assert.match(quoteList,/role="dialog"/);
-assert.match(read('styles/products.css'),/\.fl-quote-bar/);
+assert.match(cssComparableFile('styles/products.css'),/\.fl-quote-bar/);
 assert.match(app,/classList\.toggle\('has-quote-list'/);
 assert.match(quoteList,/closest\('\.product-card-actions'\)\?\.classList\.toggle\('has-quote-list'/);
-assert.match(read('styles/products.css'),/\.product-card-actions\.has-quote-list \.product-whatsapp-button[\s\S]*?grid-column:1!important/);
-assert.match(read('styles/products.css'),/\.product-card-actions\.has-quote-list \.quote-list-product-control[\s\S]*?grid-column:2!important/);
-assert.match(read('styles/products.css'),/\.product-card-actions:not\(\.has-quote-list\) \.product-whatsapp-button[\s\S]*?grid-column:1\/-1!important/);
+assert.match(cssComparableFile('styles/products.css'),/\.product-card-actions\.has-quote-list \.product-whatsapp-button[\s\S]*?grid-column:1!important/);
+assert.match(cssComparableFile('styles/products.css'),/\.product-card-actions\.has-quote-list \.quote-list-product-control[\s\S]*?grid-column:2!important/);
+assert.match(cssComparableFile('styles/products.css'),/\.product-card-actions:not\(\.has-quote-list\) \.product-whatsapp-button[\s\S]*?grid-column:1\/-1!important/);
 
 
 // v111D: Owner controls whether the public quote-list feature is visible.
@@ -502,7 +506,7 @@ assert.match(quoteList,/input\.type = 'number'/);
 assert.match(quoteList,/input\.min = '1'/);
 assert.match(quoteList,/input\.max = String\(MAX_QTY\)/);
 assert.match(quoteList,/input\.addEventListener\('change'/);
-assert.match(read('styles/products.css'),/\.fl-quote-item-qty-input/);
+assert.match(cssComparableFile('styles/products.css'),/\.fl-quote-item-qty-input/);
 
 
 // v111H: product availability states.
@@ -520,7 +524,7 @@ assert.match(productForm,/flProdAvailability/);
 assert.match(productAdmin,/AVAILABILITY_LABELS/);
 assert.match(productImport,/حالة التوفر/);
 assert.match(quoteList,/availability !== 'available'/);
-assert.match(read('styles/products.css'),/\.product-availability-badge\.is-out_of_stock/);
+assert.match(cssComparableFile('styles/products.css'),/\.product-availability-badge\.is-out_of_stock/);
 
 
 // v111I / task 6: global catalog search. Specification filters remain deferred
@@ -574,8 +578,8 @@ assert.match(read('theme-mode.js'),/flowerlight:public-theme/);
 assert.match(index,/id="flThemeSwitch"/);
 assert.match(index,/<section class="hero" id="siteHero">\s*<button id="flThemeSwitch"/);
 assert.doesNotMatch(index,/<main class="page">\s*<button id="flThemeSwitch"/);
-assert.match(read('styles/responsive.css'),/\.fl-theme-switch\{position:absolute;top:40px;right:24px;left:auto;/);
-assert.match(read('styles/responsive.css'),/@media\(max-width:420px\)\{\.fl-theme-switch\{right:18px;left:auto;top:20px;/);
+assert.match(cssComparableFile('styles/responsive.css'),/\.fl-theme-switch\{position:absolute;top:40px;right:24px;left:auto;/);
+assert.match(cssComparableFile('styles/responsive.css'),/@media\(max-width:420px\)\{\.fl-theme-switch\{right:18px;left:auto;top:20px;/);
 assert.match(index,/id="flDarkThemeCss"/);
 assert.match(sw,/theme-dark\.css\?v=__FL_VERSION__/);
 assert.match(sw,/theme-mode\.js\?v=__FL_VERSION__/);

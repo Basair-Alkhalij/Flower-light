@@ -35,11 +35,93 @@
 
   .fl-analytics-columns{grid-template-columns:1fr}
 
-  .fl-cloud-top{position:sticky;display:grid;grid-template-columns:1fr;gap:10px;padding:10px 12px}.fl-cloud-brand{width:100%;justify-content:center}.fl-cloud-logo{width:46px;height:46px;flex-basis:46px;border-radius:15px}.fl-cloud-brand-copy{text-align:right}.fl-cloud-brand strong{font-size:15px}.fl-cloud-brand small{font-size:11px}.fl-cloud-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;width:100%}.fl-cloud-menu-btn{width:100%;min-height:48px;justify-content:flex-start;border-radius:14px;padding:5px 8px;font-size:12px}.fl-cloud-menu-icon{width:32px;height:32px;flex-basis:32px;border-radius:10px}.fl-cloud-menu-icon svg{width:18px;height:18px}.fl-cloud-login{margin:24px auto;padding:20px;border-radius:20px}.fl-cloud-wrap{padding:14px 12px}
+  .fl-cloud-top{
+position:sticky;
+display:grid;
+grid-template-columns:1fr;
+gap:10px;
+padding:10px 12px}
+.fl-cloud-brand{
+width:100%;
+justify-content:center}
+.fl-cloud-logo{
+width:46px;
+height:46px;
+flex-basis:46px;
+border-radius:15px}
+.fl-cloud-brand-copy{
+text-align:right}
+.fl-cloud-brand strong{
+font-size:15px}
+.fl-cloud-brand small{
+font-size:11px}
+.fl-cloud-actions{
+display:grid;
+grid-template-columns:repeat(2,minmax(0,1fr));
+gap:7px;
+width:100%}
+.fl-cloud-menu-btn{
+width:100%;
+min-height:48px;
+justify-content:flex-start;
+border-radius:14px;
+padding:5px 8px;
+font-size:12px}
+.fl-cloud-menu-icon{
+width:32px;
+height:32px;
+flex-basis:32px;
+border-radius:10px}
+.fl-cloud-menu-icon svg{
+width:18px;
+height:18px}
+.fl-cloud-login{
+margin:24px auto;
+padding:20px;
+border-radius:20px}
+.fl-cloud-wrap{
+padding:14px 12px}
 
   .fl-profile-images{grid-template-columns:1fr}
 
-  .fl-cloud-top{align-items:flex-start}.fl-cloud-grid{grid-template-columns:1fr}.fl-cloud-nav{position:static;display:flex;overflow:auto;gap:6px}.fl-cloud-nav button{width:auto;white-space:nowrap;padding:0 14px}.fl-cloud-stats{grid-template-columns:1fr 1fr}.fl-cloud-form{grid-template-columns:1fr}.fl-cloud-field.full{grid-column:auto}.fl-cloud-row{align-items:flex-start;flex-direction:column}.fl-cloud-row-actions{width:100%}.fl-cloud-row-actions button{flex:1}.fl-cloud-wrap{padding:12px}.fl-cloud-brand small{display:none}.fl-credentials-grid,.fl-primary-recovery-card{grid-template-columns:1fr}.fl-primary-recovery-card>*{grid-column:auto!important}.fl-credentials-actions{grid-template-columns:1fr}.fl-credentials-card{padding:15px}
+  .fl-cloud-top{
+align-items:flex-start}
+.fl-cloud-grid{
+grid-template-columns:1fr}
+.fl-cloud-nav{
+position:static;
+display:flex;
+overflow:auto;
+gap:6px}
+.fl-cloud-nav button{
+width:auto;
+white-space:nowrap;
+padding:0 14px}
+.fl-cloud-stats{
+grid-template-columns:1fr 1fr}
+.fl-cloud-form{
+grid-template-columns:1fr}
+.fl-cloud-field.full{
+grid-column:auto}
+.fl-cloud-row{
+align-items:flex-start;
+flex-direction:column}
+.fl-cloud-row-actions{
+width:100%}
+.fl-cloud-row-actions button{
+flex:1}
+.fl-cloud-wrap{
+padding:12px}
+.fl-cloud-brand small{
+display:none}
+.fl-credentials-grid,.fl-primary-recovery-card{
+grid-template-columns:1fr}
+.fl-primary-recovery-card>*{
+grid-column:auto!important}
+.fl-credentials-actions{
+grid-template-columns:1fr}
+.fl-credentials-card{
+padding:15px}
 
   .product-card-actions{padding:0 8px 8px;gap:6px}
     .product-card-actions .product-whatsapp-button,.product-share-button{min-height:42px;font-size:11px}
@@ -108,7 +190,16 @@
       max-height:58vh!important;
     }
 
-  .site-catalog-panel{padding:0 9px 18px}.site-catalog-head{align-items:flex-start;flex-direction:column}.site-catalog-download{width:100%}.fl-site-catalog-current{align-items:stretch;flex-direction:column}
+  .site-catalog-panel{
+padding:0 9px 18px}
+.site-catalog-head{
+align-items:flex-start;
+flex-direction:column}
+.site-catalog-download{
+width:100%}
+.fl-site-catalog-current{
+align-items:stretch;
+flex-direction:column}
 
   .fl-admin-catalog-card{grid-template-columns:58px minmax(0,1fr);gap:10px;padding:11px}.fl-admin-catalog-icon{width:58px;height:70px;font-size:14px}
 
@@ -128,7 +219,24 @@
     .site-catalog-lazy-status strong{font-size:10px}.site-catalog-lazy-status small{font-size:8.8px}
     .site-catalog-page-placeholder{min-height:150px}
 
-  .fl-lead-toolbar{display:grid;grid-template-columns:1fr;gap:12px}.fl-lead-toolbar-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}.fl-lead-toolbar-actions .fl-cloud-btn{min-width:0;width:100%}.fl-lead-search-form{grid-template-columns:1fr 1fr}.fl-lead-search-input-wrap{grid-column:1/-1}.fl-lead-search-form .fl-cloud-btn{min-width:0;width:100%}
+  .fl-lead-toolbar{
+display:grid;
+grid-template-columns:1fr;
+gap:12px}
+.fl-lead-toolbar-actions{
+display:grid;
+grid-template-columns:repeat(2,minmax(0,1fr));
+width:100%}
+.fl-lead-toolbar-actions .fl-cloud-btn{
+min-width:0;
+width:100%}
+.fl-lead-search-form{
+grid-template-columns:1fr 1fr}
+.fl-lead-search-input-wrap{
+grid-column:1/-1}
+.fl-lead-search-form .fl-cloud-btn{
+min-width:0;
+width:100%}
 
   .product-card-actions .product-whatsapp-button,
     .image-lightbox-actions .image-lightbox-whatsapp{
@@ -235,7 +343,15 @@
 }
 
 /* invisible anti-bot honeypot for the customer lead gate. */
-.fl-lead-trap{position:absolute!important;left:-10000px!important;top:auto!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important}
+.fl-lead-trap{
+position:absolute!important;
+left:-10000px!important;
+top:auto!important;
+width:1px!important;
+height:1px!important;
+overflow:hidden!important;
+opacity:0!important;
+pointer-events:none!important}
 
 /* owner-only customer lead gate setting card. */
 .fl-lead-gate-settings-card{display:grid;gap:14px}
@@ -268,12 +384,43 @@
 
 body.pwa-install-open{overflow:hidden}
 .pwa-install-modal[hidden]{display:none!important}
-.pwa-install-modal{position:fixed;inset:0;z-index:100050;background:rgba(10,18,30,.58);backdrop-filter:blur(7px);display:flex;align-items:flex-end;justify-content:center;padding:16px;opacity:0;transition:opacity .18s ease}
+.pwa-install-modal{
+position:fixed;
+inset:0;
+z-index:100050;
+background:rgba(10,18,30,.58);
+backdrop-filter:blur(7px);
+display:flex;
+align-items:flex-end;
+justify-content:center;
+padding:16px;
+opacity:0;
+transition:opacity .18s ease}
 .pwa-install-modal.open{opacity:1}
-.pwa-install-sheet{position:relative;width:min(520px,100%);max-height:min(82vh,680px);overflow:auto;background:#fff;border-radius:26px;padding:24px 22px 22px;box-shadow:0 30px 80px rgba(0,0,0,.28);transform:translateY(22px);transition:transform .18s ease;color:#182437}
+.pwa-install-sheet{
+position:relative;
+width:min(520px,100%);
+max-height:min(82vh,680px);
+overflow:auto;
+background:#fff;
+border-radius:26px;
+padding:24px 22px 22px;
+box-shadow:0 30px 80px rgba(0,0,0,.28);
+transform:translateY(22px);
+transition:transform .18s ease;
+color:#182437}
 .pwa-install-modal.open .pwa-install-sheet{transform:translateY(0)}
 .pwa-install-close{position:absolute;left:14px;top:12px;width:38px;height:38px;border:0;border-radius:12px;background:#f2f4f7;color:#273348;font-size:25px;line-height:1;cursor:pointer}
-.pwa-install-sheet-icon{width:58px;height:58px;border-radius:18px;background:linear-gradient(135deg,#ff9f0a,#ffbd55);display:grid;place-items:center;font-size:28px;margin-bottom:14px;box-shadow:0 10px 24px rgba(255,159,10,.23)}
+.pwa-install-sheet-icon{
+width:58px;
+height:58px;
+border-radius:18px;
+background:linear-gradient(135deg,#ff9f0a,#ffbd55);
+display:grid;
+place-items:center;
+font-size:28px;
+margin-bottom:14px;
+box-shadow:0 10px 24px rgba(255,159,10,.23)}
 .pwa-install-sheet h2{font-size:20px;margin:0 0 8px;color:#142238}
 .pwa-install-sheet>p{font-size:13px;line-height:1.8;color:#697386;margin:0 0 14px}
 .pwa-install-steps{list-style:none;padding:0;margin:14px 0;display:grid;gap:10px}
@@ -282,7 +429,26 @@ body.pwa-install-open{overflow:hidden}
 .pwa-install-note{padding:10px 12px!important;border-radius:13px;background:#fff8ec!important;color:#83520a!important;margin-bottom:0!important}
 
 .pwa-install-reminder[hidden]{display:none!important}
-.pwa-install-reminder{position:fixed;z-index:100040;left:50%;bottom:max(16px,env(safe-area-inset-bottom));width:min(560px,calc(100% - 24px));transform:translate(-50%,24px);opacity:0;pointer-events:none;background:rgba(20,31,48,.97);color:#fff;border:1px solid rgba(255,255,255,.13);border-radius:20px;padding:14px 42px 14px 14px;display:grid;grid-template-columns:auto 1fr;gap:10px 12px;align-items:center;box-shadow:0 18px 50px rgba(0,0,0,.28);transition:opacity .22s ease,transform .22s ease}
+.pwa-install-reminder{
+position:fixed;
+z-index:100040;
+left:50%;
+bottom:max(16px,env(safe-area-inset-bottom));
+width:min(560px,calc(100% - 24px));
+transform:translate(-50%,24px);
+opacity:0;
+pointer-events:none;
+background:rgba(20,31,48,.97);
+color:#fff;
+border:1px solid rgba(255,255,255,.13);
+border-radius:20px;
+padding:14px 42px 14px 14px;
+display:grid;
+grid-template-columns:auto 1fr;
+gap:10px 12px;
+align-items:center;
+box-shadow:0 18px 50px rgba(0,0,0,.28);
+transition:opacity .22s ease,transform .22s ease}
 .pwa-install-reminder.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
 .pwa-reminder-close{position:absolute;top:8px;left:8px;width:30px;height:30px;border:0;border-radius:10px;background:rgba(255,255,255,.09);color:#fff;font-size:20px;cursor:pointer}
 .pwa-reminder-icon{width:42px;height:42px;border-radius:13px;background:#ff9f0a;display:grid;place-items:center;font-size:22px;grid-row:1/3}
@@ -308,17 +474,69 @@ body.pwa-install-open{overflow:hidden}
   .pwa-install-btn,.pwa-install-modal,.pwa-install-sheet,.pwa-install-reminder{transition:none!important}
 }
 
-.fl-business-info{max-width:720px;margin:24px auto;padding:16px;text-align:center;font-size:14px;line-height:1.8;overflow-wrap:anywhere}.fl-business-info[hidden]{display:none}.fl-business-info p{margin:4px 0}.fl-business-info b{margin-inline-end:8px}
+.fl-business-info{
+max-width:720px;
+margin:24px auto;
+padding:16px;
+text-align:center;
+font-size:14px;
+line-height:1.8;
+overflow-wrap:anywhere}
+.fl-business-info[hidden]{
+display:none}
+.fl-business-info p{
+margin:4px 0}
+.fl-business-info b{
+margin-inline-end:8px}
 
 /* Public visitor theme selector: anchored inside hero, opposite the brand. */
-.fl-theme-switch{position:absolute;top:40px;right:24px;left:auto;z-index:5;display:flex;align-items:center;justify-content:center;gap:6px;min-width:40px;height:40px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--ink);box-shadow:0 2px 12px rgba(0,0,0,.12);font:700 12px Tajawal,system-ui,sans-serif;cursor:pointer;direction:rtl}
+.fl-theme-switch{
+position:absolute;
+top:40px;
+right:24px;
+left:auto;
+z-index:5;
+display:flex;
+align-items:center;
+justify-content:center;
+gap:6px;
+min-width:40px;
+height:40px;
+padding:0 10px;
+border-radius:999px;
+border:1px solid var(--line);
+background:var(--paper);
+color:var(--ink);
+box-shadow:0 2px 12px rgba(0,0,0,.12);
+font:700 12px Tajawal,system-ui,sans-serif;
+cursor:pointer;
+direction:rtl}
 .fl-theme-switch:hover{border-color:var(--brand)}
 .fl-theme-switch:focus-visible{outline:3px solid var(--brand);outline-offset:3px}
 .fl-theme-switch svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 @media(max-width:420px){.fl-theme-switch{right:18px;left:auto;top:20px;min-width:36px;height:36px;padding:0 8px}}
 
 /* Visitor language control remains opposite the logo, below the theme selector. */
-.fl-language-switch{position:absolute;top:85px;right:24px;z-index:6;display:inline-flex;align-items:center;justify-content:center;min-width:72px;min-height:30px;padding:4px 11px;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:999px;box-shadow:0 2px 10px rgba(0,0,0,.09);font:800 12px Tajawal,system-ui,sans-serif;cursor:pointer;white-space:nowrap;direction:ltr}
+.fl-language-switch{
+position:absolute;
+top:85px;
+right:24px;
+z-index:6;
+display:inline-flex;
+align-items:center;
+justify-content:center;
+min-width:72px;
+min-height:30px;
+padding:4px 11px;
+background:var(--paper);
+color:var(--ink);
+border:1px solid var(--line);
+border-radius:999px;
+box-shadow:0 2px 10px rgba(0,0,0,.09);
+font:800 12px Tajawal,system-ui,sans-serif;
+cursor:pointer;
+white-space:nowrap;
+direction:ltr}
 .fl-language-switch:hover{border-color:var(--brand)}
 .fl-language-switch:focus-visible{outline:3px solid var(--brand);outline-offset:3px}
 @media(max-width:420px){.fl-language-switch{top:62px;right:18px;min-width:64px;min-height:28px;padding:4px 9px;font-size:11px}}

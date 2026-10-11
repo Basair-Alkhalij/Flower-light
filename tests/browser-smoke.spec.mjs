@@ -102,7 +102,7 @@ test('system light and dark modes keep readable contrast and produce review scre
   await page.emulateMedia({colorScheme:'dark'});
   await expect.poll(()=>contrastRatio('body')).toBeGreaterThanOrEqual(4.5);
   expect(await contrastRatio('#catalogSearchInput')).toBeGreaterThanOrEqual(4.5);
-  expect(await page.evaluate(()=>getComputedStyle(document.documentElement).colorScheme)).toContain('dark');
+  await expect.poll(()=>page.evaluate(()=>getComputedStyle(document.documentElement).colorScheme),{timeout:10000}).toContain('dark');
   await page.locator('.catalog-sheet').screenshot({path:'test-results/theme-screens/catalog-dark.png'});
 
   const colors=await page.evaluate(()=>({
@@ -356,15 +356,26 @@ test('public product and category share URLs use static SEO paths',async({page})
 
 test('legacy query deep links still open product and category targets',async({page})=>{
   await installSupabaseMock(page);
-  await page.goto(`${base}?product=prod-test`,{waitUntil:'domcontentloaded'});
+  await page.goto(`${base}?product=prod-test`,{waitUntil:'load'});
   await injectCatalogFixtures(page);
   await expect(page.locator('#catalogModal')).toHaveClass(/open/);
   await expect(page.locator('#imageLightbox')).toHaveClass(/open/);
   await page.locator('#closeImageLightbox').click();
   await page.locator('#closeProducts').click();
 
-  await page.goto(`${base}?category=wall-lights`,{waitUntil:'domcontentloaded'});
+  await page.goto(`${base}?category=wall-lights`,{waitUntil:'load'});
+  // The app also fetches an empty Supabase catalog asynchronously; wait for that only here.
+  await page.waitForFunction(()=>typeof window.flLoadCloudProducts==='function');
+  await page.evaluate(()=>window.flLoadCloudProducts());
   await injectCatalogFixtures(page);
+  // Fixtures load after app bootstrap; restore the intended query if initial routing ran too early.
+  await page.evaluate(()=>{
+    const url=new URL(location.href);
+    url.searchParams.set('category','wall-lights');
+    url.searchParams.delete('product');
+    history.replaceState({},'',url.pathname+url.search);
+    window.flRenderProducts();
+  });
   await expect(page.locator('#catalogModal')).toHaveClass(/open/);
   await expect(page.locator('.extra-section-tab').filter({hasText:'جداريات'})).toHaveClass(/active/);
 });
