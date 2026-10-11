@@ -74,6 +74,9 @@ assert.deepEqual(evaluateSeo('?admin=2'), {
   robots: 'noindex,nofollow',
 });
 assert.match(adminDatasheet, /createAdminDatasheetExport/);
+assert.match(adminDatasheet, /if\(failedImages\)throw new Error/);
+assert.ok(app.includes("if (/^data:image\\//i.test"),'uploaded image data URLs must decode directly without fetch');
+
 assert.match(adminDatasheet, /flDatasheetDesignerForm[\s\S]*createAdminDatasheetExport/);
 assert.doesNotMatch(admin, /createAdminDatasheetPdf/);
 assert.doesNotMatch(app, /requestAnimationFrame\(\(\)=>renderSiteCatalogPages/);

@@ -1017,6 +1017,21 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
   }
 
   async function loadCatalogPdfImage(src) {
+    // Uploaded datasheet images are FileReader data: URLs. The page's CSP allows
+    // them in img-src but intentionally excludes data: from connect-src, so
+    // fetch(dataUrl) fails even though the same image can be displayed safely.
+    // Decode these directly as <img>; keep the fetch/blob path for remote images.
+    if (/^data:image\//i.test(String(src || ''))) {
+      const image = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => img.naturalWidth && img.naturalHeight
+          ? resolve(img)
+          : reject(new Error('Image has no dimensions'));
+        img.onerror = () => reject(new Error('Uploaded image decode failed'));
+        img.src = src;
+      });
+      return { image, objectUrl: '' };
+    }
     const response = await fetch(src, { mode: 'cors', cache: 'force-cache' });
     if (!response.ok) throw new Error(`Image HTTP ${response.status}`);
     const blob = await response.blob();
