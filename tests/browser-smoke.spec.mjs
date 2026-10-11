@@ -1151,3 +1151,29 @@ test('acceptance: product PDF export produces a real readable PDF header',async(
   expect(bytes.length).toBeGreaterThan(10000);
   expect(bytes.subarray(0,5).toString('latin1')).toBe('%PDF-');
 });
+
+
+test('security: missing Turnstile site key must never fall back to direct customer insert',async({page})=>{
+  await installSupabaseMock(page);
+  const configSource=fs.readFileSync(new URL('../config.js',import.meta.url),'utf8');
+  const testConfig=configSource.replace(/turnstileSiteKey:\s*'[^']*'/,"turnstileSiteKey: ''");
+  expect(testConfig).not.toBe(configSource);
+  await page.route('**/config.js*',route=>route.fulfill({status:200,contentType:'application/javascript',body:testConfig}));
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>typeof window.flBeforeProductsOpen==='function');
+  await page.evaluate(()=>{
+    localStorage.removeItem('flower_light_customer_access_v1');
+    window.FLOWER_LIGHT_SITE_SETTINGS={require_customer_lead:true};
+  });
+  const pending=page.evaluate(()=>window.flBeforeProductsOpen());
+  await expect(page.locator('#flLeadGate')).toHaveClass(/open/);
+  await page.locator('#flLeadName').fill('Secure customer');
+  await page.locator('#flLeadMobile').fill('0501234567');
+  await page.waitForTimeout(1000);
+  await page.locator('#flLeadSubmit').click();
+  await expect(page.locator('#flLeadError')).toContainText('التحقق الأمني غير مهيأ');
+  await expect(page.locator('#flLeadGate')).toHaveClass(/open/);
+  await expect.poll(()=>page.evaluate(()=>localStorage.getItem('flower_light_customer_access_v1'))).toBeNull();
+  await page.locator('#flLeadClose').click();
+  expect(await pending).toBe(false);
+});

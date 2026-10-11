@@ -868,25 +868,19 @@
     if(full_name.length<2){leadError.textContent='اكتب الاسم بشكل صحيح.';leadError.classList.add('show');return;}
     if(company_name && company_name.length<2){leadError.textContent='اكتب اسم الشركة بشكل صحيح أو اتركه فارغًا.';leadError.classList.add('show');return;}
     if(digits.length<9 || digits.length>15){leadError.textContent='اكتب رقم جوال صحيح.';leadError.classList.add('show');return;}
-    if(turnstileSiteKey){
-      try{await ensureTurnstile();}catch(_){leadError.textContent='تعذر تحميل التحقق الأمني. تحقق من الاتصال وحاول مرة أخرى.';leadError.classList.add('show');return;}
-      if(!turnstileToken){leadError.textContent='أكمل التحقق الأمني ثم اضغط متابعة.';leadError.classList.add('show');return;}
-    }
+    // Production must fail closed if the security widget is misconfigured.
+    if(!turnstileSiteKey){leadError.textContent='التحقق الأمني غير مهيأ حاليًا. تواصل مع إدارة الموقع.';leadError.classList.add('show');return;}
+    try{await ensureTurnstile();}catch(_){leadError.textContent='تعذر تحميل التحقق الأمني. تحقق من الاتصال وحاول مرة أخرى.';leadError.classList.add('show');return;}
+    if(!turnstileToken){leadError.textContent='أكمل التحقق الأمني ثم اضغط متابعة.';leadError.classList.add('show');return;}
     leadError.classList.remove('show');leadError.textContent='';
     leadSubmit.disabled=true;leadSubmit.textContent='جاري الحفظ...';
     try{
-      if(turnstileSiteKey){
-        const {data,error}=await db.functions.invoke(leadSubmissionFunction,{body:{full_name,company_name,mobile,turnstile_token:turnstileToken}});
-        if(error)throw new Error(await edgeFunctionErrorMessage(error));
-        if(!data?.ok)throw new Error(String(data?.error||'تعذر حفظ البيانات الآن.'));
-      }else{
-        // Compatibility path for upgrades. Disable it by configuring Turnstile and applying the v104/v105 protected upgrade.
-        const {error}=await db.from('customer_leads').insert({full_name,company_name,mobile});
-        if(error)throw error;
-      }
+      const {data,error}=await db.functions.invoke(leadSubmissionFunction,{body:{full_name,company_name,mobile,turnstile_token:turnstileToken}});
+      if(error)throw new Error(await edgeFunctionErrorMessage(error));
+      if(!data?.ok)throw new Error(String(data?.error||'تعذر حفظ البيانات الآن.'));
       try{localStorage.setItem(leadSubmitKey,String(Date.now()));}catch(_){ }
       rememberLeadAccess();
-      if(typeof window.flTrack==='function')window.flTrack('customer_lead_saved',{source:'products_gate',protected:turnstileSiteKey?'turnstile':'legacy'});
+      if(typeof window.flTrack==='function')window.flTrack('customer_lead_saved',{source:'products_gate',protected:'turnstile'});
       leadForm.reset();
       finishLeadGate(true);
     }catch(err){

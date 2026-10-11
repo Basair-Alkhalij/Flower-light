@@ -1,3 +1,11 @@
+## v118 — 2026-10-11 — production security review
+
+- Remove the legacy direct `customer_leads` insertion branch from public JavaScript; fail closed if Cloudflare Turnstile is unconfigured.
+- Keep the protected Edge Function as the only client lead-submission path.
+- Add Playwright regression for a missing Turnstile site key and static security assertions.
+- Publish a strictly read-only SQL audit and a production verification checklist; actual RLS/Auth/Edge Function deployment still requires live Supabase access.
+- Update browser asset cache version to 118. No database modifications or new SQL migration.
+
 ## v117 — 2026-10-11 — consistent English public digital card
 
 - Translate dynamic profile/contact labels and catalog hints at render time and on visitor language change.
