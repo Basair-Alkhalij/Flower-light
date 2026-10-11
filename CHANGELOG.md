@@ -1,3 +1,12 @@
+## v119 — 2026-10-11 — Restore uploaded product images in datasheets
+
+- Fix missing photo in custom Datasheet JPG/PDF by directly decoding FileReader `data:image/*` inputs, instead of making CSP-blocked `fetch(data:...)` requests.
+- Preserve the existing CORS fetch+blob path for remote Supabase product photos.
+- Do not allow manual datasheets to download when the image fails to load; show an actionable message.
+- Add browser regression with the production CSP enforced and static guard for the fail-closed download behavior.
+- Bump application/cache token from 118 to 119 so installed PWAs load the repaired JavaScript after publishing.
+- No Supabase schema or data changes.
+
 ## v118a — 2026-10-11 — documentation, SQL and CSS maintenance
 
 - Bundle existing v111, v116, v117 and permission-only v118 migration bodies into `supabase/UPGRADE_TO_V118.sql` for installations on v110+, with six verification flags. **Production already satisfies these checks; do not rerun this file there.**
