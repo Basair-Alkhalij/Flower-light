@@ -1,3 +1,10 @@
+## v118 maintenance — service worker and code hygiene (no database change)
+
+- Precache the versioned self-hosted `supabase-vendor.js` from the first service-worker installation and handle its requests via the same-origin cache strategy.
+- Remove the redundant `vcardEscape` function definition and 12 shadowed English dictionary keys while retaining effective translations.
+- Add `tests/hygiene.mjs` to static checks and CI to detect recurrence of duplicate definitions, stale versions or missing shell caching.
+- Public catalog logic, product data, permissions and Supabase schema are unchanged.
+
 ## v118 — 2026-10-11 — production security review
 
 - Remove the legacy direct `customer_leads` insertion branch from public JavaScript; fail closed if Cloudflare Turnstile is unconfigured.

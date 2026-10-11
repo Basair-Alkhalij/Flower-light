@@ -39,6 +39,7 @@ jobs:
       - run: node --check sw.js
       - run: node --check scripts/generate-static-pages.mjs
       - run: node --check tests/static-pages.mjs
+      - run: node --check tests/hygiene.mjs
       - run: node --check tests/browser-smoke.spec.mjs
       - run: node --check tests/live-site-smoke.mjs
       - run: npm run build:check
