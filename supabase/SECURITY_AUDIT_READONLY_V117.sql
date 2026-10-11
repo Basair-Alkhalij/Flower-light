@@ -27,12 +27,18 @@ where c.relkind in ('r','p')
   )
 order by c.relname;
 
--- 2. Effective customer-lead anti-spam permission; expected anon_insert = false.
+-- 2. Effective customer-lead anti-spam permission; expected anon_insert = false, authenticated_insert = false, service_role_insert = true.
 select
   to_regclass('public.customer_leads') is not null as customer_leads_exists,
   case when to_regclass('public.customer_leads') is null then null
        else has_table_privilege('anon',to_regclass('public.customer_leads'),'INSERT')
   end as anon_can_insert_customer_leads,
+  case when to_regclass('public.customer_leads') is null then null
+       else has_table_privilege('authenticated',to_regclass('public.customer_leads'),'INSERT')
+  end as authenticated_can_insert_customer_leads,
+  case when to_regclass('public.customer_leads') is null then null
+       else has_table_privilege('service_role',to_regclass('public.customer_leads'),'INSERT')
+  end as service_role_can_insert_customer_leads,
   to_regclass('public.customer_lead_rate_limits') is not null as hashed_rate_limit_table_exists,
   to_regprocedure('public.consume_customer_lead_rate_limit(text,integer,integer)') is not null as rate_limit_rpc_exists,
   case when to_regprocedure('public.consume_customer_lead_rate_limit(text,integer,integer)') is null then null
