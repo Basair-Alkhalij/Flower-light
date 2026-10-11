@@ -200,7 +200,8 @@ export async function generateStaticPages({ outDir, baseUrl, projectRoot = path.
 
   const sitemapEntries = [
     { loc: normalizedBaseUrl, changefreq: 'weekly', priority: '1.0' },
-    { loc: new URL('privacy.html', normalizedBaseUrl).href, changefreq: 'yearly', priority: '0.3' }
+    { loc: new URL('privacy.html', normalizedBaseUrl).href, changefreq: 'yearly', priority: '0.3' },
+    { loc: new URL('privacy-en.html', normalizedBaseUrl).href, changefreq: 'yearly', priority: '0.3' }
   ];
 
   const productsByCategory = new Map();
