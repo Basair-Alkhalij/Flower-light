@@ -647,5 +647,12 @@ const securityAudit=read('supabase/SECURITY_AUDIT_READONLY_V117.sql');
 const statements=securityAudit.split('\\n').filter(line=>!/^\\s*--/.test(line)).join('\\n');
 assert.doesNotMatch(statements,/\\b(?:INSERT|UPDATE|DELETE|ALTER|DROP|GRANT|REVOKE|CREATE|TRUNCATE|EXECUTE)\\s+(?:INTO|TABLE|FROM|ON|POLICY|FUNCTION|ROLE|SCHEMA|INDEX)\\b/i);
 assert.match(securityAudit,/anon_can_insert_customer_leads/);
+assert.match(securityAudit,/authenticated_can_insert_customer_leads/);
+const edgeOnlySql=read('supabase/UPGRADE_CUSTOMER_LEADS_EDGE_ONLY_V118.sql');
+assert.match(edgeOnlySql,/revoke insert on table public\\.customer_leads from anon, authenticated/i);
+assert.match(edgeOnlySql,/grant insert on table public\\.customer_leads to service_role/i);
+assert.match(read('supabase/migrations/2026-10-06_turnstile_customer_leads.sql'),/revoke insert on table public\\.customer_leads from anon, authenticated/i);
+assert.match(sql,/revoke insert on table public\\.customer_leads from anon, authenticated/i);
+
 
 console.log('FLOWER_LIGHT_FINAL_SMOKE_OK');
