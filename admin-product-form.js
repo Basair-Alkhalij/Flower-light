@@ -16,6 +16,20 @@
   const products=liveArray('products');
   const productImages=liveArray('productImages');
   const { esc,notify,imageUrl,openModal,closeModal,modal,adminGalleryRows,nextProductSort,productSpecsFormHtml,productPricingEditorHtml,productWhatsAppOption,WHATSAPP_META_SHOW_DESCRIPTION,productSpecEditorRowHtml,pricingTierEditorRowHtml,syncPriceTierRow,collectProductPricingTiers,collectProductSpecifications,uploadProductImagePair,uploadProductCatalogPdf,storagePathUsedByOtherProduct,isStoragePath,bucket,MAX_PRODUCT_IMAGES,syncPublicProductsFromAdminCache,productStoragePairPaths }=core;
+  function collectEnglishProductSpecifications(){
+    const rows=[...document.querySelectorAll('[data-flex-spec-row]')];
+    const result=[];
+    for(const [index,row] of rows.entries()){
+      const label=String(row.querySelector('[data-flex-spec-label-en]')?.value||'').trim();
+      const value=String(row.querySelector('[data-flex-spec-value-en]')?.value||'').trim();
+      if(!label&&!value)continue;
+      if(!label||!value)throw new Error('أدخل اسم المواصفة الإنجليزية وقيمتها معًا أو اترك الحقلين فارغين.');
+      const key=String(row.querySelector('[data-flex-spec-type]')?.value||'__custom__').trim();
+      const arabicKey=key==='__custom__'?('custom_'+(index+1)):key;
+      result.push({key:arabicKey,label,value,unit:''});
+    }
+    return result.slice(0,30);
+  }
   function openProductForm(prod=null){
     if(!categories.length){notify('أضف قسمًا أولًا');return;}
     const cid=prod?.category_id||core.selectedCategory||categories[0].id;
@@ -35,10 +49,10 @@
     openModal(prod?'تعديل المنتج':'إضافة منتج',`<form id="flProductForm"><div class="fl-cloud-form">
       <div class="fl-cloud-field"><label>القسم</label><select id="flProdCat">${options}</select></div>
       <div class="fl-cloud-field"><label>الترتيب</label><input id="flProdSort" type="number" min="0" step="1" value="${defaultSort}"><small class="fl-field-help">يمكنك أيضًا تغييره لاحقًا بالسحب.</small></div>
-      <div class="fl-cloud-field"><label>اسم المنتج</label><input id="flProdName" required value="${esc(prod?.name||'')}" placeholder="مثال: جدارية LED"></div>
+      <div class="fl-cloud-field"><label>اسم المنتج (عربي)</label><input id="flProdName" required value="${esc(prod?.name||'')}" placeholder="مثال: جدارية LED"></div><div class="fl-cloud-field"><label>Product name (English)</label><input id="flProdNameEn" dir="ltr" maxlength="250" value="${esc(prod?.name_en||'')}" placeholder="English name (optional)"></div>
       <div class="fl-cloud-field"><label>رقم المنتج / الكود</label><input id="flProdModel" value="${esc(prod?.model||'')}" placeholder="مثال: 1010 أو WL-205"></div>
       <div class="fl-cloud-field"><label for="flProdAvailability">حالة التوفر</label><select id="flProdAvailability"><option value="available" ${availability==='available'?'selected':''}>متوفر</option><option value="out_of_stock" ${availability==='out_of_stock'?'selected':''}>نفد</option><option value="coming_soon" ${availability==='coming_soon'?'selected':''}>قريبًا</option></select><small class="fl-field-help">المنتج غير المتوفر يبقى ظاهرًا لكن لا يمكن إضافته لقائمة الطلب.</small></div>
-      <div class="fl-cloud-field full"><div class="fl-field-label-inline"><label for="flProdCaption">الوصف</label><label class="fl-whatsapp-include-toggle"><input id="flProdWhatsAppShowDescription" type="checkbox" ${productWhatsAppOption(prod?.specifications,WHATSAPP_META_SHOW_DESCRIPTION)?'checked':''}><span>إظهار في رسالة واتساب</span></label></div><textarea id="flProdCaption" placeholder="وصف مختصر">${esc(prod?.caption||'')}</textarea></div>
+      <div class="fl-cloud-field full"><div class="fl-field-label-inline"><label for="flProdCaption">الوصف</label><label class="fl-whatsapp-include-toggle"><input id="flProdWhatsAppShowDescription" type="checkbox" ${productWhatsAppOption(prod?.specifications,WHATSAPP_META_SHOW_DESCRIPTION)?'checked':''}><span>إظهار في رسالة واتساب</span></label></div><textarea id="flProdCaption" placeholder="وصف مختصر">${esc(prod?.caption||'')}</textarea></div><div class="fl-cloud-field full"><label>Description (English)</label><textarea id="flProdCaptionEn" dir="ltr" maxlength="2000" placeholder="English product description (optional)">${esc(prod?.caption_en||'')}</textarea></div>
       ${productPricingEditorHtml(prod)}
       ${productSpecsFormHtml(prod)}
       <section class="fl-product-gallery-editor full">
@@ -220,9 +234,12 @@
         const payload={
           category_id,
           name,
+          name_en:document.getElementById('flProdNameEn').value.trim(),
+          caption_en:document.getElementById('flProdCaptionEn').value.trim(),
           model:document.getElementById('flProdModel').value.trim(),
           caption:document.getElementById('flProdCaption').value.trim(),
           specifications:collectProductSpecifications(pricingTiers),
+          specifications_en:collectEnglishProductSpecifications(),
           price:firstRetail?.price??null,
           wholesale_price:firstWholesale?.price??null,
           wholesale_min_qty:firstWholesale?.min_qty??null,
