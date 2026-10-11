@@ -386,7 +386,7 @@
     setText('siteBrandName',displayBrand);
     setText('siteCompanyName',displayCompany);
     setText('siteFullName',fullName);
-    setText('siteJobTitleAr',(!english||!jobEn)?jobAr:'');
+    setText('siteJobTitleAr',(!english||!jobEn)?(english?cardText(jobAr):jobAr):'');
     setText('siteJobTitleEn',english?(jobEn||''):(!jobAr?jobEn:''));
 
     const brandRow=document.getElementById('siteBrandRow');
