@@ -76,7 +76,7 @@
     function cardMatchesSearch(card){
       const panel=card.closest('.extra-section-panel'),name=panel?sectionName(panel):'';
       const query=normalize(input.value);
-      return !query||normalize([card.dataset.productName,card.dataset.productModel,card.textContent,name].join(' ')).includes(query);
+      return !query||normalize([card.dataset.productName,card.dataset.productModel,card.textContent,name,panel?.dataset.categorySearch].join(' ')).includes(query);
     }
     function cardMatchesFilters(card,exceptKey=''){
       for(const [key,select] of filterControls){
@@ -155,7 +155,9 @@
 
     function applyFilter(){
       const panels=productPanels(),query=normalize(input.value),active=Boolean(query||filtersActive()),hasProducts=panels.length>0;
-      input.disabled=!hasProducts;input.placeholder=hasProducts?'ابحث في جميع الأقسام (الاسم أو الكود أو المواصفات)…':'لا توجد أقسام منتجات قابلة للبحث';
+      input.disabled=!hasProducts;
+      const placeholder=hasProducts?'ابحث في جميع الأقسام (الاسم أو الكود أو المواصفات)…':'لا توجد أقسام منتجات قابلة للبحث';
+      input.placeholder=window.FL_I18N?.translate?.(placeholder)||placeholder;
       syncDependentOptions();syncClearButton();
       if(!hasProducts){countLabel.hidden=true;return;}
       if(!active){resetView();countLabel.hidden=true;return;}
@@ -175,7 +177,7 @@
       const activeTab=tabsHost.querySelector('.catalog-tab.active');
       if(totalMatches>0&&(!activeTab||activeTab.classList.contains('catalog-search-hidden')))activateTab(firstMatchingTab);
       else if(totalMatches===0&&activeTab?.classList.contains('site-catalog-tab'))activateTab(tabsHost.querySelector('.extra-section-tab'));
-      countLabel.hidden=false;countLabel.textContent=totalMatches?`${totalMatches} نتيجة · ${matchingSections} قسم`:'لا توجد نتائج مطابقة للبحث والفلاتر';
+      countLabel.hidden=false;countLabel.textContent=totalMatches?(window.FL_I18N?.lang==='en'?`${totalMatches} results · ${matchingSections} categories`:`${totalMatches} نتيجة · ${matchingSections} قسم`):(window.FL_I18N?.translate?.('لا توجد نتائج مطابقة للبحث والفلاتر')||'لا توجد نتائج مطابقة للبحث والفلاتر');
     }
 
     let debounceTimer=0;
