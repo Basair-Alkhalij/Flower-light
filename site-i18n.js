@@ -206,8 +206,9 @@
   const cache=new WeakMap();
   const attributeCache=new WeakMap();
   const attributes=['placeholder','aria-label','title'];
-  let language='ar';
-  try { if (localStorage.getItem(KEY)==='en') language='en'; } catch (_) {}
+  const englishPrivacy=/\/privacy-en\.html$/i.test(location.pathname||'');
+  let language=englishPrivacy?'en':'ar';
+  try { if (!englishPrivacy && localStorage.getItem(KEY)==='en') language='en'; } catch (_) {}
 
   function translate(value){
     const string=String(value??'');
@@ -215,6 +216,7 @@
     if (!trimmed) return string;
     if(trimmed==='استعرض الأقسام والمنتجات.')return string.replace(trimmed,'Browse categories and products.');
     if(trimmed==='ر.س')return string.replace(trimmed,'SAR');
+    if(trimmed==='جاري تحميل بيانات المنشأة...')return string.replace(trimmed,'Loading business information…');
     const exact=dictionary[trimmed];
     if (exact) return string.replace(trimmed,exact);
     const patterns=[
@@ -273,10 +275,22 @@
     if(next!==current)element.setAttribute(name,next);
     stored.last=next;
   }
+  function syncPrivacyLinks(root){
+    if(root?.nodeType!==1)return;
+    const links=[];
+    if(root.matches?.('a[href="privacy.html"],a[href="privacy-en.html"]'))links.push(root);
+    root.querySelectorAll?.('a[href="privacy.html"],a[href="privacy-en.html"]').forEach(link=>links.push(link));
+    for(const link of links){
+      if(link.closest('[data-fl-no-translate]'))continue;
+      const wanted=language==='en'?'privacy-en.html':'privacy.html';
+      if(link.getAttribute('href')!==wanted)link.setAttribute('href',wanted);
+    }
+  }
   function scan(root){
     if(!root)return;
     if(root.nodeType===3){textNode(root);return;}
     if(root.nodeType!==1 || blocked(root))return;
+    syncPrivacyLinks(root);
     for(const name of attributes)if(root.hasAttribute(name))attr(root,name);
     const walker=document.createTreeWalker(root,NodeFilter.SHOW_ELEMENT|NodeFilter.SHOW_TEXT);
     while(walker.nextNode()){
