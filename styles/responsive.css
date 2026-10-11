@@ -310,10 +310,9 @@ body.pwa-install-open{overflow:hidden}
 
 .fl-business-info{max-width:720px;margin:24px auto;padding:16px;text-align:center;font-size:14px;line-height:1.8;overflow-wrap:anywhere}.fl-business-info[hidden]{display:none}.fl-business-info p{margin:4px 0}.fl-business-info b{margin-inline-end:8px}
 
-/* Public visitor theme selector: not shown inside catalog or export screenshots. */
-.page{position:relative}
-.fl-theme-switch{position:absolute;top:28px;right:24px;left:auto;z-index:5;display:flex;align-items:center;justify-content:center;gap:6px;min-width:40px;height:40px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--ink);box-shadow:0 2px 12px rgba(0,0,0,.12);font:700 12px Tajawal,system-ui,sans-serif;cursor:pointer;direction:rtl}
+/* Public visitor theme selector: anchored inside hero, opposite the brand. */
+.fl-theme-switch{position:absolute;top:40px;right:24px;left:auto;z-index:5;display:flex;align-items:center;justify-content:center;gap:6px;min-width:40px;height:40px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--ink);box-shadow:0 2px 12px rgba(0,0,0,.12);font:700 12px Tajawal,system-ui,sans-serif;cursor:pointer;direction:rtl}
 .fl-theme-switch:hover{border-color:var(--brand)}
 .fl-theme-switch:focus-visible{outline:3px solid var(--brand);outline-offset:3px}
 .fl-theme-switch svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-@media(max-width:420px){.fl-theme-switch{right:19px;left:auto;top:24px;min-width:36px;height:36px;padding:0 8px}}
+@media(max-width:420px){.fl-theme-switch{right:18px;left:auto;top:20px;min-width:36px;height:36px;padding:0 8px}}
