@@ -1,4 +1,4 @@
-## v112 — 2026-10-11 — Mobile catalog rendering phase 1
+## v1.1.12 — 2026-10-11 — Mobile catalog rendering phase 1
 
 - Add `content-visibility:auto` and intrinsic sizing for offscreen catalog cards on mobile-sized screens to reduce unnecessary paint and layout work.
 - Preserve desktop layout, existing WebP thumbnails and native image lazy loading.
