@@ -48,7 +48,10 @@ async function installSupabaseMock(page){
 }
 
 async function injectCatalogFixtures(page){
-  await page.waitForFunction(()=>typeof window.flRenderProducts==='function');
+  // Source mode and built Pages mode may load public-sync.js at different times.
+  // Wait for its initial catalog fetch before placing fixtures, so it cannot clear them afterwards.
+  await page.waitForFunction(()=>typeof window.flRenderProducts==='function' && typeof window.flLoadCloudProducts==='function');
+  await page.evaluate(()=>window.flLoadCloudProducts());
   await page.evaluate(()=>{
     localStorage.setItem('flower_light_customer_access_v1','1');
     window.FLOWER_LIGHT_SITE_SETTINGS={require_customer_lead:false};
@@ -373,7 +376,6 @@ test('legacy query deep links still open product and category targets',async({pa
     history.replaceState({},'',url.pathname+url.search);
     window.flRenderProducts();
   });
-  console.log('[V118A DEBUG CATEGORY]',JSON.stringify(await page.evaluate(()=>({url:location.href,ready:document.readyState,tabs:[...document.querySelectorAll('.extra-section-tab')].map(x=>({text:x.textContent,classes:x.className})),catalogOpen:document.querySelector('#catalogModal')?.className,extraCount:window.FLOWER_LIGHT_PRODUCTS?.extraSections?.length,language:document.documentElement.lang,renderType:typeof window.flRenderProducts}))));
   await expect(page.locator('#catalogModal')).toHaveClass(/open/);
   await expect(page.locator('.extra-section-tab').filter({hasText:'جداريات'})).toHaveClass(/active/);
 });
