@@ -1,3 +1,11 @@
+## v113 — 2026-10-11 — anchor theme button in hero
+
+- Move the visitor theme toggle from `.page` into `#siteHero` to anchor positioning to the card header, not the page box.
+- Align the toggle within the brand header on desktop and retain compact mobile positioning.
+- Add structural and geometric regression checks on phone and desktop viewport widths.
+- Bump cache/release asset version to 113 (`1.1.3`) to refresh the site's assets and Service Worker.
+- No database migrations or changes to PDF/JPG exports.
+
 ## v112 — 2026-10-11 — theme selector position and cache refresh
 
 - Positioned the visitor theme selector at the upper-right edge, opposite the Flower Light logo, for mobile and desktop.
