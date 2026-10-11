@@ -854,3 +854,26 @@ test('owner can manage bank accounts and validate Saudi IBAN',async({page})=>{
   expect(await page.evaluate(()=>window.FL_ADMIN_BANKS.validIban('SA0380000000608010167519'))).toBe(true);
   expect(await page.evaluate(()=>window.FL_ADMIN_BANKS.validIban('SA1500000000000000000000'))).toBe(false);
 });
+
+
+test('visitor can override system theme and saved choice survives reload',async({page})=>{
+  await installSupabaseMock(page);
+  await page.emulateMedia({colorScheme:'dark'});
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  const toggle=page.locator('#flThemeSwitch');
+  await expect(toggle).toContainText('تلقائي');
+  await expect(page.locator('#flDarkThemeCss')).toHaveAttribute('media','(prefers-color-scheme: dark)');
+  await toggle.click();
+  await expect(toggle).toContainText('فاتح');
+  await expect(page.locator('#flDarkThemeCss')).toHaveAttribute('media','not all');
+  await page.reload();
+  await expect(toggle).toContainText('فاتح');
+  await toggle.click();
+  await expect(toggle).toContainText('داكن');
+  await expect(page.locator('#flDarkThemeCss')).toHaveAttribute('media','all');
+  await page.reload();
+  await expect(toggle).toContainText('داكن');
+  await toggle.click();
+  await expect(toggle).toContainText('تلقائي');
+  expect(await page.evaluate(()=>localStorage.getItem('flowerlight:public-theme'))).toBeNull();
+});
