@@ -291,14 +291,19 @@
     const customLabel=def?'':String(spec?.label||'');
     return `<div class="fl-flex-spec-row" data-flex-spec-row>
       <div class="fl-cloud-field"><label>نوع المواصفة</label><select data-flex-spec-type>${options}<option value="__custom__" ${selectedKey==='__custom__'?'selected':''}>مواصفة أخرى</option></select><input data-flex-spec-label value="${esc(customLabel)}" placeholder="اكتب اسم المواصفة" ${selectedKey==='__custom__'?'':'hidden'}></div>
-      <div class="fl-cloud-field"><label>القيمة</label><input data-flex-spec-value value="${esc(specificationEditorValue(spec))}" placeholder="${esc(def?.placeholder||'مثال: قيمة المواصفة')}"></div>
+      <div class="fl-cloud-field"><label>القيمة</label><input data-flex-spec-value value="${esc(specificationEditorValue(spec))}" placeholder="${esc(def?.placeholder||'مثال: قيمة المواصفة')}"></div><div class="fl-cloud-field"><label>Specification (English)</label><input dir="ltr" data-flex-spec-label-en maxlength="150" value="${esc(spec?.label_en||'')}" placeholder="e.g. Wattage"></div><div class="fl-cloud-field"><label>Value (English)</label><input dir="ltr" data-flex-spec-value-en maxlength="250" value="${esc(spec?.value_en||'')}" placeholder="e.g. 12W"></div>
       <button class="fl-flex-spec-remove" data-flex-spec-remove type="button" aria-label="حذف الصفة">حذف</button>
     </div>`;
   }
 
   function productSpecsFormHtml(prod){
     const specs=normalizeSpecifications(prod?.specifications);
-    const rows=(specs.length?specs:[null]).map(spec=>productSpecEditorRowHtml(spec)).join('');
+    const english=Array.isArray(prod?.specifications_en)?prod.specifications_en:[];
+    const merged=specs.map((spec,index)=>{
+      const en=english.find(row=>row?.key===spec.key)||english[index];
+      return {...spec,label_en:en?.label||'',value_en:en?.value||''};
+    });
+    const rows=(merged.length?merged:[null]).map(spec=>productSpecEditorRowHtml(spec)).join('');
     const showInWhatsApp=productWhatsAppOption(prod?.specifications,WHATSAPP_META_SHOW_SPECS);
     return `<div class="fl-product-spec-section full"><div class="fl-product-spec-head"><div><div class="fl-field-label-inline"><strong>المواصفات الفنية</strong><label class="fl-whatsapp-include-toggle"><input id="flProdWhatsAppShowSpecs" type="checkbox" ${showInWhatsApp?'checked':''}><span>إظهار في رسالة واتساب</span></label></div><small>اختر نوع المواصفة من القائمة لتوحيدها بين المنتجات. استخدم «مواصفة أخرى» فقط عند الحاجة.</small></div><button class="fl-cloud-btn fl-add-spec-btn" id="flAddProductSpec" type="button">+ إضافة صفة</button></div><div id="flFlexibleSpecs" class="fl-flex-spec-list">${rows}</div></div>`;
   }
