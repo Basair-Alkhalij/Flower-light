@@ -145,40 +145,9 @@ assert.equal(imported.specifications_en.find(row=>row.key==='lumens')?.value,'12
 assert.equal(imported.imageRefs[0],'https://example.com/product.jpg');
 
 
-// Excel with pictures: exercise OOXML drawing generation and keep URL cells unchanged.
-const zipFiles=new Map([
-  ['[Content_Types].xml','<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/></Types>'],
-  ['xl/worksheets/sheet3.xml','<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData/></worksheet>']
-]);
-const mockZip={
-  file(name,value){
-    if(value!==undefined){zipFiles.set(name,value);return this;}
-    if(!zipFiles.has(name))return null;
-    return {async:async()=>zipFiles.get(name)};
-  },
-  generateAsync:async()=>new Blob(['excel-photos'])
-};
-context.window.XLSX.write=wb=>{exportedWorkbook=wb;return new Uint8Array([1,2,3]);};
-context.window.JSZip.loadAsync=async()=>mockZip;
-context.createImageBitmap=async()=>({width:320,height:240,close(){}});
-context.fetch=async()=>({ok:true,blob:async()=>new Blob([new Uint8Array([255,216,255])],{type:'image/jpeg'})});
-context.document.createElement=tag=>{
-  if(tag==='canvas')return {width:0,height:0,getContext:()=>({fillRect(){},drawImage(){}}),toBlob:callback=>callback(new Blob([new Uint8Array([255,216,255,217])],{type:'image/jpeg'}))};
-  return {set href(value){},set download(value){},click(){},remove(){}};
-};
-context.document.body={appendChild(){}};
-context.URL={createObjectURL:()=> 'blob:test-xlsx',revokeObjectURL(){}};
-await context.window.FL_ADMIN_IMPORT.downloadExcelTemplate({},true);
-const drawing=zipFiles.get('xl/drawings/drawing3.xml');
-assert.ok(drawing?.includes('xdr:oneCellAnchor'),'Excel did not contain drawing anchors');
-assert.ok(drawing.includes('<xdr:col>19</xdr:col>'),'Picture 1 must anchor to the first image column');
-assert.ok(drawing.includes('<xdr:row>1</xdr:row>'),'Picture must anchor on the product row, not the header');
-assert.ok(zipFiles.get('xl/media/fl-photo-3-1.jpg')?.length>0,'Embedded JPEG binary missing');
-assert.ok(zipFiles.get('xl/drawings/_rels/drawing3.xml.rels')?.includes('../media/fl-photo-3-1.jpg'),'Drawing image relationship missing');
-assert.ok(zipFiles.get('xl/worksheets/_rels/sheet3.xml.rels')?.includes('rIdFlowerLightPictures'),'Worksheet drawing relationship missing');
-assert.ok(zipFiles.get('xl/worksheets/sheet3.xml')?.includes('<drawing r:id="rIdFlowerLightPictures"/>'),'Worksheet drawing markup missing');
-assert.ok(zipFiles.get('[Content_Types].xml')?.includes('application/vnd.openxmlformats-officedocument.drawing+xml'),'Drawing content type missing');
-assert.ok(exportedWorkbook.Sheets['ثريات']['!rows']?.[1]?.hpt>=90,'Product photo row height missing');
-assert.match(read('admin-products.js'),/flDownloadExcelWithPictures/);
-
+// Keep the standard Excel export/import while hiding the two unwanted tools.
+assert.doesNotMatch(read('admin-products.js'),/flDownloadExcelWithPictures|flOptimizeLegacyImages/);
+assert.doesNotMatch(read('admin-import.js'),/excelWithImages|saveExcelPhotoBlob|withPictures/);
+assert.match(read('admin-products.js'),/id="flDownloadExcelTemplate"/);
+assert.match(read('admin-products.js'),/id="flImportProductsExcel"/);
 console.log('PRODUCT_MODULES_RUNTIME_OK');
