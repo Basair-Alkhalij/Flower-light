@@ -498,5 +498,5 @@
   }
 
 
-  window.FL_ADMIN_IMPORT={downloadExcelTemplate,downloadImportPackageTemplate,openProductExcelImport,runProductExcelImport};
+  window.FL_ADMIN_IMPORT={downloadExcelTemplate,downloadImportPackageTemplate,openProductExcelImport,runProductExcelImport,parseProductImportFile};
 })();
