@@ -346,7 +346,8 @@
   function productImportPreviewHtml(plan){
     const rows=plan.sections.map(section=>`<div class="fl-import-section"><strong>${esc(section.name)}</strong><span>${section.products.length} منتج</span><small>${section.products.reduce((n,p)=>n+p.imageSources.length,0)} صور جاهزة${section.products.some(p=>p.unresolvedImages.length)?' · يوجد صور غير موجودة':''}</small></div>`).join('');
     const warnings=plan.sections.flatMap(s=>s.products.filter(p=>p.unresolvedImages.length).map(p=>`${s.name} / ${p.name}: ${p.unresolvedImages.join('، ')}`)).slice(0,8);
-    return `<div class="fl-import-summary"><div><strong>${plan.sections.length}</strong><span>أقسام</span></div><div><strong>${plan.total}</strong><span>منتجات</span></div><div><strong>${plan.resolvedImages}</strong><span>صور جاهزة</span></div><div><strong>${plan.missingImages}</strong><span>صور مفقودة</span></div></div><div class="fl-import-sections">${rows}</div>${warnings.length?`<div class="fl-cloud-note bad"><b>تنبيه صور:</b><br>${warnings.map(esc).join('<br>')}${plan.missingImages>warnings.length?'<br>…':''}</div>`:''}`;
+    const catInfo=plan.sections.filter(section=>section.categoryMeta).length;
+    return `${catInfo?'<div class="fl-cloud-note">سيتم تطبيق الأسماء الإنجليزية ووصف الأقسام وترتيبها من ورقة «بيانات الأقسام». راجع الأرقام قبل الاستيراد؛ الأصغر يظهر أولًا، والأقسام والكتالوجات تستخدم الترتيب نفسه.</div>':''}<div class="fl-import-summary"><div><strong>${plan.sections.length}</strong><span>أقسام</span></div><div><strong>${plan.total}</strong><span>منتجات</span></div><div><strong>${plan.resolvedImages}</strong><span>صور جاهزة</span></div><div><strong>${plan.missingImages}</strong><span>صور مفقودة</span></div></div><div class="fl-import-sections">${rows}</div>${warnings.length?`<div class="fl-cloud-note bad"><b>تنبيه صور:</b><br>${warnings.map(esc).join('<br>')}${plan.missingImages>warnings.length?'<br>…':''}</div>`:''}`;
   }
 
 
@@ -472,11 +473,32 @@
     start?.addEventListener('click',()=>runProductExcelImport());
   }
 
-  async function ensureImportCategory(name,categoryMap,nextSortRef){
-    const key=importKey(name);if(categoryMap.has(key))return categoryMap.get(key);
-    const categoryName=importText(name);
-    const payload={name:categoryName,description:`منتجات قسم ${categoryName}`,sort_order:nextSortRef.value,is_visible:true,slug:newCategorySlug()};nextSortRef.value+=10;
-    const {data,error}=await db.from('categories').insert(payload).select().single();if(error)throw error;categories.push(data);categoryMap.set(key,data);return data;
+  async function ensureImportCategory(section,categoryMap,nextSortRef){
+    const name=section.name,meta=section.categoryMeta,key=importKey(name);
+    const existing=meta?.id?categories.find(c=>String(c.id)===String(meta.id)):categoryMap.get(key);
+    if(meta?.id&&!existing)throw new Error('معرف القسم في Excel لا يطابق قسمًا موجودًا. نزّل قالبًا حديثًا ولا تغيّر معرف القسم.');
+    if(existing){
+      if(meta){
+        const supplied={name_en:meta.name_en,description:meta.description,description_en:meta.description_en};
+        if(meta.sort_order!=null)supplied.sort_order=meta.sort_order;
+        if(meta.is_visible!=null)supplied.is_visible=meta.is_visible;
+        const changes=Object.fromEntries(Object.entries(supplied).filter(([field,value])=>String(existing[field]??'')!==String(value)));
+        if(Object.keys(changes).length){
+          const {data,error}=await db.from('categories').update(changes).eq('id',existing.id).select().single();
+          if(error)throw error;
+          Object.assign(existing,data);
+        }
+      }
+      categoryMap.set(key,existing);
+      return existing;
+    }
+    const categoryName=importText(meta?.name||name);
+    const order=meta?.sort_order??nextSortRef.value;
+    const payload={name:categoryName,name_en:meta?.name_en||'',description:meta?.description||`منتجات قسم ${categoryName}`,description_en:meta?.description_en||'',sort_order:order,is_visible:meta?.is_visible??true,slug:newCategorySlug()};
+    nextSortRef.value=Math.max(nextSortRef.value,order+10);
+    const {data,error}=await db.from('categories').insert(payload).select().single();
+    if(error)throw error;
+    categories.push(data);categoryMap.set(key,data);return data;
   }
 
   async function runProductExcelImport(){
@@ -487,7 +509,7 @@
     const total=plan.total;
     for(const section of plan.sections){
       let category;
-      try{category=await ensureImportCategory(section.name,categoryMap,nextSortRef);}catch(error){section.products.forEach(p=>errors.push(`${section.name} / ${p.name}: تعذر إنشاء القسم - ${error.message||error}`));failed+=section.products.length;done+=section.products.length;continue;}
+      try{category=await ensureImportCategory(section,categoryMap,nextSortRef);}catch(error){section.products.forEach(p=>errors.push(`${section.name} / ${p.name}: تعذر إنشاء القسم - ${error.message||error}`));failed+=section.products.length;done+=section.products.length;continue;}
       let newSort=nextProductSort(category.id);
       for(const row of section.products){
         done++;if(text)text.textContent=`${section.name} — ${row.name}`;if(count)count.textContent=`${done}/${total}`;if(bar)bar.value=Math.round(done/total*100);
