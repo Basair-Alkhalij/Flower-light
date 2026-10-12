@@ -15,28 +15,36 @@
   }
 
 
-  // Display only: preserve canonical units in stored product data and Excel.
+  // Localize technical units only when presenting values; never modify saved specifications.
+  const PRODUCT_SPEC_UNIT_LABELS={
+    wattage:{tokens:['W','واط','وات'],ar:'واط',en:'W'},
+    lumens:{tokens:['lm','لومن'],ar:'لومن',en:'lm'},
+    voltage:{tokens:['V','فولت','فولط'],ar:'فولت',en:'V'},
+    cct:{tokens:['K','كلفن','كيلفن'],ar:'كلفن',en:'K'},
+    frequency:{tokens:['Hz','هرتز','هيرتز'],ar:'هرتز',en:'Hz'},
+    beam_angle:{tokens:['°','درجة','درجات'],ar:'°',en:'°'}
+  };
   function formatProductSpecValue(spec,language='ar'){
     const value=String(spec?.value??'').trim();
     if(!value)return '';
     const key=String(spec?.key||'').trim();
     const label=String(spec?.label||'').trim();
     const unit=String(spec?.unit||'').trim();
-    const standardUnit=key==='wattage'?'W':key==='lumens'?'lm':unit;
+    const known=PRODUCT_SPEC_UNIT_LABELS[key];
+    const tokens=known?[...known.tokens,...(unit?[unit]:[])]:unit?[unit]:[];
     let clean=value;
-    if(key==='wattage')clean=value.replace(/(?:\s*(?:W|واط|وات))+\s*$/i,'').trim();
-    else if(key==='lumens')clean=value.replace(/(?:\s*(?:lm|لومن))+\s*$/i,'').trim();
-    else if(unit){
-      const escaped=unit.replace(/[\^$.*+?()[\]{}|]/g,'\\$&');
-      clean=value.replace(new RegExp('\\s*'+escaped+'\\s*$','i'),'').trim();
+    if(tokens.length){
+      const escaped=tokens.map(token=>token.replace(/[\^$.*+?()[\]{}|\\]/g,'\\$&')).join('|');
+      clean=value.replace(new RegExp('(?:\\s*(?:'+escaped+'))+\\s*$','i'),'').trim();
     }
     if(!clean)return value;
-    if(language!=='en'&&key==='lumens')return clean;
-    if(language!=='en'&&key==='wattage'){
-      const labelHasUnit=/^(?:الواط|الوات|واط|وات)$/.test(label);
-      return labelHasUnit?clean:clean+' واط';
-    }
-    return clean+(standardUnit?' '+standardUnit:'');
+    const ar=language!=='en';
+    const outputUnit=known?(ar?known.ar:known.en):unit;
+    if(ar&&key==='lumens'&&/لومن/.test(label))return clean;
+    if(ar&&key==='voltage'&&/فولت|فولط/.test(label))return clean;
+    if(ar&&key==='wattage'&&/^(?:الواط|الوات|واط|وات)$/.test(label))return clean;
+    if(!outputUnit)return clean;
+    return clean+(outputUnit==='°'?'°':' '+outputUnit);
   }
 
 window.FL_CATALOG_PRODUCT_META=Object.freeze({productDisplayName,normalizeProductAvailability,productAvailabilityLabel,formatProductSpecValue});
