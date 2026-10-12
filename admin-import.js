@@ -262,6 +262,35 @@
     const clean=normalizeImportPath(value).toLowerCase();let entry=lookup.full.get(clean);if(!entry)entry=lookup.base.get(clean.split('/').pop());return entry?{kind:'zipEntry',entry,name:entry.name,embedded:false}:null;
   }
 
+  const CATEGORY_EXCEL_SHEET='بيانات الأقسام';
+  const CATEGORY_EXCEL_HEADERS=['ورقة المنتجات','معرف القسم','اسم القسم (عربي)','اسم القسم (English)','الوصف (عربي)','الوصف (English)','الترتيب','ظاهر'];
+  function excelCategoryMetadata(workbook){
+    const worksheet=workbook.Sheets[CATEGORY_EXCEL_SHEET];
+    if(!worksheet)return new Map();
+    const rows=window.XLSX.utils.sheet_to_json(worksheet,{defval:'',raw:false});
+    const result=new Map();
+    rows.forEach((row,index)=>{
+      const sheet=importText(row['ورقة المنتجات']);
+      if(!sheet)return;
+      const key=importKey(sheet);
+      if(result.has(key))throw new Error(`يوجد تكرار للقسم «${sheet}» في ورقة بيانات الأقسام`);
+      const orderText=importText(row['الترتيب']);
+      const sort=orderText?importNumber(orderText):null;
+      if(orderText&&(sort==null||sort<0||!Number.isInteger(sort)))throw new Error(`ترتيب القسم «${sheet}» غير صالح (الصف ${index+2})`);
+      const visible=importText(row['ظاهر']);
+      if(visible&&!['نعم','لا','yes','no','true','false','1','0'].includes(importKey(visible)))throw new Error(`حالة ظهور القسم «${sheet}» غير صالحة`);
+      result.set(key,{
+        id:importText(row['معرف القسم']),
+        name:importText(row['اسم القسم (عربي)']),
+        name_en:importText(row['اسم القسم (English)']),
+        description:importText(row['الوصف (عربي)']),
+        description_en:importText(row['الوصف (English)']),
+        sort_order:sort,
+        is_visible:visible?importBoolean(visible):null
+      });
+    });
+    return result;
+  }
   async function parseProductImportFile(file){
     await loadProductImportLibraries();
     const fileName=String(file?.name||'').toLowerCase();let excelBuffer=null,outerZip=null,excelName=file?.name||'';
@@ -274,11 +303,12 @@
 
     const workbook=window.XLSX.read(excelBuffer,{type:'array',cellDates:false});
     const embedded=await extractEmbeddedExcelImages(excelBuffer,workbook);const outerLookup=outerZipImageLookup(outerZip);
-    const ignoreSheets=new Set(['تعليمات','instructions','instruction','readme','ملاحظات','دليل المواصفات','specification guide','الخيارات','options']);const sections=[];let total=0,resolvedImages=0,missingImages=0;
+    const categoryMetadata=excelCategoryMetadata(workbook);
+    const ignoreSheets=new Set(['تعليمات','instructions','instruction','readme','ملاحظات','دليل المواصفات','specification guide','الخيارات','options',importKey(CATEGORY_EXCEL_SHEET)]);const sections=[];let total=0,resolvedImages=0,missingImages=0;
     for(const sheetName of workbook.SheetNames||[]){
       if(ignoreSheets.has(importKey(sheetName)))continue;const sheet=workbook.Sheets[sheetName];if(!sheet)continue;
       const rows=window.XLSX.utils.sheet_to_json(sheet,{defval:'',raw:false});if(!rows.length)continue;
-      const headers=Object.keys(rows[0]||{});const headerMap=new Map(headers.map(h=>[h,canonicalImportHeader(h)]));const section={name:importText(sheetName),products:[]};
+      const headers=Object.keys(rows[0]||{});const headerMap=new Map(headers.map(h=>[h,canonicalImportHeader(h)]));const section={name:importText(sheetName),categoryMeta:categoryMetadata.get(importKey(sheetName))||null,products:[]};
       rows.forEach((row,rowIndex)=>{
         const nameHeader=headers.find(h=>headerMap.get(h)==='name');const name=importText(nameHeader?row[nameHeader]:'');if(!name)return;
         const get=canonical=>{const h=headers.find(x=>headerMap.get(x)===canonical);return h?row[h]:'';};
@@ -316,7 +346,8 @@
   function productImportPreviewHtml(plan){
     const rows=plan.sections.map(section=>`<div class="fl-import-section"><strong>${esc(section.name)}</strong><span>${section.products.length} منتج</span><small>${section.products.reduce((n,p)=>n+p.imageSources.length,0)} صور جاهزة${section.products.some(p=>p.unresolvedImages.length)?' · يوجد صور غير موجودة':''}</small></div>`).join('');
     const warnings=plan.sections.flatMap(s=>s.products.filter(p=>p.unresolvedImages.length).map(p=>`${s.name} / ${p.name}: ${p.unresolvedImages.join('، ')}`)).slice(0,8);
-    return `<div class="fl-import-summary"><div><strong>${plan.sections.length}</strong><span>أقسام</span></div><div><strong>${plan.total}</strong><span>منتجات</span></div><div><strong>${plan.resolvedImages}</strong><span>صور جاهزة</span></div><div><strong>${plan.missingImages}</strong><span>صور مفقودة</span></div></div><div class="fl-import-sections">${rows}</div>${warnings.length?`<div class="fl-cloud-note bad"><b>تنبيه صور:</b><br>${warnings.map(esc).join('<br>')}${plan.missingImages>warnings.length?'<br>…':''}</div>`:''}`;
+    const catInfo=plan.sections.filter(section=>section.categoryMeta).length;
+    return `${catInfo?'<div class="fl-cloud-note">سيتم تطبيق الأسماء الإنجليزية ووصف الأقسام وترتيبها من ورقة «بيانات الأقسام». راجع الأرقام قبل الاستيراد؛ الأصغر يظهر أولًا، والأقسام والكتالوجات تستخدم الترتيب نفسه.</div>':''}<div class="fl-import-summary"><div><strong>${plan.sections.length}</strong><span>أقسام</span></div><div><strong>${plan.total}</strong><span>منتجات</span></div><div><strong>${plan.resolvedImages}</strong><span>صور جاهزة</span></div><div><strong>${plan.missingImages}</strong><span>صور مفقودة</span></div></div><div class="fl-import-sections">${rows}</div>${warnings.length?`<div class="fl-cloud-note bad"><b>تنبيه صور:</b><br>${warnings.map(esc).join('<br>')}${plan.missingImages>warnings.length?'<br>…':''}</div>`:''}`;
   }
 
 
@@ -350,7 +381,7 @@
     if(button){button.disabled=true;button.classList.add('loading');const title=button.querySelector('.fl-product-tool-title');if(title)title.textContent='جاري تجهيز Excel...';}
     try{
       await loadProductImportLibraries();
-      const wb=window.XLSX.utils.book_new();const usedNames=new Set();
+      const wb=window.XLSX.utils.book_new();const usedNames=new Set([CATEGORY_EXCEL_SHEET.toLowerCase()]);const categoryRows=[];
       const instructions=[
         ['بصائر الخليج — قالب شامل لاستيراد منتجات Flower Light'],
         ['كل ورقة بعد هذه التعليمات تمثل قسمًا في الموقع. املأ المنتجات في ورقة القسم المناسبة فقط.'],
@@ -366,7 +397,11 @@
         ['للصور المخزنة محليًا ضع أسماء الملفات في أعمدة الصور وارفع ZIP يحتوي ملف Excel ومجلد images.'],
         ['يمكن كذلك لصق الصور داخل الصفوف في Excel؛ يتعرف عليها المستورد وفق الصف.'],
         ['منتجات موجودة: يصدّر القالب الصور والبيانات الحالية لتعديلها ثم إعادة رفعها، ولا يلزم إعادة رفع صورها دون تغيير.'],
-        ['ورقة دليل المواصفات للمساعدة فقط ولا يتم استيرادها كمنتجات.']
+        ['ورقة دليل المواصفات للمساعدة فقط ولا يتم استيرادها كمنتجات.'],
+        ['ورقة «بيانات الأقسام» تحتوي أسماء الأقسام باللغتين ووصفها وترتيب ظهورها؛ ترتيب القسم مستقل عن ترتيب المنتجات.'],
+        ['الترتيب: الرقم الأصغر يظهر أولاً، والأقسام والكتالوجات تتشارك الترتيب. عدّل الرقم بنفسك إذا أردت تغييره.'],
+        ['عند إعادة الاستيراد ستتحدث بيانات الأقسام من ورقة «بيانات الأقسام» فقط إذا كانت موجودة؛ ملفات Excel القديمة لا تغير بيانات الأقسام.'],
+        ['لا تعدّل «معرف القسم» أو «ورقة المنتجات» للصفوف الموجودة، فهي تحدد القسم الصحيح عند إعادة الاستيراد.']
       ];
       const infoWs=window.XLSX.utils.aoa_to_sheet(instructions);infoWs['!cols']=[{wch:110}];
       window.XLSX.utils.book_append_sheet(wb,infoWs,excelSafeSheetName('تعليمات',usedNames));
@@ -398,11 +433,17 @@
         });
         if(!data.length)data.push(Array(headers.length).fill(''));
         const ws=window.XLSX.utils.aoa_to_sheet([headers,...data]);ws['!cols']=excelColumnWidths(specDefs.length*2);ws['!autofilter']={ref:`A1:${window.XLSX.utils.encode_col(headers.length-1)}${data.length+1}`};
-        window.XLSX.utils.book_append_sheet(wb,ws,excelSafeSheetName(category.name,usedNames));
+        const sheetName=excelSafeSheetName(category.name,usedNames);
+        window.XLSX.utils.book_append_sheet(wb,ws,sheetName);
+        categoryRows.push([sheetName,importText(category.id),importText(category.name),importText(category.name_en),importText(category.description),importText(category.description_en),category.sort_order==null?'':Number(category.sort_order),excelBoolean(category.is_visible)]);
       }
       if(!categories.length){
         const ws=window.XLSX.utils.aoa_to_sheet([standardOnly,Array(standardOnly.length).fill('')]);ws['!cols']=excelColumnWidths(standardSpecDefs.length*2);window.XLSX.utils.book_append_sheet(wb,ws,excelSafeSheetName('منتجات',usedNames));
       }
+      const categoriesSheet=window.XLSX.utils.aoa_to_sheet([CATEGORY_EXCEL_HEADERS,...categoryRows]);
+      categoriesSheet['!cols']=[{wch:32},{wch:38},{wch:26},{wch:30},{wch:44},{wch:44},{wch:13},{wch:13}];
+      if(categoryRows.length)categoriesSheet['!autofilter']={ref:`A1:H${categoryRows.length+1}`};
+      window.XLSX.utils.book_append_sheet(wb,categoriesSheet,CATEGORY_EXCEL_SHEET);
       const stamp=new Date().toISOString().slice(0,10);
       window.XLSX.writeFile(wb,`Flower-Light-Products-${stamp}.xlsx`,{compression:true});
       notify(`تم تجهيز ملف Excel بكل المنتجات الحالية (${products.length} منتج)`);
@@ -432,11 +473,32 @@
     start?.addEventListener('click',()=>runProductExcelImport());
   }
 
-  async function ensureImportCategory(name,categoryMap,nextSortRef){
-    const key=importKey(name);if(categoryMap.has(key))return categoryMap.get(key);
-    const categoryName=importText(name);
-    const payload={name:categoryName,description:`منتجات قسم ${categoryName}`,sort_order:nextSortRef.value,is_visible:true,slug:newCategorySlug()};nextSortRef.value+=10;
-    const {data,error}=await db.from('categories').insert(payload).select().single();if(error)throw error;categories.push(data);categoryMap.set(key,data);return data;
+  async function ensureImportCategory(section,categoryMap,nextSortRef){
+    const name=section.name,meta=section.categoryMeta,key=importKey(name);
+    const existing=meta?.id?categories.find(c=>String(c.id)===String(meta.id)):categoryMap.get(key);
+    if(meta?.id&&!existing)throw new Error('معرف القسم في Excel لا يطابق قسمًا موجودًا. نزّل قالبًا حديثًا ولا تغيّر معرف القسم.');
+    if(existing){
+      if(meta){
+        const supplied={name_en:meta.name_en,description:meta.description,description_en:meta.description_en};
+        if(meta.sort_order!=null)supplied.sort_order=meta.sort_order;
+        if(meta.is_visible!=null)supplied.is_visible=meta.is_visible;
+        const changes=Object.fromEntries(Object.entries(supplied).filter(([field,value])=>String(existing[field]??'')!==String(value)));
+        if(Object.keys(changes).length){
+          const {data,error}=await db.from('categories').update(changes).eq('id',existing.id).select().single();
+          if(error)throw error;
+          Object.assign(existing,data);
+        }
+      }
+      categoryMap.set(key,existing);
+      return existing;
+    }
+    const categoryName=importText(meta?.name||name);
+    const order=meta?.sort_order??nextSortRef.value;
+    const payload={name:categoryName,name_en:meta?.name_en||'',description:meta?.description||`منتجات قسم ${categoryName}`,description_en:meta?.description_en||'',sort_order:order,is_visible:meta?.is_visible??true,slug:newCategorySlug()};
+    nextSortRef.value=Math.max(nextSortRef.value,order+10);
+    const {data,error}=await db.from('categories').insert(payload).select().single();
+    if(error)throw error;
+    categories.push(data);categoryMap.set(key,data);return data;
   }
 
   async function runProductExcelImport(){
@@ -447,7 +509,7 @@
     const total=plan.total;
     for(const section of plan.sections){
       let category;
-      try{category=await ensureImportCategory(section.name,categoryMap,nextSortRef);}catch(error){section.products.forEach(p=>errors.push(`${section.name} / ${p.name}: تعذر إنشاء القسم - ${error.message||error}`));failed+=section.products.length;done+=section.products.length;continue;}
+      try{category=await ensureImportCategory(section,categoryMap,nextSortRef);}catch(error){section.products.forEach(p=>errors.push(`${section.name} / ${p.name}: تعذر إنشاء القسم - ${error.message||error}`));failed+=section.products.length;done+=section.products.length;continue;}
       let newSort=nextProductSort(category.id);
       for(const row of section.products){
         done++;if(text)text.textContent=`${section.name} — ${row.name}`;if(count)count.textContent=`${done}/${total}`;if(bar)bar.value=Math.round(done/total*100);
