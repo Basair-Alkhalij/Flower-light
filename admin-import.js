@@ -341,12 +341,9 @@
   }
   function excelSpecKey(spec){return `${importKey(spec?.label)}|${importKey(spec?.unit)}`;}
   function excelBoolean(value){return value===false?'لا':'نعم';}
-  function liveExcelHeaders(specHeaders=[]){
-    return ['معرف المنتج','اسم المنتج','الكود','الوصف','سعر المفرق','سعر الجملة','الجملة أدنى','الجملة أعلى','سعر جملة الجملة','جملة الجملة أدنى','جملة الجملة أعلى','عرض محدود','حالة التوفر','ظاهر','الترتيب','الصورة 1','الصورة 2','الصورة 3','الصورة 4',...specHeaders];
-  }
-  function excelColumnWidths(specCount){
-    return [24,28,18,36,14,14,14,14,16,16,16,14,16,12,12,36,36,36,36,...Array(specCount).fill(20)].map(w=>({wch:w}));
-  }
+  const PRODUCT_EXCEL_STANDARD_HEADERS=['معرف المنتج','اسم المنتج (عربي)','اسم المنتج (English)','الكود','الوصف (عربي)','الوصف (English)','سعر المفرق','سعر الجملة','الجملة أدنى','الجملة أعلى','سعر جملة الجملة','جملة الجملة أدنى','جملة الجملة أعلى','عرض محدود','حالة التوفر','ظاهر','الترتيب','وصف واتساب','مواصفات واتساب','الصورة 1','الصورة 2','الصورة 3','الصورة 4'];
+  function liveExcelHeaders(specHeaders=[]){return [...PRODUCT_EXCEL_STANDARD_HEADERS,...specHeaders];}
+  function excelColumnWidths(specCount){return [23,28,29,18,38,38,15,15,14,14,16,16,16,15,17,12,12,17,19,36,36,36,36,...Array(specCount).fill(22)].map(w=>({wch:w}));}
   async function downloadExcelTemplate(event){
     const button=event?.currentTarget||document.getElementById('flDownloadExcelTemplate');const original=button?.innerHTML;
     if(button){button.disabled=true;button.classList.add('loading');const title=button.querySelector('.fl-product-tool-title');if(title)title.textContent='جاري تجهيز Excel...';}
@@ -354,46 +351,56 @@
       await loadProductImportLibraries();
       const wb=window.XLSX.utils.book_new();const usedNames=new Set();
       const instructions=[
-        ['قالب Flower Light — المنتجات الحالية'],
-        ['هذا الملف يحتوي كل المنتجات الحالية، ويمكنك تعديل أي بيانات أو إضافة صفوف جديدة ثم استيراده من زر «استيراد Excel».'],
-        ['مهم: لا تغيّر «معرف المنتج» للصفوف الحالية. عند إضافة منتج جديد اترك «معرف المنتج» فارغًا.'],
-        ['كل ورقة تمثل قسمًا. يمكنك إضافة منتج جديد في نهاية ورقة القسم نفسها.'],
-        ['للمنتج الجديد: اكتب رابط الصورة في «الصورة 1» على الأقل، أو استخدم حزمة ZIP إذا أردت صورًا محلية.'],
-        ['صور المنتجات الحالية مضافة كرابط تلقائيًا، وعند إعادة استيراد الملف دون تغيير الروابط سيحتفظ الموقع بالصور نفسها دون إعادة رفعها.'],
-        ['القيم المقبولة في «ظاهر» و«عرض محدود»: نعم / لا.'],
-        ['القيم المقبولة في «حالة التوفر»: متوفر / نفد / قريبًا.']
+        ['بصائر الخليج — قالب شامل لاستيراد منتجات Flower Light'],
+        ['كل ورقة بعد هذه التعليمات تمثل قسمًا في الموقع. املأ المنتجات في ورقة القسم المناسبة فقط.'],
+        ['خانة اسم المنتج (عربي) إلزامية لكل منتج، واسم المنتج (English) والوصف باللغتين اختياريان.'],
+        ['معرف المنتج: اتركه بلا قيمة للمنتج الجديد، ولا تغيّره عند تحديث منتج موجود. يتم التعرف أيضًا على المنتج من كوده.'],
+        ['الصف الأول يحتوي عناوين الأعمدة: لا تحذفه أو تعيد ترتيب معاني عناوينه. واترك الخانات غير المطلوبة فارغة.'],
+        ['المواصفات الفنية الخمس عشرة موجودة كاملة بالعربي والإنجليزي. املأ القيمة العربية والإنجليزية للمواصفة التي تحتاجها.'],
+        ['عناوين المواصفات الإنجليزية بشكل EN: اسم عربي | English label، ولا تغيّر الجزء العربي قبل | حتى تتطابق الترجمة.'],
+        ['يمكن إضافة مواصفة جديدة بعمود عربي (مثل: نوع التركيب)، ومعه عمود EN: نوع التركيب | Mounting type.'],
+        ['السعر بالريال؛ سعر المفرق، الجملة، وجملة الجملة اختياري. حدّد الحد الأدنى والأعلى لأسعار الجملة عند الحاجة.'],
+        ['حالة التوفر: متوفر أو نفد أو قريبًا. ظاهر، عرض محدود، وصف واتساب ومواصفات واتساب: نعم أو لا.'],
+        ['أقصى صور للمنتج أربع. يمكنك وضع روابط صور عامة مباشرة في أعمدة الصور.'],
+        ['للصور المخزنة محليًا ضع أسماء الملفات في أعمدة الصور وارفع ZIP يحتوي ملف Excel ومجلد images.'],
+        ['يمكن كذلك لصق الصور داخل الصفوف في Excel؛ يتعرف عليها المستورد وفق الصف.'],
+        ['منتجات موجودة: يصدّر القالب الصور والبيانات الحالية لتعديلها ثم إعادة رفعها، ولا يلزم إعادة رفع صورها دون تغيير.'],
+        ['ورقة دليل المواصفات للمساعدة فقط ولا يتم استيرادها كمنتجات.']
       ];
       const infoWs=window.XLSX.utils.aoa_to_sheet(instructions);infoWs['!cols']=[{wch:110}];
       window.XLSX.utils.book_append_sheet(wb,infoWs,excelSafeSheetName('تعليمات',usedNames));
 
-      const standardOnly=liveExcelHeaders([]);
+      const standardSpecDefs=PRODUCT_SPEC_FIELDS.map(field=>({key:field.key,label:field.label,unit:field.unit||'',english:PRODUCT_SPEC_LABELS_EN[field.key]||field.key}));
+      const infoSpecs=[['المفتاح','المواصفة بالعربي','الاسم بالإنجليزي','الوحدة','مثال / ملاحظة'],...standardSpecDefs.map(def=>[def.key,def.label,def.english,def.unit,PRODUCT_SPEC_FIELDS.find(item=>item.key===def.key)?.placeholder||''])];
+      const guide=window.XLSX.utils.aoa_to_sheet(infoSpecs);guide['!cols']=[{wch:22},{wch:28},{wch:33},{wch:13},{wch:33}];
+      window.XLSX.utils.book_append_sheet(wb,guide,excelSafeSheetName('دليل المواصفات',usedNames));
+      const standardOnly=liveExcelHeaders(standardSpecDefs.flatMap(spec=>[excelSpecHeader(spec),englishSpecHeader(spec,spec.english)]));
       for(const category of categories){
         const rows=products.filter(p=>String(p.category_id)===String(category.id)).sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0));
-        const specDefs=[];const seenSpecs=new Set();
-        rows.forEach(product=>normalizeSpecifications(product.specifications).forEach(spec=>{const key=excelSpecKey(spec);if(!key||seenSpecs.has(key))return;seenSpecs.add(key);specDefs.push({key,header:excelSpecHeader(spec)});}));
-        const headers=liveExcelHeaders(specDefs.map(item=>item.header));
+        const specDefs=[...standardSpecDefs];const seen=new Set(standardSpecDefs.map(x=>x.key));
+        rows.forEach(product=>normalizeSpecifications(product.specifications).forEach(spec=>{const key=spec.key||excelSpecKey(spec);if(!key||seen.has(key))return;seen.add(key);const en=(Array.isArray(product.specifications_en)?product.specifications_en:[]).find(item=>item?.key===spec.key);specDefs.push({key,label:spec.label,unit:spec.unit,english:en?.label||''});}));
+        const headers=liveExcelHeaders(specDefs.flatMap(spec=>[excelSpecHeader(spec),englishSpecHeader(spec,spec.english)]));
         const data=rows.map(product=>{
           const gallery=adminGalleryRows(product).slice(0,4);const images=gallery.map(item=>imageUrl(item.image_path)).filter(Boolean);
           while(images.length<4)images.push('');
-          const specs=new Map(normalizeSpecifications(product.specifications).map(spec=>[excelSpecKey(spec),importText(spec.value)]));
+          const specs=new Map(normalizeSpecifications(product.specifications).map(spec=>[spec.key||excelSpecKey(spec),importText(spec.value)]));
+          const englishSpecs=new Map((Array.isArray(product.specifications_en)?product.specifications_en:[]).map(spec=>[spec.key,importText(spec.value)]));
           const pricing=productPricingTiers(product.specifications,product);
-          const retail=pricing.find(row=>row.type==='retail');
-          const wholesale=pricing.find(row=>row.type==='wholesale');
-          const bulk=pricing.find(row=>row.type==='bulk');
+          const retail=pricing.find(row=>row.type==='retail');const wholesale=pricing.find(row=>row.type==='wholesale');const bulk=pricing.find(row=>row.type==='bulk');
           return [
-            importText(product.id),importText(product.name),importText(product.model),importText(product.caption),
-            retail?.price??'',wholesale?.price??'',wholesale?.min_qty??'',wholesale?.max_qty??'',
-            bulk?.price??'',bulk?.min_qty??'',bulk?.max_qty??'',
-            product.limited_offer===true?'نعم':'لا',excelAvailability(product.availability),excelBoolean(product.is_visible),product.sort_order==null?'':Number(product.sort_order),...images,
-            ...specDefs.map(def=>specs.get(def.key)||'')
+            importText(product.id),importText(product.name),importText(product.name_en),importText(product.model),importText(product.caption),importText(product.caption_en),
+            retail?.price??'',wholesale?.price??'',wholesale?.min_qty??'',wholesale?.max_qty??'',bulk?.price??'',bulk?.min_qty??'',bulk?.max_qty??'',
+            product.limited_offer===true?'نعم':'لا',excelAvailability(product.availability),excelBoolean(product.is_visible),product.sort_order==null?'':Number(product.sort_order),
+            productWhatsAppOption(product.specifications,WHATSAPP_META_SHOW_DESCRIPTION)?'نعم':'لا',productWhatsAppOption(product.specifications,WHATSAPP_META_SHOW_SPECS)?'نعم':'لا',...images,
+            ...specDefs.flatMap(def=>[specs.get(def.key)||'',englishSpecs.get(def.key)||''])
           ];
         });
         if(!data.length)data.push(Array(headers.length).fill(''));
-        const ws=window.XLSX.utils.aoa_to_sheet([headers,...data]);ws['!cols']=excelColumnWidths(specDefs.length);ws['!autofilter']={ref:`A1:${window.XLSX.utils.encode_col(headers.length-1)}${data.length+1}`};
+        const ws=window.XLSX.utils.aoa_to_sheet([headers,...data]);ws['!cols']=excelColumnWidths(specDefs.length*2);ws['!autofilter']={ref:`A1:${window.XLSX.utils.encode_col(headers.length-1)}${data.length+1}`};
         window.XLSX.utils.book_append_sheet(wb,ws,excelSafeSheetName(category.name,usedNames));
       }
       if(!categories.length){
-        const ws=window.XLSX.utils.aoa_to_sheet([standardOnly,Array(standardOnly.length).fill('')]);ws['!cols']=excelColumnWidths(0);window.XLSX.utils.book_append_sheet(wb,ws,excelSafeSheetName('منتجات',usedNames));
+        const ws=window.XLSX.utils.aoa_to_sheet([standardOnly,Array(standardOnly.length).fill('')]);ws['!cols']=excelColumnWidths(standardSpecDefs.length*2);window.XLSX.utils.book_append_sheet(wb,ws,excelSafeSheetName('منتجات',usedNames));
       }
       const stamp=new Date().toISOString().slice(0,10);window.XLSX.writeFile(wb,`Flower-Light-Products-${stamp}.xlsx`,{compression:true});
       notify(`تم تجهيز ملف Excel بكل المنتجات الحالية (${products.length} منتج)`);
