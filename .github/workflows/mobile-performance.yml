@@ -1,0 +1,29 @@
+name: Published mobile performance benchmark
+on:
+  workflow_run:
+    workflows: ['Build, test and deploy Pages']
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mobile-lab:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npm run perf:mobile
+      - name: Publish repeatable mobile lab results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: published-mobile-performance
+          path: test-results/mobile-live-performance.json
+          if-no-files-found: ignore
