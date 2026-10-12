@@ -15,7 +15,7 @@
   }
 
 
-  // Display only: keep original values and units intact for English and Excel.
+  // Display only: preserve canonical units in stored product data and Excel.
   function formatProductSpecValue(spec,language='ar'){
     const value=String(spec?.value??'').trim();
     if(!value)return '';
@@ -27,10 +27,8 @@
     if(key==='wattage')clean=value.replace(/\s*(?:W|واط|وات)\s*$/i,'').trim();
     else if(key==='lumens')clean=value.replace(/\s*(?:lm|لومن)\s*$/i,'').trim();
     else if(unit){
-      const escaped=unit.replace(/[\^$.*+?()[\]{}|]/g,'\\window.FL_CATALOG_PRODUCT_META=Object.freeze({productDisplayName,normalizeProductAvailability,productAvailabilityLabel});');
-      clean=value.replace(new RegExp('\\s*'+escaped+'\\s*
-})();
-,'i'),'').trim();
+      const escaped=unit.replace(/[\^$.*+?()[\]{}|]/g,'\\$&');
+      clean=value.replace(new RegExp('\\s*'+escaped+'\\s*$','i'),'').trim();
     }
     if(!clean)return value;
     if(language!=='en'&&key==='lumens')return clean;
