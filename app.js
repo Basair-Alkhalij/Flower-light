@@ -25,7 +25,7 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     };
   }
 
-  const {productDisplayName,normalizeProductAvailability,productAvailabilityLabel}=window.FL_CATALOG_PRODUCT_META;
+  const {productDisplayName,normalizeProductAvailability,productAvailabilityLabel,formatProductSpecValue}=window.FL_CATALOG_PRODUCT_META;
 
   const {PRICING_META_KEY,validPriceNumber,validPriceQty,formatPriceNumber,productPricingTiers,priceTierRangeNote,productPricingLines}=window.FL_CATALOG_PRICING;
 
@@ -116,7 +116,7 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
   }
 
   function specificationDisplayValue(spec) {
-    return `${spec.value}${spec.unit ? ` ${spec.unit}` : ''}`.trim();
+    return formatProductSpecValue(spec,window.FL_I18N?.lang==='en'?'en':'ar');
   }
 
   function productSpecsText(item, limit = 5) {
