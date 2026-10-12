@@ -158,7 +158,7 @@ const mockZip={
   },
   generateAsync:async()=>new Blob(['excel-photos'])
 };
-context.window.XLSX.write=()=>new Uint8Array([1,2,3]);
+context.window.XLSX.write=wb=>{exportedWorkbook=wb;return new Uint8Array([1,2,3]);};
 context.window.JSZip.loadAsync=async()=>mockZip;
 context.createImageBitmap=async()=>({width:320,height:240,close(){}});
 context.fetch=async()=>({ok:true,blob:async()=>new Blob([new Uint8Array([255,216,255])],{type:'image/jpeg'})});
