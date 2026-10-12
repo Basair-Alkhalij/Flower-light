@@ -209,7 +209,7 @@
 
 
   const IMPORT_HEADER_ALIASES={
-    product_id:['معرف المنتج','product id','product_id'],name:['اسم المنتج','الاسم','product name','name'],model:['الكود','كود المنتج','رقم المنتج','model','code','sku'],caption:['الوصف','description','caption'],
+    product_id:['معرف المنتج','product id','product_id'],name:['اسم المنتج','اسم المنتج (عربي)','الاسم','product name','name'],name_en:['اسم المنتج (English)','اسم المنتج بالإنجليزي','اسم المنتج بالانجليزي','product name english','name en','name_en'],model:['الكود','كود المنتج','رقم المنتج','model','code','sku'],caption:['الوصف','الوصف (عربي)','description','caption'],caption_en:['الوصف (English)','الوصف الإنجليزي','الوصف الانجليزي','description english','caption en','caption_en'],whatsapp_description:['وصف واتساب','إرسال الوصف في واتساب','whatsapp description'],whatsapp_specs:['مواصفات واتساب','إرسال المواصفات في واتساب','whatsapp specifications'],
     price:['سعر المفرق','سعر القطاعي','سعر التجزئه','سعر التجزئة','retail price','price'],
     wholesale_price:['سعر الجمله','سعر الجملة','wholesale price'],
     wholesale_min_qty:['الجملة أدنى','كمية الجملة','كميه الجمله','اقل كميه للجمله','أقل كمية للجملة','wholesale qty','wholesale min qty'],
@@ -226,6 +226,23 @@
   }
   function knownSpecDefinition(label){
     return resolveProductSpecDefinition?.('',label) || null;
+  }
+  const PRODUCT_SPEC_LABELS_EN={sku:'SKU / Product code',wattage:'Power',lumens:'Lumens',cct:'Color temperature',cri:'CRI',voltage:'Voltage',ip_rating:'IP rating',dimensions:'Dimensions',color:'Color',material:'Material',beam_angle:'Beam angle',frequency:'Frequency',warranty:'Warranty',bulb_base:'Bulb base',bulb_count:'Bulb count'};
+  function englishImportSpecHeader(header){return /^\\s*(?:EN|English)\\s*[:：]/i.test(String(header||''));}
+  function englishSpecHeader(spec,englishLabel=''){
+    const english=importText(englishLabel)||PRODUCT_SPEC_LABELS_EN[spec?.key]||importText(spec?.label)||'Specification';
+    return `EN: ${importText(spec?.label)} | ${english}`;
+  }
+  function parseImportEnglishSpec(header,value,arabicSpecs){
+    if(!englishImportSpecHeader(header)||!importText(value))return null;
+    const body=importText(header).replace(/^\\s*(?:EN|English)\\s*[:：]\\s*/i,'');
+    const split=body.indexOf('|');
+    const arabicLabel=(split<0?body:body.slice(0,split)).trim().replace(/\\s*[\\(\\[][^\\)\\]]+[\\)\\]]\\s*$/,'').trim();
+    const englishLabel=(split<0?'':body.slice(split+1)).trim();
+    const def=knownSpecDefinition(arabicLabel);
+    const corresponding=arabicSpecs.find(spec=>(def&&spec.key===def.key)||importKey(spec.label)===importKey(arabicLabel));
+    if(!corresponding)return null;
+    return {key:corresponding.key,label:englishLabel||PRODUCT_SPEC_LABELS_EN[corresponding.key]||arabicLabel,value:importText(value),unit:''};
   }
   function parseImportSpec(header,value,index){
     let label=importText(header).replace(/^\s*(?:مواصفه|مواصفة|spec)\s*[:：-]\s*/i,'').trim();if(!label||importText(value)==='')return null;
@@ -257,7 +274,7 @@
 
     const workbook=window.XLSX.read(excelBuffer,{type:'array',cellDates:false});
     const embedded=await extractEmbeddedExcelImages(excelBuffer,workbook);const outerLookup=outerZipImageLookup(outerZip);
-    const ignoreSheets=new Set(['تعليمات','instructions','instruction','readme','ملاحظات']);const sections=[];let total=0,resolvedImages=0,missingImages=0;
+    const ignoreSheets=new Set(['تعليمات','instructions','instruction','readme','ملاحظات','دليل المواصفات','specification guide','الخيارات','options']);const sections=[];let total=0,resolvedImages=0,missingImages=0;
     for(const sheetName of workbook.SheetNames||[]){
       if(ignoreSheets.has(importKey(sheetName)))continue;const sheet=workbook.Sheets[sheetName];if(!sheet)continue;
       const rows=window.XLSX.utils.sheet_to_json(sheet,{defval:'',raw:false});if(!rows.length)continue;
@@ -268,7 +285,8 @@
         const imageRefs=[];for(let i=1;i<=4;i++){const value=importText(get(`image${i}`));if(value&&!/^#(?:VALUE!|N\/A|REF!|NAME\?|NUM!|DIV\/0!|NULL!|SPILL!|CALC!)/i.test(value))value.split(/[;,\n]+/).map(v=>v.trim()).filter(Boolean).forEach(v=>imageRefs.push(v));}
         const sources=[],unresolved=[];imageRefs.slice(0,4).forEach(ref=>{const src=resolveImportImageReference(ref,outerLookup);if(src){sources.push(src);resolvedImages++;}else{unresolved.push(ref);missingImages++;}});
         if(!sources.length){const excelRow=Number(row.__rowNum__??(rowIndex+1));const embeddedForRow=embedded.get(sheetName)?.get(excelRow)||[];embeddedForRow.slice(0,4).forEach(src=>{sources.push(src);resolvedImages++;});}
-        const specs=[];headers.forEach((header,index)=>{if(headerMap.get(header))return;const spec=parseImportSpec(header,row[header],index);if(spec)specs.push(spec);});
+        const specs=[];headers.forEach((header,index)=>{if(headerMap.get(header)||englishImportSpecHeader(header))return;const spec=parseImportSpec(header,row[header],index);if(spec)specs.push(spec);});
+        const specsEn=headers.map(header=>parseImportEnglishSpec(header,row[header],specs)).filter(Boolean);
         const retailPrice=importNumber(get('price'));
         const wholesalePrice=importNumber(get('wholesale_price'));
         const wholesaleMin=importNumber(get('wholesale_min_qty'));
@@ -280,7 +298,7 @@
         if(retailPrice!=null) pricingTiers.push({type:'retail',price:retailPrice,min_qty:null,max_qty:null});
         if(wholesalePrice!=null) pricingTiers.push({type:'wholesale',price:wholesalePrice,min_qty:wholesaleMin==null?null:Math.trunc(wholesaleMin),max_qty:wholesaleMax==null?null:Math.trunc(wholesaleMax)});
         if(bulkPrice!=null) pricingTiers.push({type:'bulk',price:bulkPrice,min_qty:bulkMin==null?null:Math.trunc(bulkMin),max_qty:bulkMax==null?null:Math.trunc(bulkMax)});
-        const product={sheetName,rowNumber:Number(row.__rowNum__??(rowIndex+1))+1,product_id:importText(get('product_id')),name,model:importText(get('model')),caption:importText(get('caption')),price:retailPrice,wholesale_price:wholesalePrice,wholesale_min_qty:wholesaleMin,pricing_tiers:pricingTiers,limited_offer:importBoolean(get('limited_offer'),false),availability:normalizeImportAvailability(get('availability'),null),is_visible:importBoolean(get('is_visible'),true),sort_order:importNumber(get('sort_order')),specifications:specs.slice(0,30),imageSources:sources.slice(0,4),imageRefs:imageRefs.slice(0,4),unresolvedImages:unresolved};
+        const product={sheetName,rowNumber:Number(row.__rowNum__??(rowIndex+1))+1,product_id:importText(get('product_id')),name,name_en:importText(get('name_en')),model:importText(get('model')),caption:importText(get('caption')),caption_en:importText(get('caption_en')),whatsapp_description:importText(get('whatsapp_description'))?importBoolean(get('whatsapp_description'),false):null,whatsapp_specs:importText(get('whatsapp_specs'))?importBoolean(get('whatsapp_specs'),false):null,price:retailPrice,wholesale_price:wholesalePrice,wholesale_min_qty:wholesaleMin,pricing_tiers:pricingTiers,limited_offer:importBoolean(get('limited_offer'),false),availability:normalizeImportAvailability(get('availability'),null),is_visible:importBoolean(get('is_visible'),true),sort_order:importNumber(get('sort_order')),specifications:specs.slice(0,30),specifications_en:specsEn.filter(en=>specs.slice(0,30).some(ar=>ar.key===en.key)).slice(0,30),imageSources:sources.slice(0,4),imageRefs:imageRefs.slice(0,4),unresolvedImages:unresolved};
         section.products.push(product);total++;
       });
       if(section.products.length)sections.push(section);
