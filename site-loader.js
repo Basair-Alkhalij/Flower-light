@@ -14,6 +14,10 @@
     overviewScript.src='admin-overview.js?v=__FL_VERSION__';
     overviewScript.async=false;
     document.body.appendChild(overviewScript);
+    const productSpecsScript=document.createElement('script');
+    productSpecsScript.src='admin-product-specs.js?v=__FL_VERSION__';
+    productSpecsScript.async=false;
+    document.body.appendChild(productSpecsScript);
   }
   const script = document.createElement('script');
   script.src = isAdminPage ? 'admin.js?v=__FL_VERSION__' : 'public-sync.js?v=__FL_VERSION__';
