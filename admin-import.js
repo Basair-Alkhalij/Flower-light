@@ -412,7 +412,7 @@
   function openProductExcelImport(){
     currentProductImportPlan=null;
     openModal('استيراد المنتجات من Excel',`<div class="fl-excel-import">
-      <div class="fl-cloud-note"><b>طريقتان مدعومتان:</b><br>1) ملف Excel وفيه الصور داخل الخلايا أو ملصوقة داخل صفوف المنتجات.<br>2) ملف ZIP يحتوي Excel + مجلد images، وتكتب أسماء الصور في أعمدة «الصورة 1…4».</div>
+      <div class="fl-cloud-note"><b>قالب شامل بالعربي والإنجليزي:</b> اسم ووصف باللغتين + جميع المواصفات الفنية + الأسعار والصور والتوفر.<br><b>طريقتان مدعومتان:</b><br>1) ملف Excel وفيه الصور داخل الخلايا أو ملصوقة داخل صفوف المنتجات.<br>2) ملف ZIP يحتوي Excel + مجلد images، وتكتب أسماء الصور في أعمدة «الصورة 1…4».</div>
       <div class="fl-cloud-field full"><label>اختر Excel أو ZIP</label><input id="flExcelImportFile" type="file" accept=".xlsx,.xls,.zip,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip"></div>
       <div class="fl-cloud-field full"><label>طريقة التعامل مع الأكواد الموجودة</label><select id="flExcelImportMode"><option value="upsert">تحديث المنتج إذا كان الكود موجودًا + إضافة الجديد</option><option value="new_only">إضافة الجديد فقط وتخطي الأكواد الموجودة</option></select></div>
       <div id="flExcelImportPreview" class="fl-import-preview"><div class="fl-cloud-empty">اختر الملف وسيظهر ملخص قبل الاستيراد.</div></div>
@@ -470,13 +470,13 @@
           const importedRetail=importedPricing.find(tier=>tier.type==='retail');
           const importedWholesale=importedPricing.find(tier=>tier.type==='wholesale');
           const preservedMeta=existing?[
-            {key:WHATSAPP_META_SHOW_DESCRIPTION,label:'',value:productWhatsAppOption(existing.specifications,WHATSAPP_META_SHOW_DESCRIPTION)?'1':'0',unit:''},
-            {key:WHATSAPP_META_SHOW_SPECS,label:'',value:productWhatsAppOption(existing.specifications,WHATSAPP_META_SHOW_SPECS)?'1':'0',unit:''}
+            {key:WHATSAPP_META_SHOW_DESCRIPTION,label:'',value:(row.whatsapp_description==null?productWhatsAppOption(existing.specifications,WHATSAPP_META_SHOW_DESCRIPTION):row.whatsapp_description)?'1':'0',unit:''},
+            {key:WHATSAPP_META_SHOW_SPECS,label:'',value:(row.whatsapp_specs==null?productWhatsAppOption(existing.specifications,WHATSAPP_META_SHOW_SPECS):row.whatsapp_specs)?'1':'0',unit:''}
           ]:[
-            {key:WHATSAPP_META_SHOW_DESCRIPTION,label:'',value:'0',unit:''},
-            {key:WHATSAPP_META_SHOW_SPECS,label:'',value:'0',unit:''}
+            {key:WHATSAPP_META_SHOW_DESCRIPTION,label:'',value:row.whatsapp_description===true?'1':'0',unit:''},
+            {key:WHATSAPP_META_SHOW_SPECS,label:'',value:row.whatsapp_specs===true?'1':'0',unit:''}
           ];
-          const payload={category_id:category.id,name:row.name,model:row.model,caption:row.caption,specifications:[...row.specifications,...preservedMeta,pricingMetaRow(importedPricing)],price:importedRetail?.price??null,wholesale_price:importedWholesale?.price??null,wholesale_min_qty:importedWholesale?.min_qty??null,limited_offer:row.limited_offer,availability:row.availability||normalizeImportAvailability(existing?.availability,'available')||'available',is_visible:row.is_visible,sort_order:row.sort_order!=null?Math.trunc(row.sort_order):(existing?Number(existing.sort_order)||0:newSort)};
+          const payload={category_id:category.id,name:row.name,name_en:row.name_en,model:row.model,caption:row.caption,caption_en:row.caption_en,specifications:[...row.specifications,...preservedMeta,pricingMetaRow(importedPricing)],specifications_en:row.specifications_en,price:importedRetail?.price??null,wholesale_price:importedWholesale?.price??null,wholesale_min_qty:importedWholesale?.min_qty??null,limited_offer:row.limited_offer,availability:row.availability||normalizeImportAvailability(existing?.availability,'available')||'available',is_visible:row.is_visible,sort_order:row.sort_order!=null?Math.trunc(row.sort_order):(existing?Number(existing.sort_order)||0:newSort)};
           let saved;
           if(existing){const {data,error}=await db.from('products').update(payload).eq('id',existing.id).select().single();if(error)throw error;saved=data;updated++;}
           else{const {data,error}=await db.from('products').insert({...payload,image_path:imagePaths[0]}).select().single();if(error)throw error;saved=data;createdId=saved.id;created++;newSort+=10;}
