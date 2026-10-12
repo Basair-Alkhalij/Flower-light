@@ -100,6 +100,7 @@ assert.match(appSource,/canonicalProductSpecKey/);
 assert.match(appSource,/PRODUCT_SPEC_ALIAS_LOOKUP/);
 
 // Workbook round-trip: all technical-spec columns + Arabic/English values are real import fields.
+core.categories[0]={...core.categories[0],name_en:'Chandeliers',description:'إنارة سقفية',description_en:'Ceiling lighting',sort_order:11,is_visible:true};
 const testWorksheet=(rows)=>({rows,__rows:rows});
 let exportedWorkbook=null;
 context.window.XLSX={
@@ -111,9 +112,10 @@ context.window.XLSX={
     sheet_to_json:sheet=>sheet.__rows||[]
   },
   writeFile:(wb)=>{exportedWorkbook=wb;},
-  read:()=>({SheetNames:['المنتجات','دليل المواصفات'],Sheets:{
+  read:()=>({SheetNames:['المنتجات','دليل المواصفات','بيانات الأقسام'],Sheets:{
     'المنتجات':testWorksheet([{'اسم المنتج (عربي)':'جدارية تجريبية','اسم المنتج (English)':'Wall light','الوصف (عربي)':'وصف عربي','الوصف (English)':'English description','الكود':'WL-205','القدرة (W)':'12W','EN: القدرة | Power':'12 W','اللومن (lm)':'1200','EN: اللومن | Lumens':'1200 lm','حالة التوفر':'متوفر','ظاهر':'نعم','وصف واتساب':'نعم','مواصفات واتساب':'لا','الصورة 1':'https://example.com/product.jpg'}]),
-    'دليل المواصفات':testWorksheet([{'المفتاح':'sku','المواصفة بالعربي':'SKU / كود المنتج'}])
+    'دليل المواصفات':testWorksheet([{'المفتاح':'sku','المواصفة بالعربي':'SKU / كود المنتج'}]),
+    'بيانات الأقسام':testWorksheet([{'ورقة المنتجات':'المنتجات','معرف القسم':'','اسم القسم (عربي)':'المنتجات','اسم القسم (English)':'Product lighting','الوصف (عربي)':'منتجات الإنارة','الوصف (English)':'Lighting products','الترتيب':'3','ظاهر':'نعم'}])
   }})
 };
 context.window.JSZip={loadAsync:async()=>({file:()=>null})};
@@ -128,9 +130,19 @@ assert.ok(exportedHeader.includes('الوصف (English)'));
 assert.ok(exportedHeader.includes('EN: القدرة | Power'));
 assert.ok(exportedHeader.includes('EN: درجة الحماية IP | IP rating'));
 assert.ok(exportedWorkbook.Sheets['دليل المواصفات'],'specification guide missing');
+const categoryTab=exportedWorkbook.Sheets['بيانات الأقسام'];
+assert.ok(categoryTab,'category metadata tab missing');
+assert.equal(categoryTab.rows[1][0],'ثريات','metadata must track actual product worksheet');
+assert.equal(categoryTab.rows[1][2],'ثريات');
+assert.equal(categoryTab.rows[1][3],'Chandeliers','English category name must be exported');
+assert.equal(categoryTab.rows[1][5],'Ceiling lighting');
+assert.equal(categoryTab.rows[1][6],11,'category order must be exported unchanged');
 const plan=await context.window.FL_ADMIN_IMPORT.parseProductImportFile({name:'products.xlsx',arrayBuffer:async()=>new ArrayBuffer(0)});
 assert.equal(plan.total,1);
-assert.equal(plan.sections.length,1,'specification guide must be ignored');
+assert.equal(plan.sections.length,1,'guide and category metadata must be ignored as product worksheets');
+assert.equal(plan.sections[0].categoryMeta?.name_en,'Product lighting');
+assert.equal(plan.sections[0].categoryMeta?.description_en,'Lighting products');
+assert.equal(plan.sections[0].categoryMeta?.sort_order,3);
 const imported=plan.sections[0].products[0];
 assert.equal(imported.name,'جدارية تجريبية');
 assert.equal(imported.name_en,'Wall light');
@@ -144,6 +156,31 @@ assert.equal(imported.specifications_en.find(row=>row.key==='wattage')?.value,'1
 assert.equal(imported.specifications_en.find(row=>row.key==='lumens')?.value,'1200 lm');
 assert.equal(imported.imageRefs[0],'https://example.com/product.jpg');
 
+
+// The existing category gets its English name and exact sort order, without accidental insertion.
+const testImporterSource=read('admin-import.js').replace('  window.FL_ADMIN_IMPORT={','  window.__ensureCategoryForTest=ensureImportCategory;\n  window.FL_ADMIN_IMPORT={');
+vm.runInContext(testImporterSource,context,{filename:'admin-import-category-test.js'});
+const categoryWrites=[];
+core.db.from=table=>{
+  assert.equal(table,'categories');
+  return {update:patch=>({eq:(_field,id)=>({select:()=>({single:async()=>{
+    categoryWrites.push({id,patch});
+    return {data:{...core.categories.find(cat=>cat.id===id),...patch},error:null};
+  }})})})};
+};
+const categoryMap=new Map([['ثريات',core.categories[0]]]);
+const sorter={value:30};
+const edited=await context.window.__ensureCategoryForTest({name:'ثريات',categoryMeta:{id:'c1',name:'ثريات',name_en:'Premium Chandeliers',description:'إنارة سقفية',description_en:'Premium ceiling lights',sort_order:2,is_visible:true}},categoryMap,sorter);
+assert.equal(edited.id,'c1');
+assert.equal(core.categories.length,1,'metadata import must not duplicate a category');
+assert.equal(categoryWrites.length,1);
+assert.equal(categoryWrites[0].patch.name_en,'Premium Chandeliers');
+assert.equal(categoryWrites[0].patch.sort_order,2);
+assert.equal(categoryWrites[0].patch.description_en,'Premium ceiling lights');
+await context.window.__ensureCategoryForTest({name:'ثريات',categoryMeta:null},categoryMap,sorter);
+assert.equal(categoryWrites.length,1,'legacy workbook must not overwrite category metadata');
+await assert.rejects(context.window.__ensureCategoryForTest({name:'ثريات',categoryMeta:{id:'missing'}},categoryMap,sorter),/معرف القسم/);
+assert.equal(categoryWrites.length,1,'invalid ID must never change category data');
 
 // Keep the standard Excel export/import while hiding the two unwanted tools.
 assert.doesNotMatch(read('admin-products.js'),/flDownloadExcelWithPictures|flOptimizeLegacyImages/);
