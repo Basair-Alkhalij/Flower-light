@@ -558,6 +558,9 @@
       console.warn('[Site profile] load failed',err);
       window.FLOWER_LIGHT_PROFILE={};window.FLOWER_LIGHT_CONTACTS=[];renderPublicProfile();
       return false;
+    } finally {
+      // Release the temporary mobile geometry after profile and contacts settle.
+      document.getElementById('publicCard')?.classList.remove('fl-profile-pending');
     }
   }
   window.flLoadPublicProfile=loadPublicProfile;
@@ -738,6 +741,8 @@
   window.FLOWER_LIGHT_SITE_SETTINGS = { require_customer_lead: true, master_barcode_path: '', master_barcode_url: '', design_footer_number: '', design_footer_label: '', pwa_install_enabled: false, quote_list_enabled: true, catalog_filter_keys: ['availability','wattage','cct'], catalog_custom_filters: [] };
   window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extraSections: [] };
   renderPublicProfile();
+  // Unconfigured/offline pages do not start the cloud profile request.
+  if (!db) document.getElementById('publicCard')?.classList.remove('fl-profile-pending');
   // Expose the *initial* catalog synchronization promise so bootstraps and tests
   // can wait for it without issuing a second overlapping Supabase query.
   let initialCatalogLoad=Promise.resolve(false);

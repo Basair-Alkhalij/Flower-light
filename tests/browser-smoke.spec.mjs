@@ -1283,3 +1283,33 @@ test('mobile catalog defers offscreen card painting without hiding products',asy
   const desktop=await page.locator('.extra-section-grid .chandelier-card').first().evaluate(node=>getComputedStyle(node).contentVisibility);
   expect(desktop).toBe('visible');
 });
+
+// A delayed mock simulates the cloud profile response while checking temporary space.
+test('mobile profile loading reserves hero and contact actions until data arrives',async({page})=>{
+  const slowProfile=supabaseMockScript
+    .replace("if(table==='site_profile')return Promise.resolve({data:{},error:null});",
+      "if(table==='site_profile')return new Promise(resolve=>setTimeout(()=>resolve({data:{brand_name:'Flower Light',company_name:'بصائر الخليج',full_name:'موظف المبيعات',job_title_ar:'مسؤول المبيعات'},error:null}),2500));")
+    .replace("then(resolve){return Promise.resolve({data:[],error:null}).then(resolve);}",
+      "then(resolve){if(table==='contact_items')return Promise.resolve({data:[{type:'whatsapp',value:'0560933353',is_visible:true}],error:null}).then(resolve);return Promise.resolve({data:[],error:null}).then(resolve);}");
+  const fulfill=route=>route.fulfill({status:200,contentType:'application/javascript',body:slowProfile});
+  await page.route('https://cdn.jsdelivr.net/npm/@supabase/**',fulfill);
+  await page.route('**/supabase-vendor.js*',fulfill);
+  await page.setViewportSize({width:390,height:844});
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await expect(page.locator('#publicCard')).toHaveClass(/fl-profile-pending/);
+  const reserved=await page.evaluate(()=>{
+    const hero=document.getElementById('siteHero'),save=document.getElementById('saveContact'),quick=document.getElementById('quickActions');
+    return {hero:hero.getBoundingClientRect().height,save:save.getBoundingClientRect().height,quick:quick.getBoundingClientRect().height,
+      saveHidden:save.hidden,quickHidden:quick.hidden,saveVisibility:getComputedStyle(save).visibility,quickVisibility:getComputedStyle(quick).visibility};
+  });
+  expect(reserved.hero).toBeGreaterThanOrEqual(500);
+  expect(reserved.save).toBeGreaterThanOrEqual(58);
+  expect(reserved.quick).toBeGreaterThanOrEqual(70);
+  expect(reserved.saveHidden&&reserved.quickHidden).toBe(true);
+  expect(reserved.saveVisibility).toBe('hidden');
+  expect(reserved.quickVisibility).toBe('hidden');
+  await expect(page.locator('#publicCard')).not.toHaveClass(/fl-profile-pending/, {timeout:10000});
+  await expect(page.locator('#saveContact')).toBeVisible();
+  await expect(page.locator('#quickActions')).toBeVisible();
+  await expect(page.locator('#siteHero')).toBeVisible();
+});
