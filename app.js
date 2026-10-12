@@ -25,18 +25,7 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     };
   }
 
-  function productDisplayName(item) {
-    return item?.name || item?.caption || item?.alt || 'منتج';
-  }
-
-  const PRODUCT_AVAILABILITY_LABELS = Object.freeze({ available: 'متوفر', out_of_stock: 'نفد', coming_soon: 'قريبًا' });
-  function normalizeProductAvailability(value) {
-    const key = String(value || '').trim();
-    return Object.hasOwn(PRODUCT_AVAILABILITY_LABELS, key) ? key : 'available';
-  }
-  function productAvailabilityLabel(value) {
-    return PRODUCT_AVAILABILITY_LABELS[normalizeProductAvailability(value)];
-  }
+  const {productDisplayName,normalizeProductAvailability,productAvailabilityLabel}=window.FL_CATALOG_PRODUCT_META;
 
   const {PRICING_META_KEY,validPriceNumber,validPriceQty,formatPriceNumber,productPricingTiers,priceTierRangeNote,productPricingLines}=window.FL_CATALOG_PRICING;
 
