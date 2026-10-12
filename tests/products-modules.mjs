@@ -70,6 +70,7 @@ assert.equal(typeof context.window.FL_ADMIN_IMPORT?.openProductExcelImport,'func
 assert.equal(typeof context.window.FL_ADMIN_IMPORT?.downloadExcelTemplate,'function');
 
 const adminSource=read('admin.js');
+const specSource=read('admin-product-specs.js');
 const appSource=read('app.js');
 const formSource=read('admin-product-form.js');
 const listSource=read('admin-products.js');
@@ -81,8 +82,8 @@ assert.match(listSource,/availability:productAvailability\(source\.availability\
 assert.match(importSource,/حالة التوفر/);
 assert.match(importSource,/normalizeImportAvailability/);
 assert.match(importSource,/availability:row\.availability/);
-assert.match(adminSource,/PRODUCT_SPEC_ALIAS_GROUPS/);
-assert.match(adminSource,/الواط/);
+assert.match(specSource,/PRODUCT_SPEC_ALIAS_GROUPS/);
+assert.match(specSource,/الواط/);
 assert.match(adminSource,/resolveProductSpecDefinition/);
 assert.match(adminSource,/data-flex-spec-type/);
 assert.match(formSource,/data-flex-spec-type/);
