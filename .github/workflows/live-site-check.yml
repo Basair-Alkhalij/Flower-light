@@ -1,14 +1,16 @@
 name: Live site smoke check
 
 on:
-  deployment_status:
+  workflow_run:
+    workflows: ['Build, test and deploy Pages']
+    types: [completed]
   workflow_dispatch:
   schedule:
     - cron: '17 */6 * * *'
 
 jobs:
   live:
-    if: github.event_name != 'deployment_status' || github.event.deployment_status.state == 'success'
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == github.event.repository.default_branch)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
