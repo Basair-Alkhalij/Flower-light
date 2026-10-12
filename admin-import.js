@@ -380,7 +380,7 @@
     if(button){button.disabled=true;button.classList.add('loading');const title=button.querySelector('.fl-product-tool-title');if(title)title.textContent='جاري تجهيز Excel...';}
     try{
       await loadProductImportLibraries();
-      const wb=window.XLSX.utils.book_new();const usedNames=new Set();
+      const wb=window.XLSX.utils.book_new();const usedNames=new Set([CATEGORY_EXCEL_SHEET.toLowerCase()]);const categoryRows=[];
       const instructions=[
         ['بصائر الخليج — قالب شامل لاستيراد منتجات Flower Light'],
         ['كل ورقة بعد هذه التعليمات تمثل قسمًا في الموقع. املأ المنتجات في ورقة القسم المناسبة فقط.'],
@@ -396,7 +396,11 @@
         ['للصور المخزنة محليًا ضع أسماء الملفات في أعمدة الصور وارفع ZIP يحتوي ملف Excel ومجلد images.'],
         ['يمكن كذلك لصق الصور داخل الصفوف في Excel؛ يتعرف عليها المستورد وفق الصف.'],
         ['منتجات موجودة: يصدّر القالب الصور والبيانات الحالية لتعديلها ثم إعادة رفعها، ولا يلزم إعادة رفع صورها دون تغيير.'],
-        ['ورقة دليل المواصفات للمساعدة فقط ولا يتم استيرادها كمنتجات.']
+        ['ورقة دليل المواصفات للمساعدة فقط ولا يتم استيرادها كمنتجات.'],
+        ['ورقة «بيانات الأقسام» تحتوي أسماء الأقسام باللغتين ووصفها وترتيب ظهورها؛ ترتيب القسم مستقل عن ترتيب المنتجات.'],
+        ['الترتيب: الرقم الأصغر يظهر أولاً، والأقسام والكتالوجات تتشارك الترتيب. عدّل الرقم بنفسك إذا أردت تغييره.'],
+        ['عند إعادة الاستيراد ستتحدث بيانات الأقسام من ورقة «بيانات الأقسام» فقط إذا كانت موجودة؛ ملفات Excel القديمة لا تغير بيانات الأقسام.'],
+        ['لا تعدّل «معرف القسم» أو «ورقة المنتجات» للصفوف الموجودة، فهي تحدد القسم الصحيح عند إعادة الاستيراد.']
       ];
       const infoWs=window.XLSX.utils.aoa_to_sheet(instructions);infoWs['!cols']=[{wch:110}];
       window.XLSX.utils.book_append_sheet(wb,infoWs,excelSafeSheetName('تعليمات',usedNames));
@@ -428,11 +432,17 @@
         });
         if(!data.length)data.push(Array(headers.length).fill(''));
         const ws=window.XLSX.utils.aoa_to_sheet([headers,...data]);ws['!cols']=excelColumnWidths(specDefs.length*2);ws['!autofilter']={ref:`A1:${window.XLSX.utils.encode_col(headers.length-1)}${data.length+1}`};
-        window.XLSX.utils.book_append_sheet(wb,ws,excelSafeSheetName(category.name,usedNames));
+        const sheetName=excelSafeSheetName(category.name,usedNames);
+        window.XLSX.utils.book_append_sheet(wb,ws,sheetName);
+        categoryRows.push([sheetName,importText(category.id),importText(category.name),importText(category.name_en),importText(category.description),importText(category.description_en),category.sort_order==null?'':Number(category.sort_order),excelBoolean(category.is_visible)]);
       }
       if(!categories.length){
         const ws=window.XLSX.utils.aoa_to_sheet([standardOnly,Array(standardOnly.length).fill('')]);ws['!cols']=excelColumnWidths(standardSpecDefs.length*2);window.XLSX.utils.book_append_sheet(wb,ws,excelSafeSheetName('منتجات',usedNames));
       }
+      const categoriesSheet=window.XLSX.utils.aoa_to_sheet([CATEGORY_EXCEL_HEADERS,...categoryRows]);
+      categoriesSheet['!cols']=[{wch:32},{wch:38},{wch:26},{wch:30},{wch:44},{wch:44},{wch:13},{wch:13}];
+      if(categoryRows.length)categoriesSheet['!autofilter']={ref:`A1:H${categoryRows.length+1}`};
+      window.XLSX.utils.book_append_sheet(wb,categoriesSheet,CATEGORY_EXCEL_SHEET);
       const stamp=new Date().toISOString().slice(0,10);
       window.XLSX.writeFile(wb,`Flower-Light-Products-${stamp}.xlsx`,{compression:true});
       notify(`تم تجهيز ملف Excel بكل المنتجات الحالية (${products.length} منتج)`);
