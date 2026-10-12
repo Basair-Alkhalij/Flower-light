@@ -304,7 +304,7 @@
     const workbook=window.XLSX.read(excelBuffer,{type:'array',cellDates:false});
     const embedded=await extractEmbeddedExcelImages(excelBuffer,workbook);const outerLookup=outerZipImageLookup(outerZip);
     const categoryMetadata=excelCategoryMetadata(workbook);
-    const ignoreSheets=new Set(['تعليمات','instructions','instruction','readme','ملاحظات','دليل المواصفات','specification guide','الخيارات','options',CATEGORY_EXCEL_SHEET]);const sections=[];let total=0,resolvedImages=0,missingImages=0;
+    const ignoreSheets=new Set(['تعليمات','instructions','instruction','readme','ملاحظات','دليل المواصفات','specification guide','الخيارات','options',importKey(CATEGORY_EXCEL_SHEET)]);const sections=[];let total=0,resolvedImages=0,missingImages=0;
     for(const sheetName of workbook.SheetNames||[]){
       if(ignoreSheets.has(importKey(sheetName)))continue;const sheet=workbook.Sheets[sheetName];if(!sheet)continue;
       const rows=window.XLSX.utils.sheet_to_json(sheet,{defval:'',raw:false});if(!rows.length)continue;
