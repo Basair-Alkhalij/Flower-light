@@ -262,6 +262,35 @@
     const clean=normalizeImportPath(value).toLowerCase();let entry=lookup.full.get(clean);if(!entry)entry=lookup.base.get(clean.split('/').pop());return entry?{kind:'zipEntry',entry,name:entry.name,embedded:false}:null;
   }
 
+  const CATEGORY_EXCEL_SHEET='بيانات الأقسام';
+  const CATEGORY_EXCEL_HEADERS=['ورقة المنتجات','معرف القسم','اسم القسم (عربي)','اسم القسم (English)','الوصف (عربي)','الوصف (English)','الترتيب','ظاهر'];
+  function excelCategoryMetadata(workbook){
+    const worksheet=workbook.Sheets[CATEGORY_EXCEL_SHEET];
+    if(!worksheet)return new Map();
+    const rows=window.XLSX.utils.sheet_to_json(worksheet,{defval:'',raw:false});
+    const result=new Map();
+    rows.forEach((row,index)=>{
+      const sheet=importText(row['ورقة المنتجات']);
+      if(!sheet)return;
+      const key=importKey(sheet);
+      if(result.has(key))throw new Error(`يوجد تكرار للقسم «${sheet}» في ورقة بيانات الأقسام`);
+      const orderText=importText(row['الترتيب']);
+      const sort=orderText?importNumber(orderText):null;
+      if(orderText&&(sort==null||sort<0||!Number.isInteger(sort)))throw new Error(`ترتيب القسم «${sheet}» غير صالح (الصف ${index+2})`);
+      const visible=importText(row['ظاهر']);
+      if(visible&&!['نعم','لا','yes','no','true','false','1','0'].includes(importKey(visible)))throw new Error(`حالة ظهور القسم «${sheet}» غير صالحة`);
+      result.set(key,{
+        id:importText(row['معرف القسم']),
+        name:importText(row['اسم القسم (عربي)']),
+        name_en:importText(row['اسم القسم (English)']),
+        description:importText(row['الوصف (عربي)']),
+        description_en:importText(row['الوصف (English)']),
+        sort_order:sort,
+        is_visible:visible?importBoolean(visible):null
+      });
+    });
+    return result;
+  }
   async function parseProductImportFile(file){
     await loadProductImportLibraries();
     const fileName=String(file?.name||'').toLowerCase();let excelBuffer=null,outerZip=null,excelName=file?.name||'';
@@ -274,11 +303,12 @@
 
     const workbook=window.XLSX.read(excelBuffer,{type:'array',cellDates:false});
     const embedded=await extractEmbeddedExcelImages(excelBuffer,workbook);const outerLookup=outerZipImageLookup(outerZip);
-    const ignoreSheets=new Set(['تعليمات','instructions','instruction','readme','ملاحظات','دليل المواصفات','specification guide','الخيارات','options']);const sections=[];let total=0,resolvedImages=0,missingImages=0;
+    const categoryMetadata=excelCategoryMetadata(workbook);
+    const ignoreSheets=new Set(['تعليمات','instructions','instruction','readme','ملاحظات','دليل المواصفات','specification guide','الخيارات','options',CATEGORY_EXCEL_SHEET]);const sections=[];let total=0,resolvedImages=0,missingImages=0;
     for(const sheetName of workbook.SheetNames||[]){
       if(ignoreSheets.has(importKey(sheetName)))continue;const sheet=workbook.Sheets[sheetName];if(!sheet)continue;
       const rows=window.XLSX.utils.sheet_to_json(sheet,{defval:'',raw:false});if(!rows.length)continue;
-      const headers=Object.keys(rows[0]||{});const headerMap=new Map(headers.map(h=>[h,canonicalImportHeader(h)]));const section={name:importText(sheetName),products:[]};
+      const headers=Object.keys(rows[0]||{});const headerMap=new Map(headers.map(h=>[h,canonicalImportHeader(h)]));const section={name:importText(sheetName),categoryMeta:categoryMetadata.get(importKey(sheetName))||null,products:[]};
       rows.forEach((row,rowIndex)=>{
         const nameHeader=headers.find(h=>headerMap.get(h)==='name');const name=importText(nameHeader?row[nameHeader]:'');if(!name)return;
         const get=canonical=>{const h=headers.find(x=>headerMap.get(x)===canonical);return h?row[h]:'';};
