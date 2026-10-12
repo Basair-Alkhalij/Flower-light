@@ -344,12 +344,97 @@
   const PRODUCT_EXCEL_STANDARD_HEADERS=['معرف المنتج','اسم المنتج (عربي)','اسم المنتج (English)','الكود','الوصف (عربي)','الوصف (English)','سعر المفرق','سعر الجملة','الجملة أدنى','الجملة أعلى','سعر جملة الجملة','جملة الجملة أدنى','جملة الجملة أعلى','عرض محدود','حالة التوفر','ظاهر','الترتيب','وصف واتساب','مواصفات واتساب','الصورة 1','الصورة 2','الصورة 3','الصورة 4'];
   function liveExcelHeaders(specHeaders=[]){return [...PRODUCT_EXCEL_STANDARD_HEADERS,...specHeaders];}
   function excelColumnWidths(specCount){return [23,28,29,18,38,38,15,15,14,14,16,16,16,15,17,12,12,17,19,36,36,36,36,...Array(specCount).fill(22)].map(w=>({wch:w}));}
-  async function downloadExcelTemplate(event){
+
+  // Embed viewable JPEG thumbnails using standard OOXML drawing relationships.
+  // The original image URL cells stay intact for unchanged-image re-imports.
+  async function excelImageThumb(url){
+    const response=await fetch(url,{mode:'cors',credentials:'omit'});
+    if(!response.ok)throw new Error('Image HTTP '+response.status);
+    const bitmap=await createImageBitmap(await response.blob());
+    try{
+      const canvas=document.createElement('canvas');canvas.width=160;canvas.height=112;
+      const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Canvas unavailable');
+      ctx.fillStyle='#fff';ctx.fillRect(0,0,160,112);
+      const scale=Math.min(160/bitmap.width,112/bitmap.height);
+      const w=Math.round(bitmap.width*scale),h=Math.round(bitmap.height*scale);
+      ctx.drawImage(bitmap,Math.round((160-w)/2),Math.round((112-h)/2),w,h);
+      const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.78));
+      if(!blob)throw new Error('Image encoding failed');
+      return new Uint8Array(await blob.arrayBuffer());
+    }finally{bitmap.close?.();}
+  }
+  function excelImageAnchor(pic,id){
+    const width=160*9525,height=112*9525;
+    return '<xdr:oneCellAnchor><xdr:from><xdr:col>'+pic.col+'</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>'+pic.row+'</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:ext cx="'+width+'" cy="'+height+'"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="'+id+'" name="Flower Light '+id+'"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId'+id+'"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+width+'" cy="'+height+'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>';
+  }
+  async function excelWithImages(workbook,photos,onProgress){
+    const data=window.XLSX.write(workbook,{bookType:'xlsx',type:'array',compression:true});
+    const zip=await window.JSZip.loadAsync(data);
+    const bySheet=new Map();let added=0,failed=0,index=0;
+    const items=photos.filter(item=>/^https?:\/\//i.test(item.url));
+    async function worker(){
+      while(index<items.length){
+        const task=items[index++];
+        try{
+          const bytes=await excelImageThumb(task.url);
+          if(!bySheet.has(task.sheetIndex))bySheet.set(task.sheetIndex,[]);
+          bySheet.get(task.sheetIndex).push({...task,bytes});added++;
+        }catch(error){failed++;console.warn('[Excel images] photo unavailable',task.url,error);}
+        onProgress?.(added+failed,items.length);
+      }
+    }
+    await Promise.all(Array.from({length:Math.min(4,items.length)},()=>worker()));
+    if(items.length&&added===0)throw new Error('تعذر تحميل الصور لملف Excel. استخدم القالب العادي أو تحقق من روابط الصور.');
+    const drawingType='http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing';
+    const imageType='http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
+    const relNs='http://schemas.openxmlformats.org/package/2006/relationships';
+    const documentRelNs='http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+    const typesEntry=zip.file('[Content_Types].xml');
+    if(!typesEntry)throw new Error('Excel content types missing');
+    let types=await typesEntry.async('string');
+    if(!/Extension="jpg"/i.test(types))types=types.replace('</Types>','<Default Extension="jpg" ContentType="image/jpeg"/></Types>');
+    for(const [sheetIndex,list] of bySheet){
+      const worksheetPath='xl/worksheets/sheet'+sheetIndex+'.xml';
+      const worksheet=zip.file(worksheetPath);
+      if(!worksheet)throw new Error('Excel worksheet missing: '+sheetIndex);
+      let xml=await worksheet.async('string');
+      if(/<drawing\b/.test(xml))throw new Error('Worksheet drawing already exists');
+      const relationshipPath='xl/worksheets/_rels/sheet'+sheetIndex+'.xml.rels';
+      const oldRel=zip.file(relationshipPath);
+      let rels=oldRel?await oldRel.async('string'):'<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="'+relNs+'"></Relationships>';
+      const drawingId='rIdFlowerLightPictures';
+      if(rels.includes('Id="'+drawingId+'"'))throw new Error('Duplicate Excel relationship');
+      rels=rels.replace('</Relationships>','<Relationship Id="'+drawingId+'" Type="'+drawingType+'" Target="../drawings/drawing'+sheetIndex+'.xml"/></Relationships>');
+      zip.file(relationshipPath,rels);
+      if(!/\bxmlns:r=/.test(xml))xml=xml.replace(/<worksheet\b/,'<worksheet xmlns:r="'+documentRelNs+'"');
+      zip.file(worksheetPath,xml.replace('</worksheet>','<drawing r:id="'+drawingId+'"/></worksheet>'));
+      const anchors=[],imageRels=[];
+      for(let n=0;n<list.length;n++){
+        const id=n+1,pic=list[n],media='fl-photo-'+sheetIndex+'-'+id+'.jpg';
+        zip.file('xl/media/'+media,pic.bytes);
+        anchors.push(excelImageAnchor(pic,id));
+        imageRels.push('<Relationship Id="rId'+id+'" Type="'+imageType+'" Target="../media/'+media+'"/>');
+      }
+      const draw='xl/drawings/drawing'+sheetIndex+'.xml';
+      zip.file(draw,'<?xml version="1.0" encoding="UTF-8"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="'+documentRelNs+'">'+anchors.join('')+'</xdr:wsDr>');
+      zip.file('xl/drawings/_rels/drawing'+sheetIndex+'.xml.rels','<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="'+relNs+'">'+imageRels.join('')+'</Relationships>');
+      types=types.replace('</Types>','<Override PartName="/'+draw+'" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/></Types>');
+    }
+    zip.file('[Content_Types].xml',types);
+    return {blob:await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}}),added,failed};
+  }
+  function saveExcelPhotoBlob(blob,filename){
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');
+    a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+  }
+
+  async function downloadExcelTemplate(event,withPictures=false){
     const button=event?.currentTarget||document.getElementById('flDownloadExcelTemplate');const original=button?.innerHTML;
     if(button){button.disabled=true;button.classList.add('loading');const title=button.querySelector('.fl-product-tool-title');if(title)title.textContent='جاري تجهيز Excel...';}
     try{
       await loadProductImportLibraries();
-      const wb=window.XLSX.utils.book_new();const usedNames=new Set();
+      const wb=window.XLSX.utils.book_new();const usedNames=new Set();const photos=[];
       const instructions=[
         ['بصائر الخليج — قالب شامل لاستيراد منتجات Flower Light'],
         ['كل ورقة بعد هذه التعليمات تمثل قسمًا في الموقع. املأ المنتجات في ورقة القسم المناسبة فقط.'],
@@ -380,6 +465,8 @@
         const specDefs=[...standardSpecDefs];const seen=new Set(standardSpecDefs.map(x=>x.key));
         rows.forEach(product=>normalizeSpecifications(product.specifications).forEach(spec=>{const key=spec.key||excelSpecKey(spec);if(!key||seen.has(key))return;seen.add(key);const en=(Array.isArray(product.specifications_en)?product.specifications_en:[]).find(item=>item?.key===spec.key);specDefs.push({key,label:spec.label,unit:spec.unit,english:en?.label||''});}));
         const headers=liveExcelHeaders(specDefs.flatMap(spec=>[excelSpecHeader(spec),englishSpecHeader(spec,spec.english)]));
+        const sheetIndex=wb.SheetNames.length+1;
+        if(withPictures)rows.forEach((p,rowIndex)=>adminGalleryRows(p).slice(0,4).forEach((photo,col)=>{const url=imageUrl(photo.image_path);if(url)photos.push({sheetIndex,row:rowIndex+1,col:19+col,url});}));
         const data=rows.map(product=>{
           const gallery=adminGalleryRows(product).slice(0,4);const images=gallery.map(item=>imageUrl(item.image_path)).filter(Boolean);
           while(images.length<4)images.push('');
@@ -396,14 +483,21 @@
           ];
         });
         if(!data.length)data.push(Array(headers.length).fill(''));
-        const ws=window.XLSX.utils.aoa_to_sheet([headers,...data]);ws['!cols']=excelColumnWidths(specDefs.length*2);ws['!autofilter']={ref:`A1:${window.XLSX.utils.encode_col(headers.length-1)}${data.length+1}`};
+        const ws=window.XLSX.utils.aoa_to_sheet([headers,...data]);ws['!cols']=excelColumnWidths(specDefs.length*2);if(withPictures&&rows.length)ws['!rows']=[{hpt:26},...rows.map(()=>({hpt:90}))];ws['!autofilter']={ref:`A1:${window.XLSX.utils.encode_col(headers.length-1)}${data.length+1}`};
         window.XLSX.utils.book_append_sheet(wb,ws,excelSafeSheetName(category.name,usedNames));
       }
       if(!categories.length){
         const ws=window.XLSX.utils.aoa_to_sheet([standardOnly,Array(standardOnly.length).fill('')]);ws['!cols']=excelColumnWidths(standardSpecDefs.length*2);window.XLSX.utils.book_append_sheet(wb,ws,excelSafeSheetName('منتجات',usedNames));
       }
-      const stamp=new Date().toISOString().slice(0,10);window.XLSX.writeFile(wb,`Flower-Light-Products-${stamp}.xlsx`,{compression:true});
-      notify(`تم تجهيز ملف Excel بكل المنتجات الحالية (${products.length} منتج)`);
+      const stamp=new Date().toISOString().slice(0,10);
+      if(withPictures){
+        const result=await excelWithImages(wb,photos,(done,total)=>{const title=button?.querySelector('.fl-product-tool-title');if(title)title.textContent='الصور '+done+'/'+total;});
+        saveExcelPhotoBlob(result.blob,'Flower-Light-Products-With-Images-'+stamp+'.xlsx');
+        notify('تم تجهيز Excel بالصور: '+result.added+' صورة'+(result.failed?' · تعذر تحميل '+result.failed+' صورة، وروابطها محفوظة':''));
+      }else{
+        window.XLSX.writeFile(wb,`Flower-Light-Products-${stamp}.xlsx`,{compression:true});
+        notify(`تم تجهيز ملف Excel بكل المنتجات الحالية (${products.length} منتج)`);
+      }
     }catch(error){console.warn('[Excel export] failed',error);notify('تعذر تجهيز ملف Excel: '+(error?.message||error));}
     finally{if(button){button.disabled=false;button.classList.remove('loading');if(original!=null)button.innerHTML=original;}}
   }
