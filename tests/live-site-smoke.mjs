@@ -28,7 +28,19 @@ function quotedAsset(html,file){
   return match[1];
 }
 
-const html=await (await get('')).text();
+// GitHub Pages may briefly serve the legacy source (unreplaced __FL_VERSION__)
+// during a branch/Jekyll deployment before the built Actions artifact propagates.
+// Retry *readiness*, not only HTTP errors, and require the exact current release.
+const releaseVersion=JSON.parse(fs.readFileSync(new URL('../package.json',import.meta.url),'utf8')).version.split('.').join('');
+async function waitForPublishedBuild(){
+  for(let attempt=1;attempt<=10;attempt++){
+    const html=await (await get('')).text();
+    if(!html.includes('__FL_VERSION__') && !html.includes('__FL_JSONLD_CSP_HASH__') && html.includes('app.js?v='+releaseVersion))return html;
+    if(attempt<10){console.log(`Published Pages version not ready (attempt ${attempt}/10); expecting ${releaseVersion}`);await sleep(RETRY_MS);}
+  }
+  throw new Error(`Published Pages still serves an unbuilt/stale index after readiness retries; expected v${releaseVersion}. Check Settings > Pages deployment source.`);
+}
+const html=await waitForPublishedBuild();
 assert.match(html,/Basair Gulf Flower Light/i);
 assert.doesNotMatch(html,/[?&]admin=/i);
 assert.match(html,/share-image\.jpg/i);
