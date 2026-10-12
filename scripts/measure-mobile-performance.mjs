@@ -12,9 +12,9 @@ try{
     const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:3,isMobile:true,hasTouch:true,locale:'ar-SA',serviceWorkers:'block'});
     const page=await context.newPage();
     await page.addInitScript(()=>{
-      window.__flVitals={lcp:0,cls:0};
+      window.__flVitals={lcp:0,cls:0,shifts:[]};
       try{new PerformanceObserver(list=>{for(const e of list.getEntries())window.__flVitals.lcp=e.startTime;}).observe({type:'largest-contentful-paint',buffered:true});}catch(_){ }
-      try{new PerformanceObserver(list=>{for(const e of list.getEntries())if(!e.hadRecentInput)window.__flVitals.cls+=e.value;}).observe({type:'layout-shift',buffered:true});}catch(_){ }
+      try{new PerformanceObserver(list=>{for(const e of list.getEntries())if(!e.hadRecentInput){window.__flVitals.cls+=e.value;window.__flVitals.shifts.push({ms:Math.round(e.startTime),value:Number(e.value.toFixed(4)),sources:(e.sources||[]).slice(0,3).map(src=>{const n=src.node;return n?String(n.tagName||'').toLowerCase()+(n.id?'#'+n.id:'')+(n.classList?.length?'.'+[...n.classList].slice(0,2).join('.'):''):'unknown';})});}}).observe({type:'layout-shift',buffered:true});}catch(_){ }
     });
     const cdp=await context.newCDPSession(page);
     await cdp.send('Network.enable');
@@ -27,7 +27,7 @@ try{
     const metrics=await page.evaluate(()=>{
       const nav=performance.getEntriesByType('navigation')[0];
       const fcp=performance.getEntriesByType('paint').find(e=>e.name==='first-contentful-paint');
-      return {fcpMs:Math.round(fcp?.startTime??0),lcpMs:Math.round(window.__flVitals?.lcp??0),cls:Number((window.__flVitals?.cls??0).toFixed(4)),domContentLoadedMs:Math.round(nav?.domContentLoadedEventEnd??0),loadMs:Math.round(nav?.loadEventEnd??0),resources:performance.getEntriesByType('resource').length};
+      return {fcpMs:Math.round(fcp?.startTime??0),lcpMs:Math.round(window.__flVitals?.lcp??0),cls:Number((window.__flVitals?.cls??0).toFixed(4)),domContentLoadedMs:Math.round(nav?.domContentLoadedEventEnd??0),loadMs:Math.round(nav?.loadEventEnd??0),resources:performance.getEntriesByType('resource').length,largestShifts:(window.__flVitals?.shifts||[]).sort((a,b)=>b.value-a.value).slice(0,6)};
     });
     trials.push(metrics);
     console.log('MOBILE_LAB_TRIAL',i+1,JSON.stringify(metrics));
