@@ -554,3 +554,11 @@ direction:ltr}
 :root[data-fl-language="en"] .fl-lead-note,
 :root[data-fl-language="en"] .fl-lead-form,
 :root[data-fl-language="en"] .catalog-search-input{direction:ltr;text-align:left}
+
+/* Reserve the real mobile profile/action geometry only while cloud profile is loading.
+   Once the profile resolves (including failures), ordinary layout rules resume. */
+@media (max-width: 760px) {
+  #publicCard.fl-profile-pending .hero { min-height: 500px; }
+  #publicCard.fl-profile-pending #saveContact[hidden] { display: flex !important; visibility: hidden; }
+  #publicCard.fl-profile-pending #quickActions[hidden] { display: grid !important; visibility: hidden; min-height: 70px; }
+}
