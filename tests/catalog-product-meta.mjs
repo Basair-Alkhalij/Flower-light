@@ -13,6 +13,8 @@ assert.equal(m.productAvailabilityLabel(null),'متوفر');
 
 assert.equal(m.formatProductSpecValue({key:'lumens',label:'اللومن',value:'1200',unit:'lm'},'ar'),'1200');
 assert.equal(m.formatProductSpecValue({key:'lumens',label:'اللومن',value:'1200 lm',unit:'lm'},'ar'),'1200');
+assert.equal(m.formatProductSpecValue({key:'lumens',label:'اللومن',value:'1200 lm lm',unit:'lm'},'ar'),'1200');
+assert.equal(m.formatProductSpecValue({key:'wattage',label:'القدرة',value:'100 W W',unit:'W'},'ar'),'100 واط');
 assert.equal(m.formatProductSpecValue({key:'lumens',label:'اللومن',value:'1200 لومن',unit:'lm'},'ar'),'1200');
 assert.equal(m.formatProductSpecValue({key:'wattage',label:'القدرة',value:'100',unit:'W'},'ar'),'100 واط');
 assert.equal(m.formatProductSpecValue({key:'wattage',label:'القدرة',value:'100W',unit:'W'},'ar'),'100 واط');
