@@ -24,8 +24,8 @@
     const unit=String(spec?.unit||'').trim();
     const standardUnit=key==='wattage'?'W':key==='lumens'?'lm':unit;
     let clean=value;
-    if(key==='wattage')clean=value.replace(/\s*(?:W|واط|وات)\s*$/i,'').trim();
-    else if(key==='lumens')clean=value.replace(/\s*(?:lm|لومن)\s*$/i,'').trim();
+    if(key==='wattage')clean=value.replace(/(?:\s*(?:W|واط|وات))+\s*$/i,'').trim();
+    else if(key==='lumens')clean=value.replace(/(?:\s*(?:lm|لومن))+\s*$/i,'').trim();
     else if(unit){
       const escaped=unit.replace(/[\^$.*+?()[\]{}|]/g,'\\$&');
       clean=value.replace(new RegExp('\\s*'+escaped+'\\s*$','i'),'').trim();
