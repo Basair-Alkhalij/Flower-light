@@ -21,7 +21,19 @@ assert.equal(m.formatProductSpecValue({key:'wattage',label:'القدرة',value:
 assert.equal(m.formatProductSpecValue({key:'wattage',label:'الواط',value:'100W',unit:'W'},'ar'),'100');
 assert.equal(m.formatProductSpecValue({key:'wattage',label:'Power',value:'100 واط',unit:'W'},'en'),'100 W');
 assert.equal(m.formatProductSpecValue({key:'lumens',label:'Lumens',value:'1200 lm',unit:'lm'},'en'),'1200 lm');
-assert.equal(m.formatProductSpecValue({key:'voltage',label:'الفولت',value:'220 V',unit:'V'},'ar'),'220 V');
+assert.equal(m.formatProductSpecValue({key:'voltage',label:'الفولت',value:'220 V',unit:'V'},'ar'),'220');
+assert.equal(m.formatProductSpecValue({key:'voltage',label:'الفولت',value:'220/240 فولت V',unit:'V'},'ar'),'220/240');
+assert.equal(m.formatProductSpecValue({key:'voltage',label:'الفولت',value:'220/240 فولت V',unit:'V'},'en'),'220/240 V');
+assert.equal(m.formatProductSpecValue({key:'voltage',label:'الجهد',value:'220/240 V',unit:'V'},'ar'),'220/240 فولت');
+assert.equal(m.formatProductSpecValue({key:'cct',label:'حرارة اللون',value:'3000/6500 K كلفن',unit:'K'},'ar'),'3000/6500 كلفن');
+assert.equal(m.formatProductSpecValue({key:'cct',label:'Color temperature',value:'3000/6500 K كلفن',unit:'K'},'en'),'3000/6500 K');
+assert.equal(m.formatProductSpecValue({key:'frequency',label:'التردد',value:'50/60 هرتز Hz',unit:'Hz'},'ar'),'50/60 هرتز');
+assert.equal(m.formatProductSpecValue({key:'frequency',label:'Frequency',value:'50/60 هرتز Hz',unit:'Hz'},'en'),'50/60 Hz');
+assert.equal(m.formatProductSpecValue({key:'beam_angle',label:'زاوية الإضاءة',value:'120 درجة °',unit:'°'},'ar'),'120°');
+assert.equal(m.formatProductSpecValue({key:'beam_angle',label:'Beam angle',value:'120°',unit:'°'},'en'),'120°');
+assert.equal(m.formatProductSpecValue({key:'dimensions',label:'المقاس',value:'25 سم سم',unit:'سم'},'ar'),'25 سم');
+assert.equal(m.formatProductSpecValue({key:'dimensions',label:'المقاس',value:'30 × 12 × 8 سم'},'ar'),'30 × 12 × 8 سم');
+
 assert.equal(m.formatProductSpecValue({key:'ip_rating',label:'درجة الحماية',value:'IP65'},'ar'),'IP65');
 assert.equal(m.formatProductSpecValue({key:'color',label:'اللون',value:'ذهبي'},'ar'),'ذهبي');
 assert.equal(m.formatProductSpecValue({key:'wattage',label:'القدرة',value:'',unit:'W'},'ar'),'');
