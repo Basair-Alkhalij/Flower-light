@@ -228,16 +228,16 @@
     return resolveProductSpecDefinition?.('',label) || null;
   }
   const PRODUCT_SPEC_LABELS_EN={sku:'SKU / Product code',wattage:'Power',lumens:'Lumens',cct:'Color temperature',cri:'CRI',voltage:'Voltage',ip_rating:'IP rating',dimensions:'Dimensions',color:'Color',material:'Material',beam_angle:'Beam angle',frequency:'Frequency',warranty:'Warranty',bulb_base:'Bulb base',bulb_count:'Bulb count'};
-  function englishImportSpecHeader(header){return /^\\s*(?:EN|English)\\s*[:：]/i.test(String(header||''));}
+  function englishImportSpecHeader(header){return /^\s*(?:EN|English)\s*[:：]/i.test(String(header||''));}
   function englishSpecHeader(spec,englishLabel=''){
     const english=importText(englishLabel)||PRODUCT_SPEC_LABELS_EN[spec?.key]||importText(spec?.label)||'Specification';
     return `EN: ${importText(spec?.label)} | ${english}`;
   }
   function parseImportEnglishSpec(header,value,arabicSpecs){
     if(!englishImportSpecHeader(header)||!importText(value))return null;
-    const body=importText(header).replace(/^\\s*(?:EN|English)\\s*[:：]\\s*/i,'');
+    const body=importText(header).replace(/^\s*(?:EN|English)\s*[:：]\s*/i,'');
     const split=body.indexOf('|');
-    const arabicLabel=(split<0?body:body.slice(0,split)).trim().replace(/\\s*[\\(\\[][^\\)\\]]+[\\)\\]]\\s*$/,'').trim();
+    const arabicLabel=(split<0?body:body.slice(0,split)).trim().replace(/\s*[\(\[][^\)\]]+[\)\]]\s*$/,'').trim();
     const englishLabel=(split<0?'':body.slice(split+1)).trim();
     const def=knownSpecDefinition(arabicLabel);
     const corresponding=arabicSpecs.find(spec=>(def&&spec.key===def.key)||importKey(spec.label)===importKey(arabicLabel));
