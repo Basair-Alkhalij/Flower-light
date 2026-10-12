@@ -242,17 +242,13 @@
       ? (selectedCatalog?`<div class="fl-admin-catalog-list">${catalogAdminCard(selectedCatalog)}</div>`:`<div class="fl-cloud-empty">اختر كتالوجًا أو أضف كتالوجًا جديدًا.</div>`)
       : (cards?`<div class="fl-cloud-products">${cards}</div>`:`<div class="fl-cloud-empty">لا توجد منتجات في هذا القسم بعد.</div>`);
 
-    const legacyImageCount=core.isPrimaryAdmin?(window.FL_ADMIN_MEDIA?.legacyImagePlan?.().length||0):0;
     const productTools=`<div class="fl-product-tools" aria-label="أدوات المنتجات والكتالوجات">
-      <button ${core.isPrimaryAdmin?'':'hidden'} class="fl-product-tool legacy" id="flOptimizeLegacyImages" type="button"><span class="fl-product-tool-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="m5 17 4-4 3 3 2-2 5 5"></path></svg></span><span class="fl-product-tool-copy"><strong>تحسين الصور القديمة</strong><small>${legacyImageCount?`${legacyImageCount} صورة · `:''}JPG/PNG → WebP مع حفظ الأصل</small></span></button>
       <button class="fl-product-tool excel" id="flDownloadExcelTemplate" type="button"><span class="fl-product-tool-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5z"></path><path d="M15 3v5h5"></path><path d="m8 12 5 5m0-5-5 5"></path></svg></span><span class="fl-product-tool-copy"><strong class="fl-product-tool-title">قالب Excel</strong><small>كل المنتجات الحالية جاهزة للتعديل</small></span></button>
-      <button class="fl-product-tool excel" id="flDownloadExcelWithPictures" type="button"><span class="fl-product-tool-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="8" cy="9" r="2"></circle><path d="m4 17 5-5 4 3 3-4 4 5"></path></svg></span><span class="fl-product-tool-copy"><strong class="fl-product-tool-title">Excel بالصور</strong><small>الصور الأربع داخل الصفوف · ملف أكبر</small></span></button>
       <button class="fl-product-tool import" id="flImportProductsExcel" type="button"><span class="fl-product-tool-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v12"></path><path d="m8 11 4 4 4-4"></path><path d="M5 19h14"></path></svg></span><span class="fl-product-tool-copy"><strong>استيراد Excel</strong><small>تحديث أو إضافة منتجات دفعة واحدة</small></span></button>
       <button class="fl-product-tool catalog" id="flAddCatalog" type="button"><span class="fl-product-tool-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5z"></path><path d="M15 3v5h5"></path><path d="M8 13h8M8 17h6"></path></svg></span><span class="fl-product-tool-copy"><strong>كتالوج PDF</strong><small>إضافة كتالوج مستقل جديد</small></span></button>
       <button class="fl-product-tool product" id="flAddProduct" type="button" ${categories.length?'':'disabled'}><span class="fl-product-tool-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg></span><span class="fl-product-tool-copy"><strong>منتج جديد</strong><small>إضافة منتج يدويًا داخل قسم</small></span></button>
     </div>`;
     layout(`<div class="fl-cloud-head"><div><h2>المنتجات والكتالوجات</h2><p>الأقسام والكتالوجات موجودة معًا هنا. يمكنك إضافة أكثر من كتالوج PDF، وكل كتالوج يظهر للزوار كخيار مستقل بجانب ثريات وجداريات وبلفون وغيرها.</p></div></div><div class="fl-cloud-card"><div class="fl-products-toolbar"><div class="fl-cloud-field"><label>القسم / الكتالوج</label><select id="flCategorySelect">${selector}</select></div><div class="fl-product-order-status" id="flProductOrderStatus">${isCatalog?'هذا كتالوج PDF مستقل':'اسحب المنتجات لترتيبها تلقائيًا'}</div></div>${content}</div>`,productTools);
-    document.getElementById('flOptimizeLegacyImages')?.addEventListener('click',()=>window.FL_ADMIN_MEDIA?.optimizeLegacyImages());
     const sel=document.getElementById('flCategorySelect');
     if(sel) sel.addEventListener('change',e=>{
       core.selectedProductNode=e.target.value;
@@ -260,7 +256,6 @@
       renderProducts();
     });
     document.getElementById('flDownloadExcelTemplate')?.addEventListener('click',event=>window.FL_ADMIN_IMPORT?.downloadExcelTemplate?.(event));
-    document.getElementById('flDownloadExcelWithPictures')?.addEventListener('click',event=>window.FL_ADMIN_IMPORT?.downloadExcelTemplate?.(event,true));
     document.getElementById('flAddCatalog')?.addEventListener('click',()=>openCatalogForm());
     document.getElementById('flImportProductsExcel')?.addEventListener('click',()=>window.FL_ADMIN_IMPORT?.openProductExcelImport?.());
     document.getElementById('flAddProduct')?.addEventListener('click',()=>window.FL_ADMIN_PRODUCT_FORM?.openProductForm?.());
