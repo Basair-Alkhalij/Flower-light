@@ -508,11 +508,29 @@
     categories.push(data);categoryMap.set(key,data);return data;
   }
 
+  function resolveImportedProduct(row,idMap,codeMap){
+    const explicitId=String(row.product_id||'').trim();
+    const byId=explicitId?idMap.get(explicitId):null;
+    const matches=row.model?codeMap.get(importKey(row.model))||[]:[];
+    if(explicitId&&!byId)throw new Error(`معرف المنتج غير موجود (${explicitId})؛ لم يتم تحديث أي منتج.`);
+    if(!byId&&matches.length>1)throw new Error(`الكود (${row.model}) مكرر في ${matches.length} منتجات؛ حدّد معرف المنتج الصحيح.`);
+    if(byId&&matches.length&&!matches.some(p=>String(p.id)===String(byId.id)))throw new Error('كود المنتج يتطابق مع منتج آخر غير المعرف المحدد؛ راجع الكود قبل الاستيراد.');
+    return byId||matches[0]||null;
+  }
+
   async function runProductExcelImport(){
     const plan=currentProductImportPlan;if(!plan)return;const start=document.getElementById('flExcelImportStart'),cancel=document.getElementById('flExcelImportCancel');
     const mode=document.getElementById('flExcelImportMode')?.value||'upsert';const progress=document.getElementById('flExcelImportProgress'),bar=document.getElementById('flExcelImportProgressBar'),text=document.getElementById('flExcelImportProgressText'),count=document.getElementById('flExcelImportProgressCount');
     start.disabled=true;if(cancel)cancel.disabled=true;if(progress)progress.hidden=false;const categoryMap=new Map(categories.map(c=>[importKey(c.name),c]));const nextSortRef={value:(categories.length?Math.max(...categories.map(c=>Number(c.sort_order)||0))+10:0)};
-    const idMap=new Map(products.map(p=>[String(p.id),p]));const codeMap=new Map(products.filter(p=>importText(p.model)).map(p=>[importKey(p.model),p]));let created=0,updated=0,skipped=0,failed=0,done=0;const errors=[];
+    const idMap=new Map(products.map(p=>[String(p.id),p]));
+    const codeMap=new Map();
+    for(const product of products){
+      const code=importKey(product.model);
+      if(!code)continue;
+      if(!codeMap.has(code))codeMap.set(code,[]);
+      codeMap.get(code).push(product);
+    }
+    let created=0,updated=0,skipped=0,failed=0,done=0;const errors=[];
     const total=plan.total;
     for(const section of plan.sections){
       let category;
@@ -520,7 +538,10 @@
       let newSort=nextProductSort(category.id);
       for(const row of section.products){
         done++;if(text)text.textContent=`${section.name} — ${row.name}`;if(count)count.textContent=`${done}/${total}`;if(bar)bar.value=Math.round(done/total*100);
-        const existing=(row.product_id?idMap.get(String(row.product_id)):null)||(row.model?codeMap.get(importKey(row.model)):null);if(existing&&mode==='new_only'){skipped++;continue;}
+        let existing;
+        try{existing=resolveImportedProduct(row,idMap,codeMap);}
+        catch(error){failed++;errors.push(`${section.name} / ${row.name}: ${error.message}`);continue;}
+        if(existing&&mode==='new_only'){skipped++;continue;}
         const uploaded=[];let createdId='';
         try{
           const previousImagePaths=existing?adminGalleryRows(existing).map(x=>x.image_path).filter(Boolean):[];
@@ -558,7 +579,14 @@
               if(removable.length){try{await db.storage.from(bucket).remove([...new Set(removable.flatMap(productStoragePairPaths))]);}catch(_){}}
             }
           }
-          idMap.set(String(saved.id),saved);if(importText(saved.model))codeMap.set(importKey(saved.model),saved);if(!existing)products.push(saved);
+          idMap.set(String(saved.id),saved);if(importText(saved.model)){
+            const key=importKey(saved.model);
+            for(const [otherKey,list] of codeMap){
+              if(otherKey!==key)codeMap.set(otherKey,list.filter(p=>String(p.id)!==String(saved.id)));
+            }
+            const matches=codeMap.get(key)||[];
+            codeMap.set(key,[...matches.filter(p=>String(p.id)!==String(saved.id)),saved]);
+          }if(!existing)products.push(saved);
         }catch(error){failed++;errors.push(`${section.name} / ${row.name}${row.model?` (${row.model})`:''}: ${error?.message||error}`);if(createdId){try{await db.from('products').delete().eq('id',createdId);}catch(_){}}if(uploaded.length){try{await db.storage.from(bucket).remove(uploaded);}catch(_){}}}
         await new Promise(resolve=>setTimeout(resolve,20));
       }
