@@ -377,6 +377,7 @@ assert.match(read('admin-import.js'), /xlsx-0\.20\.3/);
 assert.match(read('admin-import.js'), /integrity/);
 assert.match(app, /JSPDF_SRI/);
 assert.match(catalogPdfViewer, /PDFJS_SRI/);
+assert.match(catalogPdfViewer, /isEvalSupported\s*:\s*false/, 'PDF catalog must disable eval to mitigate CVE-2024-4367');
 assert.match(app, /parsed\.protocol==='https:'/);
 assert.match(app, /localhost','127\.0\.0\.1/);
 assert.match(sync, /challenges\.cloudflare\.com\/turnstile/);
