@@ -337,16 +337,26 @@
   function cleanWhatsApp(value){ return window.flNormalizeWhatsAppNumber ? window.flNormalizeWhatsAppNumber(value) : String(value || '').replace(/\D/g,''); }
   function normalizeWebsite(value){
     const v=String(value||'').trim();
-    if(!v) return '';
-    return /^https?:\/\//i.test(v) ? v : `https://${v}`;
+    if(!v || /[\u0000-\u001f\u007f]/.test(v))return '';
+    if(/^[a-z][a-z0-9+.-]*:/i.test(v)&&!/^https?:\/\//i.test(v))return '';
+    try{
+      const url=new URL(/^https?:\/\//i.test(v)?v:`https://${v}`);
+      return (/^https?:$/.test(url.protocol)&&url.hostname&&!url.username&&!url.password)?url.href:'';
+    }catch(_){return '';}
   }
   function contactHref(item){
     const value=String(item?.value||'').trim();
-    if(!value) return '#';
-    if(item.type==='phone') return `tel:${cleanPhone(value)}`;
-    if(item.type==='whatsapp') return `https://wa.me/${cleanWhatsApp(value)}`;
-    if(item.type==='email') return `mailto:${value}`;
-    if(item.type==='website' || item.type==='location') return normalizeWebsite(value);
+    if(!value)return '#';
+    if(item.type==='phone'){
+      const phone=cleanPhone(value);
+      return /^\+?\d{7,15}$/.test(phone)?`tel:${phone}`:'#';
+    }
+    if(item.type==='whatsapp'){
+      const number=cleanWhatsApp(value);
+      return /^\d{8,15}$/.test(number)?`https://wa.me/${number}`:'#';
+    }
+    if(item.type==='email')return /^[^\s@?&#]+@[^\s@?&#]+\.[^\s@?&#]+$/.test(value)?`mailto:${value}`:'#';
+    if(item.type==='website'||item.type==='location')return normalizeWebsite(value)||'#';
     return '#';
   }
   function contactPhoneKey(value){
@@ -1745,6 +1755,7 @@
     document.getElementById('flContactForm').addEventListener('submit',async e=>{
       e.preventDefault();
       const payload={type:document.getElementById('flContactType').value,label:document.getElementById('flContactLabel').value.trim(),label_en:document.getElementById('flContactLabelEn').value.trim(),value:document.getElementById('flContactValue').value.trim(),sort_order:Number(document.getElementById('flContactSort').value)||0,is_visible:document.getElementById('flContactVisible').checked};
+      if(contactHref(payload)==='#'){notify('رقم الاتصال أو الواتساب أو البريد أو رابط الموقع غير صالح. راجع البيانات قبل الحفظ.');return;}
       const res=item?await db.from('contact_items').update(payload).eq('id',item.id):await db.from('contact_items').insert(payload);
       if(res.error){notify('تعذر الحفظ: '+res.error.message);return;}
       closeModal();await loadContactsAdminData();await loadPublicProfile();renderContacts();notify('تم حفظ وسيلة التواصل');

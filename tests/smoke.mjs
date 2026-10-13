@@ -393,6 +393,39 @@ assert.match(read('admin-import.js'), /xlsx-0\.20\.3/);
   assert.equal(resolve({model:'OTHER'},ids,codes).id,'c');
   assert.equal(resolve({model:'NEW'},ids,codes),null);
 }
+// Step 11: public and admin contact links are safe and valid.
+{
+  for(const [name,source] of [['public-sync.js',sync],['admin.js',admin]]){
+    const from=source.indexOf('  function cleanPhone(');
+    const to=source.indexOf('  function contactPhoneKey(',from);
+    assert.ok(from>=0&&to>from,'Missing contact link functions: '+name);
+    const functions=source.slice(from,to);
+    const {contactHref}=vm.runInNewContext(functions+'\n({contactHref})',{
+      URL,window:{flNormalizeWhatsAppNumber:value=>{
+        let digits=String(value||'').replace(/\D/g,'');
+        if(digits.startsWith('00'))digits=digits.slice(2);
+        if(/^05\d{8}$/.test(digits))return '966'+digits.slice(1);
+        if(/^5\d{8}$/.test(digits))return '966'+digits;
+        return digits;
+      }}
+    });
+    const link=(type,value)=>contactHref({type,value});
+    assert.equal(link('phone','0560933353'),'tel:0560933353',name);
+    assert.equal(link('phone','+966 56 093 3353'),'tel:+966560933353',name);
+    assert.equal(link('whatsapp','0560933353'),'https://wa.me/966560933353',name);
+    assert.equal(link('email','sales@example.com'),'mailto:sales@example.com',name);
+    assert.equal(link('website','example.com/contact'),'https://example.com/contact',name);
+    assert.equal(link('location','https://maps.app.goo.gl/example'),'https://maps.app.goo.gl/example',name);
+    for(const [type,value] of [
+      ['phone','123'],['whatsapp','0'],['email','not-an-email'],
+      ['website','javascript:alert(1)'],['location','data:text/html,Hello'],
+      ['website','https://user:password@example.com'],['website','http://'],
+      ['website','https://example.com\nmalformed']
+    ])assert.equal(link(type,value),'#',name+': reject '+type+' '+value);
+  }
+  assert.ok(admin.includes("if(contactHref(payload)==='#')"),'Admin must validate contact before saving');
+}
+
 // Step 10: execute real gallery-save/cleanup logic without touching Supabase.
 {
   const source=read('admin-import.js');
