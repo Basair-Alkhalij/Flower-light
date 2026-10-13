@@ -369,11 +369,15 @@
     return counts;
   }
 
-  function productImportPreviewHtml(plan){
+  function productImportPreviewHtml(plan,mode='upsert'){
+    const counts=previewProductImportCounts(plan,mode);
     const rows=plan.sections.map(section=>`<div class="fl-import-section"><strong>${esc(section.name)}</strong><span>${section.products.length} منتج</span><small>${section.products.reduce((n,p)=>n+p.imageSources.length,0)} صور جاهزة${section.products.some(p=>p.unresolvedImages.length)?' · يوجد صور غير موجودة':''}</small></div>`).join('');
     const warnings=plan.sections.flatMap(s=>s.products.filter(p=>p.unresolvedImages.length).map(p=>`${s.name} / ${p.name}: ${p.unresolvedImages.join('، ')}`)).slice(0,8);
     const catInfo=plan.sections.filter(section=>section.categoryMeta).length;
-    return `${catInfo?'<div class="fl-cloud-note">سيتم تطبيق الأسماء الإنجليزية ووصف الأقسام وترتيبها من ورقة «بيانات الأقسام». راجع الأرقام قبل الاستيراد؛ الأصغر يظهر أولًا، والأقسام والكتالوجات تستخدم الترتيب نفسه.</div>':''}<div class="fl-import-summary"><div><strong>${plan.sections.length}</strong><span>أقسام</span></div><div><strong>${plan.total}</strong><span>منتجات</span></div><div><strong>${plan.resolvedImages}</strong><span>صور جاهزة</span></div><div><strong>${plan.missingImages}</strong><span>صور مفقودة</span></div></div><div class="fl-import-sections">${rows}</div>${warnings.length?`<div class="fl-cloud-note bad"><b>تنبيه صور:</b><br>${warnings.map(esc).join('<br>')}${plan.missingImages>warnings.length?'<br>…':''}</div>`:''}`;
+    const summary=`<div class="fl-import-summary"><div><strong>${counts.created}</strong><span>متوقع إضافتها</span></div><div><strong>${counts.updated}</strong><span>متوقع تحديثها</span></div><div><strong>${counts.skipped}</strong><span>متوقع تخطيها</span></div><div><strong>${counts.conflicts}</strong><span>تعارضات</span></div></div>`;
+    const note=mode==='new_only'?'سيتم إضافة المنتجات الجديدة فقط. المنتجات الموجودة لن تُحدّث.':'سيتم تحديث المنتجات المطابقة وإضافة الجديدة، مع الاحتفاظ بالمنتجات الأخرى غير الموجودة في الملف.';
+    const conflictNote=counts.conflicts?`<div class="fl-cloud-note bad"><b>تعارضات تحتاج المراجعة:</b> لن تُحدّث هذه الصفوف تلقائيًا.<br>${counts.conflictRows.map(esc).join('<br>')}${counts.conflicts>counts.conflictRows.length?'<br>…':''}</div>`:'';
+    return `<div class="fl-cloud-note"><b>${esc(note)}</b><br><small>الأعداد تقديرية قبل الاستيراد؛ قد تتغير عند وجود صفوف متكررة داخل الملف أو عند تعذّر رفع الصور أو حفظ البيانات.</small></div>${summary}${catInfo?'<div class="fl-cloud-note">تحتوي ورقة «بيانات الأقسام» على إعدادات قد تُحدّث أسماء الأقسام ووصفها وترتيبها. راجعها قبل الاستيراد.</div>':''}<div class="fl-import-summary"><div><strong>${plan.sections.length}</strong><span>أقسام</span></div><div><strong>${plan.total}</strong><span>منتجات بالملف</span></div><div><strong>${plan.resolvedImages}</strong><span>صور جاهزة</span></div><div><strong>${plan.missingImages}</strong><span>صور مفقودة</span></div></div><div class="fl-import-sections">${rows}</div>${conflictNote}${warnings.length?`<div class="fl-cloud-note bad"><b>تنبيه صور:</b><br>${warnings.map(esc).join('<br>')}${plan.missingImages>warnings.length?'<br>…':''}</div>`:''}`;
   }
 
 
