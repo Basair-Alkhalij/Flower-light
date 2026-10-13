@@ -393,15 +393,19 @@ assert.match(read('admin-import.js'), /xlsx-0\.20\.3/);
   assert.equal(resolve({model:'OTHER'},ids,codes).id,'c');
   assert.equal(resolve({model:'NEW'},ids,codes),null);
 }
-// Step 10: Excel import must not delete pre-existing product images from Storage.
+// Step 10: old image pairs may only be removed after the gallery is saved.
 {
   const importSource=read('admin-import.js');
   const start=importSource.indexOf('  async function runProductExcelImport()');
   const end=importSource.indexOf('  window.FL_ADMIN_IMPORT=',start);
   assert.ok(start>=0&&end>start,'Excel import handler not found');
   const handler=importSource.slice(start,end);
-  assert.ok(!handler.includes('removable.flatMap(productStoragePairPaths)'),'Excel import must not delete previous image pairs');
-  assert.ok(handler.includes('Preserve all prior product images in Storage during Excel imports.'));
+  const gallery=handler.indexOf("db.rpc('set_product_gallery_for_admin'");
+  const cleanup=handler.indexOf('removable.flatMap(productStoragePairPaths)');
+  assert.ok(gallery>=0&&cleanup>gallery,'Old image cleanup must follow successful gallery update');
+  assert.ok(handler.includes('!storagePathUsedByOtherProduct(path,saved.id)'),'Shared images cannot be deleted');
+  assert.ok(handler.includes('row.imageSources.length&&!exportedUrlsUnchanged'),'Blank Excel image cells must preserve old images');
+  assert.ok(handler.includes('if(removeError)console.warn'),'Storage cleanup failures should be logged without reverting a successful gallery save');
 }
 // Step 9 safety regression: ambiguous codes and conflicting IDs must not update a product.
 assert.ok(adminImport.includes('matches.length>1'));
