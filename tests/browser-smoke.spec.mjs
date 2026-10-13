@@ -1259,6 +1259,35 @@ test('acceptance: multi-product catalog PDF downloads a valid multi-page documen
   expect((pdf.match(/\/Type \/Page\b/g)||[]).length).toBeGreaterThanOrEqual(2);
 });
 
+test('acceptance: admin datasheet shared renderer downloads a real PDF with embedded image',async({page})=>{
+  await installSupabaseMock(page);
+  await page.goto(base,{waitUntil:'load'});
+  await page.waitForFunction(()=>Boolean(window.flDatasheetPdf?.loadJsPdf && window.flDatasheetPdf?.createSinglePage));
+  const downloadPromise=page.waitForEvent('download',{timeout:40000});
+  const result=await page.evaluate(async()=>{
+    const renderer=window.flDatasheetPdf;
+    const swatch=document.createElement('canvas');
+    swatch.width=200;swatch.height=200;
+    const ctx=swatch.getContext('2d');
+    ctx.fillStyle='#e62a59';ctx.fillRect(0,0,200,200);
+    const img=swatch.toDataURL('image/png');
+    const item={name:'منتج اختبار الداتا شيت',model:'DS-PDF-TEST',specifications:[{key:'wattage',label:'القدرة',value:'12',unit:'W'}],image:img,gallery:[{image:img,image_path:''}]};
+    const {canvas,failedImages}=await renderer.createSinglePage(item,img,0,1,{scale:1});
+    if(failedImages)throw new Error('Datasheet image was not rendered');
+    const JsPdf=await renderer.loadJsPdf();
+    const pdf=new JsPdf({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+    pdf.addImage(canvas.toDataURL('image/jpeg',renderer.qualities?.pdf||0.94),'JPEG',0,0,210,297,undefined,'FAST');
+    renderer.triggerBlobDownload(pdf.output('blob'),'DS-PDF-TEST-datasheet.pdf');
+    return {failedImages};
+  });
+  expect(result.failedImages).toBe(0);
+  const download=await downloadPromise;
+  expect(download.suggestedFilename()).toBe('DS-PDF-TEST-datasheet.pdf');
+  const bytes=fs.readFileSync(await download.path());
+  expect(bytes.length).toBeGreaterThan(10000);
+  expect(bytes.subarray(0,5).toString('latin1')).toBe('%PDF-');
+});
+
 test('security: missing Turnstile site key must never fall back to direct customer insert',async({page})=>{
   await installSupabaseMock(page);
   const configSource=fs.readFileSync(new URL('../config.js',import.meta.url),'utf8');
