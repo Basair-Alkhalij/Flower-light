@@ -1376,6 +1376,27 @@ test.describe('datasheet local images with real production CSP',()=>{
 });
 
 
+test('performance: visible logo priority and lazy offscreen product thumbnails',async({page})=>{
+  await installSupabaseMock(page);
+  await page.goto(base,{waitUntil:'load'});
+  await injectCatalogFixtures(page);
+  await expect(page.locator('#siteWatermark')).toHaveAttribute('loading','lazy');
+  await expect(page.locator('#siteWatermark')).toHaveAttribute('fetchpriority','low');
+  await expect(page.locator('#siteLogo')).toHaveAttribute('fetchpriority','high');
+  await page.evaluate(()=>{
+    const items=window.FLOWER_LIGHT_PRODUCTS.extraSections[0].items;
+    for(let index=1;index<8;index++)items.push({...items[0],id:'prod-test-'+index,name:'جداري '+index});
+    window.flRenderProducts();
+  });
+  await page.locator('#openProducts').click();
+  const gallery=page.locator('.product-image-button img');
+  await expect(gallery).toHaveCount(8);
+  expect(await gallery.nth(0).evaluate(img=>({loading:img.loading,decoding:img.decoding,priority:img.fetchPriority})))
+    .toEqual({loading:'lazy',decoding:'async',priority:'auto'});
+  expect(await gallery.nth(6).evaluate(img=>({loading:img.loading,decoding:img.decoding,priority:img.fetchPriority})))
+    .toEqual({loading:'lazy',decoding:'async',priority:'low'});
+});
+
 test('performance: catalog product cards are built on first open rather than the company-card load',async({page})=>{
   await installSupabaseMock(page);
   await page.goto(base,{waitUntil:'load'});
