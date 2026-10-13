@@ -343,6 +343,47 @@ assert.match(sync,/productThumbnailPath/);
 assert.match(app,/item\.image_thumb \|\| item\.image/);
 assert.match(app,/image\.decoding = 'async'/);
 
+// Step 14: image loading attributes must be set before the network request starts.
+{
+  const from=app.indexOf("  function createZoomButton(");
+  const to=app.indexOf("  function attachProductCardGalleryNavigation(",from);
+  const createCard=app.slice(from,to);
+  assert.ok(from>=0&&to>from,'Product image factory missing');
+  const imgAt=createCard.indexOf("const image = document.createElement('img');");
+  const loadingAt=createCard.indexOf('image.loading = imageLoading;',imgAt);
+  const priorityAt=createCard.indexOf("image.fetchPriority = 'low';",imgAt);
+  const srcAt=createCard.indexOf('image.src = item.image_thumb || item.image;',imgAt);
+  assert.ok(imgAt>=0&&loadingAt>imgAt&&priorityAt>loadingAt&&srcAt>priorityAt,
+    'Apply lazy loading and low fetch priority before starting the thumbnail request');
+  assert.match(index,/<img class="watermark"[^>]*loading="lazy"[^>]*fetchpriority="low"/,
+    'Decorative watermark must defer to the company logo');
+  assert.match(index,/<img class="brand-logo"[^>]*fetchpriority="high"/,
+    'Visible company branding should have high image priority');
+
+  const preloadFrom=app.indexOf('  function preloadLightboxNeighbors()');
+  const preloadTo=app.indexOf('  function showLightboxState(',preloadFrom);
+  assert.ok(preloadFrom>=0&&preloadTo>preloadFrom,'Lightbox preloading helper missing');
+  const helper=app.slice(preloadFrom,preloadTo).trim();
+  const loaded=[];
+  class MockImage {
+    set src(value){loaded.push({url:value,priority:this.fetchPriority,decoding:this.decoding});}
+  }
+  const makePrefetch=saveData=>vm.runInNewContext('('+helper+')',{
+    lightboxNavigationAvailable:()=>true,
+    navigator:{connection:{saveData}},
+    neighborLightboxImage:direction=>direction<0?'previous.webp':'next.webp',
+    Image:MockImage
+  });
+  makePrefetch(true)();
+  assert.equal(loaded.length,0,'Data saver must disable unnecessary neighboring-image prefetch');
+  makePrefetch(false)();
+  assert.equal(loaded.length,2,'Normal gallery navigation can prefetch adjacent images');
+  assert.deepEqual(loaded.map(item=>item.url),['previous.webp','next.webp']);
+  assert.ok(loaded.every(item=>item.priority==='low'&&item.decoding==='async'),
+    'Neighbor prefetches must be low-priority asynchronous decodes');
+}
+
+
 
 // v98: Owner-controlled strict WebAPK prompt — no shortcut fallback.
 const pwaInstall=read('pwa-install.js');
