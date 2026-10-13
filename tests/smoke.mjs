@@ -375,6 +375,12 @@ assert.match(index, /site-loader\.js\?v=__FL_VERSION__/);
 assert.match(siteLoader, /admin-import\.js\?v=__FL_VERSION__/);
 assert.match(read('admin-import.js'), /xlsx-0\.20\.3/);
 
+assert.match(adminImport,/const unmatched=products\.filter\(/,'Excel export must verify category coverage');
+assert.match(adminImport,/exportedProductCount\+=rows\.length/,'Excel export must count generated rows');
+assert.match(adminImport,/exportedProductCount!==products\.length/,'Excel export must reject incomplete workbooks');
+assert.ok(adminImport.indexOf('exportedProductCount!==products.length')<adminImport.indexOf('window.XLSX.writeFile(wb,'),'Excel row check must precede download');
+
+
  // Step 8: do not silently truncate a catalog export at the PostgREST row cap.
  assert.match(admin,/\.range\(start,start\+pageSize-1\)/);
  for(const table of ['categories','products','product_images','site_catalogs']){
