@@ -374,6 +374,11 @@ assert.match(index, /site-bootstrap\.js\?v=__FL_VERSION__/);
 assert.match(index, /site-loader\.js\?v=__FL_VERSION__/);
 assert.match(siteLoader, /admin-import\.js\?v=__FL_VERSION__/);
 assert.match(read('admin-import.js'), /xlsx-0\.20\.3/);
+// Step 9 safety regression: ambiguous codes and conflicting IDs must not update a product.
+assert.ok(adminImport.includes('matches.length>1'));
+assert.ok(adminImport.includes('if(explicitId&&!byId)'));
+assert.ok(adminImport.includes('if(byId&&matches.length'));
+
 
 assert.match(adminImport,/const unmatched=products\.filter\(/,'Excel export must verify category coverage');
 assert.match(adminImport,/exportedProductCount\+=rows\.length/,'Excel export must count generated rows');
