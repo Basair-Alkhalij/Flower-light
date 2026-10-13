@@ -28,4 +28,12 @@ const build=read('scripts/build.mjs');
 const siteUrl=build.match(/DEFAULT_SITE_URL='([^']+)'/);
 assert.ok(siteUrl);
 assert.equal(JSON.parse(read('site-settings.json')).siteUrl,siteUrl[1]);
+// Regression: internal admin errors may be logged, but must never reach callers.
+const adminAccount = read('supabase/functions/manage-admin-account/index.ts');
+const adminCatch = adminAccount.slice(adminAccount.lastIndexOf('  } catch (error) {'));
+assert.match(adminCatch, /console\.error\('\[manage-admin-account\]', message\)/);
+assert.match(adminCatch, /return response\(409, \{ error: 'هذا البريد مرتبط بحساب آخر بالفعل\.' \}\)/);
+assert.match(adminCatch, /return response\(500, \{ error: 'تعذر تنفيذ العملية\. حاول مرة أخرى\.' \}\)/);
+assert.doesNotMatch(adminCatch, /return response\(500, \{ error: `[^\`]*\$\{message\}/);
+
 console.log('EDGE_ORIGINS_AND_SITE_URL_OK');

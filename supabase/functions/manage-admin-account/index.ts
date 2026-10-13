@@ -381,6 +381,6 @@ Deno.serve(async (request) => {
     if (/already.*registered|already.*exists|email.*taken/i.test(message)) {
       return response(409, { error: 'هذا البريد مرتبط بحساب آخر بالفعل.' })
     }
-    return response(500, { error: `تعذر تنفيذ العملية: ${message}` })
+    return response(500, { error: 'تعذر تنفيذ العملية. حاول مرة أخرى.' })
   }
 })
