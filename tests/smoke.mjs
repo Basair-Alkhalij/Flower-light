@@ -380,7 +380,8 @@ assert.ok(catalogPdfViewer.includes('pdfjs/pdf.min.mjs?v=__FL_VERSION__'), 'PDF.
 assert.ok(catalogPdfViewer.includes('pdfjs/pdf.worker.min.mjs?v=__FL_VERSION__'), 'PDF.js 4 matching worker missing');
 assert.ok(catalogPdfViewer.includes('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/'), 'PDF.js 4 font URLs missing');
 assert.ok(!catalogPdfViewer.includes('pdf.js/3.11.174'), 'Old vulnerable PDF.js reference remains');
-assert.match(read('scripts/build.mjs'), /PDFJS_VENDOR_SHA256/, 'PDF.js build vendor logging absent');
+assert.match(read('scripts/build.mjs'), /pdfjsSha256/, 'PDF.js vendor integrity pins missing');
+assert.match(read('scripts/build.mjs'), /sha256!==pdfjsSha256\[asset\]/, 'PDF.js checksum verification missing');
 assert.match(catalogPdfViewer, /isEvalSupported\s*:\s*false/, 'PDF catalog must disable eval to mitigate CVE-2024-4367');
 assert.match(app, /parsed\.protocol==='https:'/);
 assert.match(app, /localhost','127\.0\.0\.1/);
