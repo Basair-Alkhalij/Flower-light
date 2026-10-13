@@ -26,6 +26,7 @@
   const getView = () => core.view;
 
   let analyticsPeriod = 30;
+  let analyticsRequestId = 0;
 
   function analyticsPeriodLabel(days){
     return days===1?'اليوم':days===7?'آخر 7 أيام':days===30?'آخر 30 يومًا':days===90?'آخر 90 يومًا':'كل الوقت';
@@ -73,9 +74,10 @@
     if(host)host.innerHTML=analyticsChartSvg(a?.timeseries,analyticsChartMetric);
   }
   async function renderAnalytics(){
+    const requestId=++analyticsRequestId;
     layout(`<div class="fl-cloud-head"><div><h2>إحصائيات الموقع</h2><p>الزيارات والتفاعل مع المنتجات والأقسام والفروع.</p></div></div><div class="fl-cloud-card"><div class="fl-cloud-empty">جاري تحميل الإحصائيات...</div></div>`);
     const {data,error}=await db.rpc('get_site_analytics_for_admin',{p_days:analyticsPeriod});
-    if(getView()!=='analytics')return;
+    if(getView()!=='analytics'||requestId!==analyticsRequestId)return;
     if(error){
       layout(`<div class="fl-cloud-head"><div><h2>إحصائيات الموقع</h2><p>الزيارات والتفاعل مع الموقع.</p></div></div><div class="fl-cloud-note bad">تعذر تحميل الإحصائيات. شغّل ملف <b>SUPABASE_SETUP.sql</b> في Supabase مرة واحدة ثم أعد المحاولة.<br><small>${esc(error.message||'')}</small></div>`);
       return;
