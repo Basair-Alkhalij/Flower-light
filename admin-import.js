@@ -574,8 +574,15 @@
           else{const {data,error}=await db.from('products').insert({...payload,image_path:imagePaths[0]}).select().single();if(error)throw error;saved=data;createdId=saved.id;created++;newSort+=10;}
           if((row.imageSources.length&&!exportedUrlsUnchanged)||!existing){
             const {error}=await db.rpc('set_product_gallery_for_admin',{p_product_id:saved.id,p_image_paths:imagePaths,p_primary_path:imagePaths[0]});if(error)throw error;
-            // Preserve all prior product images in Storage during Excel imports.
-            // Image cleanup, if needed, must be a separate explicit operation.
+            // Only remove superseded image pairs after the gallery update succeeded.
+            // Do not touch images that are still referenced by another product.
+            if(existing&&row.imageSources.length&&!exportedUrlsUnchanged){
+              const removable=previousImagePaths.filter(path=>isStoragePath(path)&&!imagePaths.includes(path)&&!storagePathUsedByOtherProduct(path,saved.id));
+              if(removable.length){
+                try{const {error:removeError}=await db.storage.from(bucket).remove([...new Set(removable.flatMap(productStoragePairPaths))]);if(removeError)console.warn('[Excel import] old image cleanup failed',removeError);}
+                catch(error){console.warn('[Excel import] old image cleanup failed',error);}
+              }
+            }
           }
           idMap.set(String(saved.id),saved);if(importText(saved.model)){
             const key=importKey(saved.model);
