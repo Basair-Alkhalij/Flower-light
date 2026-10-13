@@ -602,6 +602,28 @@ begin
     v_meta := '{}'::jsonb;
   end if;
 
+  -- Fail closed when another analytics write holds the global transaction lock.
+  -- This serializes the global cap checks without queueing public RPC traffic.
+  if not pg_try_advisory_xact_lock(57452026, 6) then
+    return false;
+  end if;
+
+  -- Global rolling ceilings independent of untrusted browser visitor/session IDs.
+  -- Both checks use analytics_events_created_at_idx and stop at the threshold.
+  if exists (
+    select 1 from public.analytics_events e
+    where e.created_at >= now() - interval '1 minute'
+    order by e.created_at desc
+    offset 119 limit 1
+  ) then return false; end if;
+
+  if exists (
+    select 1 from public.analytics_events e
+    where e.created_at >= now() - interval '1 hour'
+    order by e.created_at desc
+    offset 1499 limit 1
+  ) then return false; end if;
+
   -- Hard ceiling for one browser session.
   -- OFFSET 119 lets PostgreSQL stop as soon as the 120th matching row exists,
   -- instead of counting every event in the one-minute window.
@@ -1621,6 +1643,28 @@ begin
   if jsonb_typeof(v_meta) is distinct from 'object' or octet_length(v_meta::text) > 4000 then
     v_meta := '{}'::jsonb;
   end if;
+
+  -- Fail closed when another analytics write holds the global transaction lock.
+  -- This serializes the global cap checks without queueing public RPC traffic.
+  if not pg_try_advisory_xact_lock(57452026, 6) then
+    return false;
+  end if;
+
+  -- Global rolling ceilings independent of untrusted browser visitor/session IDs.
+  -- Both checks use analytics_events_created_at_idx and stop at the threshold.
+  if exists (
+    select 1 from public.analytics_events e
+    where e.created_at >= now() - interval '1 minute'
+    order by e.created_at desc
+    offset 119 limit 1
+  ) then return false; end if;
+
+  if exists (
+    select 1 from public.analytics_events e
+    where e.created_at >= now() - interval '1 hour'
+    order by e.created_at desc
+    offset 1499 limit 1
+  ) then return false; end if;
 
   if exists (
     select 1 from public.analytics_events e
