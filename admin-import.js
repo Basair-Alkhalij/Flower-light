@@ -508,6 +508,16 @@
     categories.push(data);categoryMap.set(key,data);return data;
   }
 
+  function resolveImportedProduct(row,idMap,codeMap){
+    const explicitId=String(row.product_id||'').trim();
+    const byId=explicitId?idMap.get(explicitId):null;
+    const matches=row.model?codeMap.get(importKey(row.model))||[]:[];
+    if(explicitId&&!byId)throw new Error(`معرف المنتج غير موجود (${explicitId})؛ لم يتم تحديث أي منتج.`);
+    if(!byId&&matches.length>1)throw new Error(`الكود (${row.model}) مكرر في ${matches.length} منتجات؛ حدّد معرف المنتج الصحيح.`);
+    if(byId&&matches.length&&!matches.some(p=>String(p.id)===String(byId.id)))throw new Error('كود المنتج يتطابق مع منتج آخر غير المعرف المحدد؛ راجع الكود قبل الاستيراد.');
+    return byId||matches[0]||null;
+  }
+
   async function runProductExcelImport(){
     const plan=currentProductImportPlan;if(!plan)return;const start=document.getElementById('flExcelImportStart'),cancel=document.getElementById('flExcelImportCancel');
     const mode=document.getElementById('flExcelImportMode')?.value||'upsert';const progress=document.getElementById('flExcelImportProgress'),bar=document.getElementById('flExcelImportProgressBar'),text=document.getElementById('flExcelImportProgressText'),count=document.getElementById('flExcelImportProgressCount');
@@ -528,19 +538,9 @@
       let newSort=nextProductSort(category.id);
       for(const row of section.products){
         done++;if(text)text.textContent=`${section.name} — ${row.name}`;if(count)count.textContent=`${done}/${total}`;if(bar)bar.value=Math.round(done/total*100);
-        const explicitId=String(row.product_id||'').trim();
-        const byId=explicitId?idMap.get(explicitId):null;
-        const matches=row.model?codeMap.get(importKey(row.model))||[]:[];
-        if(explicitId&&!byId){
-          failed++;errors.push(`${section.name} / ${row.name}: معرف المنتج غير موجود (${explicitId})؛ لم يتم تحديث أي منتج.`);continue;
-        }
-        if(!byId&&matches.length>1){
-          failed++;errors.push(`${section.name} / ${row.name}: الكود (${row.model}) مكرر في ${matches.length} منتجات؛ حدّد معرف المنتج الصحيح.`);continue;
-        }
-        if(byId&&matches.length&& !matches.some(p=>String(p.id)===String(byId.id))){
-          failed++;errors.push(`${section.name} / ${row.name}: كود المنتج يتطابق مع منتج آخر غير المعرف المحدد؛ راجع الكود قبل الاستيراد.`);continue;
-        }
-        const existing=byId||matches[0]||null;
+        let existing;
+        try{existing=resolveImportedProduct(row,idMap,codeMap);}
+        catch(error){failed++;errors.push(`${section.name} / ${row.name}: ${error.message}`);continue;}
         if(existing&&mode==='new_only'){skipped++;continue;}
         const uploaded=[];let createdId='';
         try{
