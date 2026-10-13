@@ -378,7 +378,7 @@ assert.match(read('admin-import.js'), /xlsx-0\.20\.3/);
 // Behavioral matching regression: evaluate the real import resolver in isolation.
 {
   const from=adminImport.indexOf('  function resolveImportedProduct(');
-  const to=adminImport.indexOf('\n  async function runProductExcelImport(',from);
+  const to=adminImport.indexOf('\n  }\n',from)+5;
   assert.ok(from>=0&&to>from,'Missing product match resolver');
   const source=adminImport.slice(from,to).trim();
   const importKey=value=>String(value||'').trim().toLowerCase().replace(/[\s_\-\/]+/g,' ');
@@ -392,6 +392,47 @@ assert.match(read('admin-import.js'), /xlsx-0\.20\.3/);
   assert.throws(()=>resolve({product_id:'a',model:'OTHER'},ids,codes),/منتج آخر/);
   assert.equal(resolve({model:'OTHER'},ids,codes).id,'c');
   assert.equal(resolve({model:'NEW'},ids,codes),null);
+}
+// Step 10: execute real gallery-save/cleanup logic without touching Supabase.
+{
+  const source=read('admin-import.js');
+  const start=source.indexOf('  async function saveImportedProductGallery(');
+  const end=source.indexOf('  async function runProductExcelImport(',start);
+  assert.ok(start>=0&&end>start,'Excel gallery save helper must exist');
+  const helper=source.slice(start,end).trim();
+  const handler=source.slice(end,source.indexOf('  window.FL_ADMIN_IMPORT=',end));
+  assert.ok(handler.includes('if((row.imageSources.length&&!exportedUrlsUnchanged)||!existing)'), 'Blank image cells must not change an existing gallery');
+  assert.ok(handler.includes('await saveImportedProductGallery(saved,imagePaths,previousImagePaths'), 'Importer must await gallery save before continuing');
+  const setup=(rpcError=null,shared=[],removeError=null)=>{
+    const calls=[];
+    const db={
+      rpc:async(name,payload)=>{calls.push(['rpc',name,payload.p_product_id]);return {error:rpcError};},
+      storage:{from:()=>({remove:async paths=>{calls.push(['remove',...paths]);return {error:removeError};}})}
+    };
+    const fn=vm.runInNewContext('('+helper+')',{
+      db,bucket:'test-images',isStoragePath:path=>path.startsWith('store/'),
+      storagePathUsedByOtherProduct:path=>shared.includes(path),
+      productStoragePairPaths:path=>[path+'.l.webp',path+'.s.webp'],
+      console:{warn:(...args)=>calls.push(['warn',...args])}
+    });
+    return {fn,calls};
+  };
+  const saved={id:'product-1'};
+  const previous=['store/old','store/shared','store/unchanged','https://external/img.jpg'];
+  const newer=['store/new','store/unchanged'];
+  const good=setup(null,['store/shared']);
+  await good.fn(saved,newer,previous,true);
+  assert.equal(good.calls[0][0],'rpc','Gallery must be saved first');
+  assert.deepEqual(Array.from(good.calls[1]).slice(1),['store/old.l.webp','store/old.s.webp'],'Only unused old image pair can be removed');
+  const failed=setup(new Error('gallery update failed'));
+  await assert.rejects(failed.fn(saved,newer,previous,true),/gallery update failed/);
+  assert.equal(failed.calls.length,1,'Failed gallery save must never delete old images');
+  const keep=setup();
+  await keep.fn(saved,newer,previous,false);
+  assert.equal(keep.calls.length,1,'No replacement must preserve all previous images');
+  const failedCleanup=setup(null,[],new Error('storage cleanup failed'));
+  await failedCleanup.fn(saved,newer,['store/old'],true);
+  assert.equal(failedCleanup.calls.some(call=>call[0]==='warn'),true,'Storage deletion failure must be logged without failing saved gallery');
 }
 // Step 9 safety regression: ambiguous codes and conflicting IDs must not update a product.
 assert.ok(adminImport.includes('matches.length>1'));
