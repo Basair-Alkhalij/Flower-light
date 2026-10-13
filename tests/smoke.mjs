@@ -393,6 +393,35 @@ assert.match(read('admin-import.js'), /xlsx-0\.20\.3/);
   assert.equal(resolve({model:'OTHER'},ids,codes).id,'c');
   assert.equal(resolve({model:'NEW'},ids,codes),null);
 }
+// Step 12: a slow older analytics response must not replace newer dashboard data.
+{
+  const analyticsSource=read('admin-analytics.js');
+  const layouts=[];
+  const pending=[];
+  const core={
+    esc:value=>String(value??''),
+    notify:()=>{},
+    layout:html=>layouts.push(String(html)),
+    view:'analytics',
+    db:{rpc:(name,args)=>new Promise(resolve=>pending.push({name,args,resolve}))}
+  };
+  const scope={window:{FL_ADMIN_CORE:core},document:{getElementById:()=>null},console};
+  vm.runInNewContext(analyticsSource,scope);
+  const render=scope.window.FL_ADMIN_ANALYTICS.renderAnalytics;
+  const older=render();
+  const newer=render();
+  assert.equal(pending.length,2,'Concurrent analytics requests should both start');
+  pending[1].resolve({data:{total_visits:42},error:null});
+  await newer;
+  const latestLayout=layouts.at(-1);
+  assert.ok(latestLayout.includes((42).toLocaleString('ar-SA')),'Newest response should render');
+  const renderedCount=layouts.length;
+  pending[0].resolve({data:{total_visits:7},error:null});
+  await older;
+  assert.equal(layouts.length,renderedCount,'Stale analytics response must not render');
+  assert.equal(layouts.at(-1),latestLayout,'Newest dashboard must remain visible');
+}
+
 // Step 11: public and admin contact links are safe and valid.
 {
   for(const [name,source] of [['public-sync.js',sync],['admin.js',admin]]){
