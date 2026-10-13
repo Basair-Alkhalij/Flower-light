@@ -393,6 +393,16 @@ assert.match(read('admin-import.js'), /xlsx-0\.20\.3/);
   assert.equal(resolve({model:'OTHER'},ids,codes).id,'c');
   assert.equal(resolve({model:'NEW'},ids,codes),null);
 }
+// Step 10: Excel import must not delete pre-existing product images from Storage.
+{
+  const importSource=read('admin-import.js');
+  const start=importSource.indexOf('  async function runProductExcelImport()');
+  const end=importSource.indexOf('  window.FL_ADMIN_IMPORT=',start);
+  assert.ok(start>=0&&end>start,'Excel import handler not found');
+  const handler=importSource.slice(start,end);
+  assert.ok(!handler.includes('removable.flatMap(productStoragePairPaths)'),'Excel import must not delete previous image pairs');
+  assert.ok(handler.includes('Preserve all prior product images in Storage during Excel imports.'));
+}
 // Step 9 safety regression: ambiguous codes and conflicting IDs must not update a product.
 assert.ok(adminImport.includes('matches.length>1'));
 assert.ok(adminImport.includes('if(explicitId&&!byId)'));
