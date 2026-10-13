@@ -374,6 +374,25 @@ assert.match(index, /site-bootstrap\.js\?v=__FL_VERSION__/);
 assert.match(index, /site-loader\.js\?v=__FL_VERSION__/);
 assert.match(siteLoader, /admin-import\.js\?v=__FL_VERSION__/);
 assert.match(read('admin-import.js'), /xlsx-0\.20\.3/);
+
+// Behavioral matching regression: evaluate the real import resolver in isolation.
+{
+  const from=adminImport.indexOf('  function resolveImportedProduct(');
+  const to=adminImport.indexOf('\n  async function runProductExcelImport(',from);
+  assert.ok(from>=0&&to>from,'Missing product match resolver');
+  const source=adminImport.slice(from,to).trim();
+  const importKey=value=>String(value||'').trim().toLowerCase().replace(/[\s_\-\/]+/g,' ');
+  const resolve=vm.runInNewContext('('+source+')',{importKey});
+  const a={id:'a',model:'SAME'},b={id:'b',model:'SAME'},c={id:'c',model:'OTHER'};
+  const ids=new Map([['a',a],['b',b],['c',c]]);
+  const codes=new Map([['same',[a,b]],['other',[c]]]);
+  assert.throws(()=>resolve({model:'same'},ids,codes),/مكرر/);
+  assert.equal(resolve({product_id:'a',model:'SAME'},ids,codes).id,'a');
+  assert.throws(()=>resolve({product_id:'missing',model:'OTHER'},ids,codes),/غير موجود/);
+  assert.throws(()=>resolve({product_id:'a',model:'OTHER'},ids,codes),/منتج آخر/);
+  assert.equal(resolve({model:'OTHER'},ids,codes).id,'c');
+  assert.equal(resolve({model:'NEW'},ids,codes),null);
+}
 // Step 9 safety regression: ambiguous codes and conflicting IDs must not update a product.
 assert.ok(adminImport.includes('matches.length>1'));
 assert.ok(adminImport.includes('if(explicitId&&!byId)'));
