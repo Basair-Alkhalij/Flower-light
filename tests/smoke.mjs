@@ -374,6 +374,30 @@ assert.match(index, /site-bootstrap\.js\?v=__FL_VERSION__/);
 assert.match(index, /site-loader\.js\?v=__FL_VERSION__/);
 assert.match(siteLoader, /admin-import\.js\?v=__FL_VERSION__/);
 assert.match(read('admin-import.js'), /xlsx-0\.20\.3/);
+
+ // Step 8: do not silently truncate a catalog export at the PostgREST row cap.
+ assert.match(admin,/\.range\(start,start\+pageSize-1\)/);
+ for(const table of ['categories','products','product_images','site_catalogs']){
+   assert.ok(admin.includes("loadAllCatalogRows('"+table+"'"),'Missing paginated catalog load: '+table);
+ }
+ {
+   const start=admin.indexOf('  async function loadAllCatalogRows(');
+   const end=admin.indexOf('\n  async function loadCatalogAdminData(',start);
+   assert.ok(start>=0&&end>start,'Catalog pagination helper missing');
+   const source=admin.slice(start,end).trim().replace(/^async function loadAllCatalogRows/,'async function loadAllCatalogRows');
+   const rows=Array.from({length:1005},(_,i)=>({id:String(i),sort_order:i}));
+   const ranges=[];
+   const db={from:()=>({
+     select(){return this;},order(){return this;},
+     range(from,to){ranges.push([from,to]);return Promise.resolve({data:rows.slice(from,to+1),error:null});}
+   })};
+   const load=vm.runInNewContext('('+source+')',{db});
+   const result=await load('products');
+   assert.equal(result.error,null);
+   assert.equal(result.data.length,1005,'All product rows must be loaded');
+   assert.deepEqual(ranges,[[0,999],[1000,1999]]);
+ }
+
 assert.match(read('admin-import.js'), /integrity/);
 assert.match(app, /JSPDF_SRI/);
 assert.match(app, /https:\/\/cdn\.jsdelivr\.net\/npm\/jspdf@4\.2\.1\/dist\/jspdf\.umd\.min\.js/, 'Pinned jsPDF 4.2.1 loader missing');
