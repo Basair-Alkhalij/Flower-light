@@ -393,6 +393,33 @@ assert.match(read('admin-import.js'), /xlsx-0\.20\.3/);
   assert.equal(resolve({model:'OTHER'},ids,codes).id,'c');
   assert.equal(resolve({model:'NEW'},ids,codes),null);
 }
+// Step 12: preserve owner-managed filter IDs while recognizing legacy specification labels.
+{
+  const from=app.indexOf('  const PRODUCT_SPEC_LABELS =');
+  const to=app.indexOf('\n  function productSpecifications(',from);
+  assert.ok(from>=0&&to>from,'Catalog specification normalization not found');
+  const siteSettings={catalog_custom_filters:[{key:'custom_filter_test1',label:'إضاءة جانبية'}]};
+  const ctx={window:{FLOWER_LIGHT_SITE_SETTINGS:siteSettings},PRICING_META_KEY:'__pricing_tiers'};
+  const funcs=vm.runInNewContext(app.slice(from,to)+'\n({canonicalProductSpecKey,normalizeProductSpecifications})',ctx);
+  const normalized=row=>funcs.normalizeProductSpecifications([row])[0];
+  assert.equal(normalized({key:'custom_1',label:'اضاءه جانبيه',value:'نعم'}).key,'custom_filter_test1');
+  assert.equal(normalized({key:'custom_filter_test1',label:'القدرة',value:'خاص'}).key,'custom_filter_test1',
+    'Explicit configured keys must not be redirected by aliases');
+  assert.equal(normalized({key:'legacy_foo',label:'سوكت',value:'E27'}).key,'bulb_base');
+  assert.equal(normalized({key:'legacy_foo',label:'socket',value:'E27'}).key,'bulb_base');
+  assert.equal(normalized({key:'legacy_foo',label:'dimension',value:'30 سم'}).key,'dimensions');
+  const legacy=normalized({key:'legacy_foo',label:'مواصفة غير معروفة',value:'متاح',unit:'م'});
+  assert.equal(legacy.key,'legacy_foo');
+  assert.equal(legacy.value,'متاح');
+  assert.equal(legacy.unit,'م');
+  siteSettings.catalog_custom_filters.push({key:'custom_filter_test2',label:'اضاءة جانبية'});
+  assert.equal(normalized({key:'custom_1',label:'اضاءه جانبيه',value:'نعم'}).key,'custom_1',
+    'Ambiguous custom labels cannot be guessed');
+  delete ctx.window.FLOWER_LIGHT_SITE_SETTINGS;
+  assert.equal(normalized({key:'custom_1',label:'اضاءه جانبيه',value:'نعم'}).key,'custom_1',
+    'Old specifications must survive absent filter settings');
+}
+
 // Step 12: a slow older analytics response must not replace newer dashboard data.
 {
   const analyticsSource=read('admin-analytics.js');
