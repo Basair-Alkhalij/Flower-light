@@ -55,6 +55,8 @@
       const pdfjs=await loadPdfJs();
       const loadingTask=pdfjs.getDocument({
         url,
+        // CVE-2024-4367: disable dynamically evaluated PDF font code.
+        isEvalSupported:false,
         cMapUrl:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
         cMapPacked:true,
         standardFontDataUrl:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/standard_fonts/',

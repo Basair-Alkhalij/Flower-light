@@ -115,6 +115,37 @@ test('system light and dark modes keep readable contrast and produce review scre
   expect(colors.search).not.toBe('rgb(255, 255, 255)');
 });
 
+
+test('catalog PDF renderer disables evaluated font code and renders pages',async({page})=>{
+  await installSupabaseMock(page);
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>Boolean(window.FL_CATALOG_PDF_VIEWER?.render));
+  await page.evaluate(()=>{
+    window.__pdfReaderOptions=null;
+    window.pdfjsLib={
+      GlobalWorkerOptions:{},
+      getDocument(options){
+        window.__pdfReaderOptions=options;
+        const fakePage={
+          getViewport({scale}){return {width:200*scale,height:280*scale};},
+          render({canvasContext}){canvasContext.fillStyle='#fff';canvasContext.fillRect(0,0,20,20);return {promise:Promise.resolve()};},
+          cleanup(){}
+        };
+        return {promise:Promise.resolve({numPages:2,getPage:async()=>fakePage,cleanup(){},destroy(){}})};
+      }
+    };
+    const panel=document.createElement('section');
+    panel.id='flPdfSecurityTest';
+    panel.innerHTML='<div class="site-catalog-pages"></div>';
+    document.body.appendChild(panel);
+    window.FL_CATALOG_PDF_VIEWER.render(panel,'https://example.com/catalog-test.pdf');
+  });
+  await expect.poll(()=>page.evaluate(()=>window.__pdfReaderOptions?.isEvalSupported)).toBe(false);
+  expect(await page.evaluate(()=>window.__pdfReaderOptions.url)).toBe('https://example.com/catalog-test.pdf');
+  await expect(page.locator('#flPdfSecurityTest .site-catalog-page')).toHaveCount(2);
+  await expect(page.locator('#flPdfSecurityTest .site-catalog-page[data-rendered="1"]')).toHaveCount(2);
+});
+
 test('customer gate can be enabled and disabled',async({page})=>{
   await installSupabaseMock(page);
   await page.goto(base,{waitUntil:'domcontentloaded'});
