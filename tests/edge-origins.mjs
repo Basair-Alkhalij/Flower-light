@@ -36,4 +36,40 @@ assert.match(adminCatch, /return response\(409, \{ error: 'هذا البريد �
 assert.match(adminCatch, /return response\(500, \{ error: 'تعذر تنفيذ العملية\. حاول مرة أخرى\.' \}\)/);
 assert.doesNotMatch(adminCatch, /return response\(500, \{ error: `[^\`]*\$\{message\}/);
 
+
+// Exercise the actual request-body reader with absent/spoofed Content-Length,
+// chunked Unicode input, the exact 8 KiB boundary, and oversized input.
+assert.match(fn,/Number\.isFinite\(contentLength\) && contentLength > MAX_LEAD_BODY_BYTES/);
+assert.match(fn,/const parsed = await readLimitedJson\(request\)/);
+assert.match(fn,/if \(parsed\.tooLarge\) return jsonResponse\(413,/);
+assert.doesNotMatch(fn,/await request\.json\(\)/);
+const readerSource=fn.match(/const MAX_LEAD_BODY_BYTES = 8192\n\nasync function readLimitedJson\(request: Request\) \{[\s\S]*?\n\}\n\n(?=type TurnstileResult)/)?.[0];
+assert.ok(readerSource,'streaming byte-limited JSON reader must exist');
+const readLimitedJson=new Function('TextDecoder',readerSource
+  .replace('request: Request','request')
+  .replace(' as Record<string, unknown>','')+'\nreturn readLimitedJson;')(TextDecoder);
+const encoder=new TextEncoder();
+function chunkedRequest(bytes,chunkSize,headers={}){
+  let offset=0;
+  const stream=new ReadableStream({pull(controller){
+    if(offset>=bytes.length){controller.close();return;}
+    controller.enqueue(bytes.slice(offset,offset+chunkSize));
+    offset+=chunkSize;
+  }});
+  return new Request('https://example.test/lead',{method:'POST',body:stream,duplex:'half',headers});
+}
+const good=JSON.stringify({full_name:'سارة',company_name:'شركة',mobile:'0501234567',turnstile_token:'token'});
+const utf8=encoder.encode(good);
+const normal=await readLimitedJson(chunkedRequest(utf8,7));
+assert.equal(normal.tooLarge,false);
+assert.equal(normal.data.full_name,'سارة');
+const exactly8192=encoder.encode(JSON.stringify({padding:'x'.repeat(8192-'{"padding":""}'.length)}));
+assert.equal(exactly8192.length,8192);
+assert.equal((await readLimitedJson(chunkedRequest(exactly8192,4096))).tooLarge,false);
+const over8192=encoder.encode(JSON.stringify({padding:'x'.repeat(8193-'{"padding":""}'.length)}));
+assert.equal(over8192.length,8193);
+assert.equal((await readLimitedJson(chunkedRequest(over8192,4096))).tooLarge,true);
+assert.equal((await readLimitedJson(chunkedRequest(over8192,4096,{'content-length':'10'}))).tooLarge,true);
+await assert.rejects(readLimitedJson(chunkedRequest(encoder.encode('{invalid'),4)),SyntaxError);
+
 console.log('EDGE_ORIGINS_AND_SITE_URL_OK');

@@ -59,6 +59,30 @@ async function sha256Hex(value: string) {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')
 }
 
+// Enforce the byte limit even when Content-Length is absent or incorrect.
+const MAX_LEAD_BODY_BYTES = 8192
+
+async function readLimitedJson(request: Request) {
+  const reader = request.body?.getReader()
+  if (!reader) throw new SyntaxError('Empty request body')
+
+  const decoder = new TextDecoder()
+  let json = ''
+  let receivedBytes = 0
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    receivedBytes += value.byteLength
+    if (receivedBytes > MAX_LEAD_BODY_BYTES) {
+      await reader.cancel().catch(() => {})
+      return { tooLarge: true, data: null }
+    }
+    json += decoder.decode(value, { stream: true })
+  }
+  json += decoder.decode()
+  return { tooLarge: false, data: JSON.parse(json) as Record<string, unknown> }
+}
+
 type TurnstileResult = {
   success?: boolean
   hostname?: string
@@ -76,7 +100,7 @@ Deno.serve(async (request) => {
   const contentType = request.headers.get('content-type')?.toLowerCase() ?? ''
   if (!contentType.includes('application/json')) return jsonResponse(415, { error: 'نوع البيانات غير مدعوم.' }, origin)
   const contentLength = Number(request.headers.get('content-length') || '0')
-  if (Number.isFinite(contentLength) && contentLength > 8192) return jsonResponse(413, { error: 'حجم الطلب أكبر من المسموح.' }, origin)
+  if (Number.isFinite(contentLength) && contentLength > MAX_LEAD_BODY_BYTES) return jsonResponse(413, { error: 'حجم الطلب أكبر من المسموح.' }, origin)
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
@@ -88,7 +112,9 @@ Deno.serve(async (request) => {
 
     let body: Record<string, unknown>
     try {
-      body = await request.json()
+      const parsed = await readLimitedJson(request)
+      if (parsed.tooLarge) return jsonResponse(413, { error: 'حجم الطلب أكبر من المسموح.' }, origin)
+      body = parsed.data as Record<string, unknown>
     } catch {
       return jsonResponse(400, { error: 'بيانات الطلب غير صالحة.' }, origin)
     }
