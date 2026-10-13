@@ -124,6 +124,10 @@ if (!process.argv.includes('--check')) {
   // PDF.js's patched ESM files are fetched once during CI and served locally.
   // Both files must use exactly the same upstream release (main + worker).
   const pdfjsBase='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/';
+  const pdfjsSha256={
+    'pdf.min.mjs':'27fc2a057a00f92a4334ad06e17dbd7259912954e9fb7f76400bcca5fd190a9c',
+    'pdf.worker.min.mjs':'1baa1844c89c80a5b2797c916e75ab29254be46d8e9cb53cb6364d7aad84be36'
+  };
   const pdfjsFolder=path.join(out,'pdfjs');
   fs.mkdirSync(pdfjsFolder,{recursive:true});
   for(const [asset,minBytes] of [['pdf.min.mjs',200_000],['pdf.worker.min.mjs',900_000]]){
@@ -132,6 +136,7 @@ if (!process.argv.includes('--check')) {
     const bytes=Buffer.from(await response.arrayBuffer());
     if(bytes.length<minBytes) throw new Error(`Unexpectedly small PDF.js asset: ${asset}`);
     const sha256=crypto.createHash('sha256').update(bytes).digest('hex');
+    if(sha256!==pdfjsSha256[asset]) throw new Error(`PDF.js upstream hash mismatch for ${asset}`);
     console.log('PDFJS_VENDOR_SHA256',asset,sha256);
     fs.writeFileSync(path.join(pdfjsFolder,asset),bytes);
     sizes['pdfjs/'+asset]={source:bytes.length,minified:bytes.length,gzip:zlib.gzipSync(bytes,{level:9}).length};
