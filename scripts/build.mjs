@@ -121,6 +121,22 @@ if (!process.argv.includes('--check')) {
     throw new Error(`Unable to prepare pinned Supabase browser bundle: ${error?.message||error}`);
   }
 
+  // PDF.js's patched ESM files are fetched once during CI and served locally.
+  // Both files must use exactly the same upstream release (main + worker).
+  const pdfjsBase='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/';
+  const pdfjsFolder=path.join(out,'pdfjs');
+  fs.mkdirSync(pdfjsFolder,{recursive:true});
+  for(const [asset,minBytes] of [['pdf.min.mjs',200_000],['pdf.worker.min.mjs',900_000]]){
+    const response=await fetch(pdfjsBase+asset,{redirect:'follow'});
+    if(!response.ok) throw new Error(`Unable to obtain PDF.js 4.10.38 ${asset}: HTTP ${response.status}`);
+    const bytes=Buffer.from(await response.arrayBuffer());
+    if(bytes.length<minBytes) throw new Error(`Unexpectedly small PDF.js asset: ${asset}`);
+    const sha256=crypto.createHash('sha256').update(bytes).digest('hex');
+    console.log('PDFJS_VENDOR_SHA256',asset,sha256);
+    fs.writeFileSync(path.join(pdfjsFolder,asset),bytes);
+    sizes['pdfjs/'+asset]={source:bytes.length,minified:bytes.length,gzip:zlib.gzipSync(bytes,{level:9}).length};
+  }
+
   for(const entry of fs.readdirSync(root,{withFileTypes:true})){
     const name=entry.name;
     if(!entry.isFile() || !(/\.(html|js|css|png|jpg|jpeg|ico|webmanifest|xml)$/.test(name) || ['robots.txt','.nojekyll'].includes(name))) continue;
