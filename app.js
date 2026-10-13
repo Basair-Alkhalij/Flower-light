@@ -53,11 +53,11 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     ['حرارة اللون','cct'],['حراره اللون','cct'],['درجة حرارة اللون','cct'],['درجه حراره اللون','cct'],['كلفن','cct'],['kelvin','cct'],['k','cct'],
     ['الفولت','voltage'],['الجهد','voltage'],['فولت','voltage'],['volt','voltage'],['v','voltage'],
     ['درجة الحماية ip','ip_rating'],['درجه الحمايه ip','ip_rating'],['درجة الحماية','ip_rating'],['درجه الحمايه','ip_rating'],['ip','ip_rating'],
-    ['المقاس','dimensions'],['المقاسات','dimensions'],['الأبعاد','dimensions'],['الابعاد','dimensions'],['size','dimensions'],
+    ['المقاس','dimensions'],['المقاسات','dimensions'],['الأبعاد','dimensions'],['الابعاد','dimensions'],['size','dimensions'],['dimension','dimensions'],
     ['اللون','color'],['colour','color'],['الخامة','material'],['الخامه','material'],
     ['زاوية الإضاءة','beam_angle'],['زاويه الاضاءه','beam_angle'],['beam angle','beam_angle'],
     ['التردد','frequency'],['hz','frequency'],['الضمان','warranty'],
-    ['قاعدة اللمبة','bulb_base'],['قاعده اللمبه','bulb_base'],['bulb base','bulb_base'],['سوكت','bulb_base'],
+    ['قاعدة اللمبة','bulb_base'],['قاعده اللمبه','bulb_base'],['bulb base','bulb_base'],['سوكت','bulb_base'],['socket','bulb_base'],
     ['عدد اللمبات','bulb_count'],['عدد اللمبة','bulb_count'],['عدد اللمبه','bulb_count'],['bulb count','bulb_count'],
     ['كود المنتج','sku'],['رقم المنتج','sku'],['رمز المنتج','sku']
   ]);
@@ -75,10 +75,22 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
   })();
   function canonicalProductSpecKey(rawKey, label) {
     const direct = String(rawKey || '').trim();
+    // Explicit custom-filter keys are stable identifiers: never remap them by label.
+    if (/^custom_filter_[a-z0-9]+$/i.test(direct)) return direct;
     if (Object.hasOwn(PRODUCT_SPEC_LABELS, direct)) return direct;
-    return PRODUCT_SPEC_ALIAS_LOOKUP.get(normalizeProductSpecAlias(direct))
-      || PRODUCT_SPEC_ALIAS_LOOKUP.get(normalizeProductSpecAlias(label))
-      || direct;
+    const known = PRODUCT_SPEC_ALIAS_LOOKUP.get(normalizeProductSpecAlias(direct))
+      || PRODUCT_SPEC_ALIAS_LOOKUP.get(normalizeProductSpecAlias(label));
+    if (known) return known;
+    // Legacy custom_1/unnamed specifications can match an owner-defined filter by label.
+    // Ambiguous labels are intentionally left as-is.
+    const customFilters = window.FLOWER_LIGHT_SITE_SETTINGS?.catalog_custom_filters;
+    if (Array.isArray(customFilters)) {
+      const token=normalizeProductSpecAlias(label||direct);
+      const matches=customFilters.filter(row=>/^custom_filter_[a-z0-9]+$/i.test(String(row?.key||''))
+        && token && normalizeProductSpecAlias(row.label)===token);
+      if (matches.length===1)return String(matches[0].key);
+    }
+    return direct;
   }
 
   const WHATSAPP_META_SHOW_DESCRIPTION = '__whatsapp_show_description';
