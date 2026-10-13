@@ -2,19 +2,24 @@
 (() => {
   'use strict';
 
-  const PDFJS_CDN='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-  const PDFJS_SRI='sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e';
-  const PDFJS_WORKER='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  // PDF.js 4.10.38 is the fixed ES-module distribution; production assets
+  // are pinned and served from this site's origin during the Pages build.
+  const PDFJS_MODULE='./pdfjs/pdf.min.mjs?v=__FL_VERSION__';
+  const PDFJS_WORKER='./pdfjs/pdf.worker.min.mjs?v=__FL_VERSION__';
+  const PDFJS_RESOURCES='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/';
   let pdfJsPromise=null;
 
   function loadPdfJs(){
-    if(window.pdfjsLib?.getDocument){window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS_WORKER;return Promise.resolve(window.pdfjsLib);}
+    // Keep explicit injection support for isolated browser tests.
+    if(window.pdfjsLib?.getDocument){
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc=new URL(PDFJS_WORKER,document.baseURI).href;
+      return Promise.resolve(window.pdfjsLib);
+    }
     if(pdfJsPromise) return pdfJsPromise;
-    pdfJsPromise=new Promise((resolve,reject)=>{
-      const existing=document.querySelector('script[data-fl-pdfjs]');
-      const finish=()=>{if(!window.pdfjsLib?.getDocument){reject(new Error('PDF.js غير متاح'));return;}window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS_WORKER;resolve(window.pdfjsLib);};
-      if(existing){existing.addEventListener('load',finish,{once:true});existing.addEventListener('error',()=>reject(new Error('تعذر تحميل قارئ PDF')),{once:true});return;}
-      const script=document.createElement('script');script.src=PDFJS_CDN;script.async=true;script.dataset.flPdfjs='1';script.integrity=PDFJS_SRI;script.crossOrigin='anonymous';script.referrerPolicy='no-referrer';script.addEventListener('load',finish,{once:true});script.addEventListener('error',()=>reject(new Error('تعذر تحميل قارئ PDF')),{once:true});document.head.appendChild(script);
+    pdfJsPromise=import(PDFJS_MODULE).then(pdfjs=>{
+      if(typeof pdfjs.getDocument!=='function') throw new Error('PDF.js غير متاح');
+      pdfjs.GlobalWorkerOptions.workerSrc=new URL(PDFJS_WORKER,document.baseURI).href;
+      return pdfjs;
     }).catch(error=>{pdfJsPromise=null;throw error;});
     return pdfJsPromise;
   }
@@ -57,9 +62,9 @@
         url,
         // CVE-2024-4367: disable dynamically evaluated PDF font code.
         isEvalSupported:false,
-        cMapUrl:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+        cMapUrl:PDFJS_RESOURCES+'cmaps/',
         cMapPacked:true,
-        standardFontDataUrl:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/standard_fonts/',
+        standardFontDataUrl:PDFJS_RESOURCES+'standard_fonts/',
         useSystemFonts:true,
         disableFontFace:false
       });

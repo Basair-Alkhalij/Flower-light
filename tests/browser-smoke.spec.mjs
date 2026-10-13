@@ -146,6 +146,45 @@ test('catalog PDF renderer disables evaluated font code and renders pages',async
   await expect(page.locator('#flPdfSecurityTest .site-catalog-page[data-rendered="1"]')).toHaveCount(2);
 });
 
+
+// Small valid one-page PDF, built in-memory to exercise the actual ESM parser/worker.
+function catalogPdfFixture(){
+  const contents='BT /F1 18 Tf 22 245 Td (Flower Light Catalog) Tj ET';
+  const objects=[
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Count 1 /Kids [3 0 R] >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 300] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    `<< /Length ${Buffer.byteLength(contents)} >>\nstream\n${contents}\nendstream`
+  ];
+  let pdf='%PDF-1.4\n';const offsets=[0];
+  objects.forEach((obj,i)=>{offsets.push(Buffer.byteLength(pdf,'latin1'));pdf+=`${i+1} 0 obj\n${obj}\nendobj\n`;});
+  const xref=Buffer.byteLength(pdf,'latin1');
+  pdf+=`xref\n0 ${objects.length+1}\n0000000000 65535 f \n`;
+  for(let i=1;i<offsets.length;i++)pdf+=`${String(offsets[i]).padStart(10,'0')} 00000 n \n`;
+  pdf+=`trailer\n<< /Size ${objects.length+1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return Buffer.from(pdf,'latin1');
+}
+test('built PDF.js 4 ESM parses and renders a real PDF using its local worker',async({page})=>{
+  test.skip(process.env.FL_TEST_DIST!=='1','Production-only self-hosted module assets');
+  await installSupabaseMock(page);
+  await page.route('**/fl-reader-fixture.pdf',route=>route.fulfill({status:200,contentType:'application/pdf',body:catalogPdfFixture()}));
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>Boolean(window.FL_CATALOG_PDF_VIEWER?.render));
+  await page.evaluate(()=>{
+    const panel=document.createElement('section');
+    panel.id='flPdfRealTest';
+    panel.innerHTML='<div class="site-catalog-pages"></div>';
+    document.body.appendChild(panel);
+    window.FL_CATALOG_PDF_VIEWER.render(panel,new URL('fl-reader-fixture.pdf',location.href).href);
+  });
+  await expect(page.locator('#flPdfRealTest .site-catalog-page')).toHaveCount(1,{timeout:20000});
+  await expect(page.locator('#flPdfRealTest .site-catalog-page[data-rendered="1"]')).toHaveCount(1,{timeout:30000});
+  await expect(page.locator('#flPdfRealTest img.site-catalog-page-image')).toBeVisible();
+  const workerSrc=await page.evaluate(()=>window.__pdfReaderOptions?.workerSrc);
+  expect(workerSrc).toBeUndefined(); // This test loads the real PDF.js, not a mock.
+});
+
 test('customer gate can be enabled and disabled',async({page})=>{
   await installSupabaseMock(page);
   await page.goto(base,{waitUntil:'domcontentloaded'});
