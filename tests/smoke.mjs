@@ -393,6 +393,49 @@ assert.match(read('admin-import.js'), /xlsx-0\.20\.3/);
   assert.equal(resolve({model:'OTHER'},ids,codes).id,'c');
   assert.equal(resolve({model:'NEW'},ids,codes),null);
 }
+// Step 13: import preview estimates reflect the selected mode without modifying products.
+{
+  const source=read('admin-import.js');
+  const block=(startMark,endMark)=>{
+    const start=source.indexOf(startMark),end=source.indexOf(endMark,start);
+    assert.ok(start>=0&&end>start,'Missing import preview logic: '+startMark);
+    return source.slice(start,end);
+  };
+  const resolver=block('  function resolveImportedProduct(', '  async function saveImportedProductGallery(');
+  const preview=block('  function previewProductImportCounts(', '  const EMBEDDED_EXCEL_TEMPLATE_B64');
+  const existing=[{id:'a',model:'D'},{id:'b',model:'D'},{id:'c',model:'U'}];
+  const mod=vm.runInNewContext(resolver+preview+'\n({previewProductImportCounts,productImportPreviewHtml})',{
+    products:existing,
+    importKey:value=>String(value||'').trim().toLowerCase(),
+    esc:value=>String(value??'')
+  });
+  const makeRow=(name,model,product_id='')=>({name,model,product_id,imageSources:[],unresolvedImages:[]});
+  const plan={total:5,resolvedImages:0,missingImages:0,sections:[{
+    name:'ثريات',categoryMeta:null,products:[
+      makeRow('جديد','N'),makeRow('موجود','U'),makeRow('مكرر','D'),
+      makeRow('معرف غير صحيح','U','missing'),makeRow('معرف صحيح','D','a')
+    ]
+  }]};
+  const upsert=mod.previewProductImportCounts(plan,'upsert');
+  assert.equal(upsert.created,1);
+  assert.equal(upsert.updated,2);
+  assert.equal(upsert.skipped,0);
+  assert.equal(upsert.conflicts,2);
+  const newOnly=mod.previewProductImportCounts(plan,'new_only');
+  assert.equal(newOnly.created,1);
+  assert.equal(newOnly.updated,0);
+  assert.equal(newOnly.skipped,2);
+  assert.equal(newOnly.conflicts,2);
+  const html=mod.productImportPreviewHtml(plan,'upsert');
+  assert.match(html,/تحديث المنتجات المطابقة وإضافة الجديدة/);
+  assert.match(html,/مع الاحتفاظ بالمنتجات الأخرى/);
+  assert.match(html,/تعارضات تحتاج المراجعة/);
+  assert.match(html,/الأعداد تقديرية/);
+  assert.match(mod.productImportPreviewHtml(plan,'new_only'),/المنتجات الموجودة لن تُحدّث/);
+  assert.match(source,/request!==fileSelection/,'Old file reads must not replace the current preview');
+  assert.match(source,/mode\?\.addEventListener\('change'/,'Changing import mode must refresh the preview');
+}
+
 // Step 12: preserve owner-managed filter IDs while recognizing legacy specification labels.
 {
   const from=app.indexOf('  const PRODUCT_SPEC_LABELS =');

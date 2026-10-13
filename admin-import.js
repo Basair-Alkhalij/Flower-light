@@ -343,11 +343,41 @@
     throw new Error('مصدر صورة غير معروف');
   }
 
-  function productImportPreviewHtml(plan){
+  function previewProductImportCounts(plan,mode='upsert'){
+    const idMap=new Map(products.map(product=>[String(product.id),product]));
+    const codeMap=new Map();
+    for(const product of products){
+      const key=importKey(product.model);
+      if(!key)continue;
+      if(!codeMap.has(key))codeMap.set(key,[]);
+      codeMap.get(key).push(product);
+    }
+    const counts={created:0,updated:0,skipped:0,conflicts:0,conflictRows:[]};
+    for(const section of plan.sections){
+      for(const row of section.products){
+        try{
+          const existing=resolveImportedProduct(row,idMap,codeMap);
+          if(!existing)counts.created++;
+          else if(mode==='new_only')counts.skipped++;
+          else counts.updated++;
+        }catch(error){
+          counts.conflicts++;
+          if(counts.conflictRows.length<5)counts.conflictRows.push(section.name+' / '+row.name+': '+error.message);
+        }
+      }
+    }
+    return counts;
+  }
+
+  function productImportPreviewHtml(plan,mode='upsert'){
+    const counts=previewProductImportCounts(plan,mode);
     const rows=plan.sections.map(section=>`<div class="fl-import-section"><strong>${esc(section.name)}</strong><span>${section.products.length} منتج</span><small>${section.products.reduce((n,p)=>n+p.imageSources.length,0)} صور جاهزة${section.products.some(p=>p.unresolvedImages.length)?' · يوجد صور غير موجودة':''}</small></div>`).join('');
     const warnings=plan.sections.flatMap(s=>s.products.filter(p=>p.unresolvedImages.length).map(p=>`${s.name} / ${p.name}: ${p.unresolvedImages.join('، ')}`)).slice(0,8);
     const catInfo=plan.sections.filter(section=>section.categoryMeta).length;
-    return `${catInfo?'<div class="fl-cloud-note">سيتم تطبيق الأسماء الإنجليزية ووصف الأقسام وترتيبها من ورقة «بيانات الأقسام». راجع الأرقام قبل الاستيراد؛ الأصغر يظهر أولًا، والأقسام والكتالوجات تستخدم الترتيب نفسه.</div>':''}<div class="fl-import-summary"><div><strong>${plan.sections.length}</strong><span>أقسام</span></div><div><strong>${plan.total}</strong><span>منتجات</span></div><div><strong>${plan.resolvedImages}</strong><span>صور جاهزة</span></div><div><strong>${plan.missingImages}</strong><span>صور مفقودة</span></div></div><div class="fl-import-sections">${rows}</div>${warnings.length?`<div class="fl-cloud-note bad"><b>تنبيه صور:</b><br>${warnings.map(esc).join('<br>')}${plan.missingImages>warnings.length?'<br>…':''}</div>`:''}`;
+    const summary=`<div class="fl-import-summary"><div><strong>${counts.created}</strong><span>متوقع إضافتها</span></div><div><strong>${counts.updated}</strong><span>متوقع تحديثها</span></div><div><strong>${counts.skipped}</strong><span>متوقع تخطيها</span></div><div><strong>${counts.conflicts}</strong><span>تعارضات</span></div></div>`;
+    const note=mode==='new_only'?'سيتم إضافة المنتجات الجديدة فقط. المنتجات الموجودة لن تُحدّث.':'سيتم تحديث المنتجات المطابقة وإضافة الجديدة، مع الاحتفاظ بالمنتجات الأخرى غير الموجودة في الملف.';
+    const conflictNote=counts.conflicts?`<div class="fl-cloud-note bad"><b>تعارضات تحتاج المراجعة:</b> لن تُحدّث هذه الصفوف تلقائيًا.<br>${counts.conflictRows.map(esc).join('<br>')}${counts.conflicts>counts.conflictRows.length?'<br>…':''}</div>`:'';
+    return `<div class="fl-cloud-note"><b>${esc(note)}</b><br><small>الأعداد تقديرية قبل الاستيراد؛ قد تتغير عند وجود صفوف متكررة داخل الملف أو عند تعذّر رفع الصور أو حفظ البيانات.</small></div>${summary}${catInfo?'<div class="fl-cloud-note">تحتوي ورقة «بيانات الأقسام» على إعدادات قد تُحدّث أسماء الأقسام ووصفها وترتيبها. راجعها قبل الاستيراد.</div>':''}<div class="fl-import-summary"><div><strong>${plan.sections.length}</strong><span>أقسام</span></div><div><strong>${plan.total}</strong><span>منتجات بالملف</span></div><div><strong>${plan.resolvedImages}</strong><span>صور جاهزة</span></div><div><strong>${plan.missingImages}</strong><span>صور مفقودة</span></div></div><div class="fl-import-sections">${rows}</div>${conflictNote}${warnings.length?`<div class="fl-cloud-note bad"><b>تنبيه صور:</b><br>${warnings.map(esc).join('<br>')}${plan.missingImages>warnings.length?'<br>…':''}</div>`:''}`;
   }
 
 
@@ -462,20 +492,32 @@
   function openProductExcelImport(){
     currentProductImportPlan=null;
     openModal('استيراد المنتجات من Excel',`<div class="fl-excel-import">
-      <div class="fl-cloud-note"><b>قالب شامل بالعربي والإنجليزي:</b> اسم ووصف باللغتين + جميع المواصفات الفنية + الأسعار والصور والتوفر.<br><b>طريقتان مدعومتان:</b><br>1) ملف Excel وفيه الصور داخل الخلايا أو ملصوقة داخل صفوف المنتجات.<br>2) ملف ZIP يحتوي Excel + مجلد images، وتكتب أسماء الصور في أعمدة «الصورة 1…4».</div>
-      <div class="fl-cloud-field full"><label>اختر Excel أو ZIP</label><input id="flExcelImportFile" type="file" accept=".xlsx,.xls,.zip,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip"></div>
-      <div class="fl-cloud-field full"><label>طريقة التعامل مع الأكواد الموجودة</label><select id="flExcelImportMode"><option value="upsert">تحديث المنتج إذا كان الكود موجودًا + إضافة الجديد</option><option value="new_only">إضافة الجديد فقط وتخطي الأكواد الموجودة</option></select></div>
-      <div id="flExcelImportPreview" class="fl-import-preview"><div class="fl-cloud-empty">اختر الملف وسيظهر ملخص قبل الاستيراد.</div></div>
+      <div class="fl-cloud-note"><b>ثلاث خطوات:</b> اختر ملف Excel أو ZIP، راجع المعاينة، ثم ابدأ الاستيراد.<br><small>ملف ZIP مخصص عندما تكون الصور ملفات منفصلة داخل مجلد images؛ أما Excel فيمكن أن يتضمن روابط الصور أو صورًا مرفقة.</small></div>
+      <div class="fl-cloud-field full"><label for="flExcelImportFile">1. اختر Excel أو ZIP</label><input id="flExcelImportFile" type="file" accept=".xlsx,.xls,.zip,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip"></div>
+      <div class="fl-cloud-field full"><label for="flExcelImportMode">2. طريقة الاستيراد</label><select id="flExcelImportMode"><option value="upsert">تحديث الموجود وإضافة الجديد (الافتراضي)</option><option value="new_only">إضافة الجديد فقط، دون تحديث الموجود</option></select></div>
+      <div id="flExcelImportPreview" class="fl-import-preview"><div class="fl-cloud-empty">ستظهر معاينة المنتجات والصور والتعارضات بعد اختيار الملف.</div></div>
       <div id="flExcelImportProgress" class="fl-import-progress" hidden><div><span id="flExcelImportProgressText">جاري الاستيراد…</span><strong id="flExcelImportProgressCount">0/0</strong></div><progress id="flExcelImportProgressBar" max="100" value="0"></progress></div>
-      <div class="fl-cloud-dialog-actions"><button class="fl-cloud-btn primary" id="flExcelImportStart" type="button" disabled>استيراد الآن</button><button class="fl-cloud-btn" id="flExcelImportCancel" type="button">إلغاء</button></div>
+      <div class="fl-cloud-dialog-actions"><button class="fl-cloud-btn primary" id="flExcelImportStart" type="button" disabled>3. بدء الاستيراد</button><button class="fl-cloud-btn" id="flExcelImportCancel" type="button">إلغاء</button></div>
     </div>`);
     document.getElementById('flExcelImportCancel')?.addEventListener('click',closeModal);
-    const input=document.getElementById('flExcelImportFile'),start=document.getElementById('flExcelImportStart'),preview=document.getElementById('flExcelImportPreview');
+    const input=document.getElementById('flExcelImportFile'),start=document.getElementById('flExcelImportStart'),preview=document.getElementById('flExcelImportPreview'),mode=document.getElementById('flExcelImportMode');
+    let fileSelection=0;
+    mode?.addEventListener('change',()=>{
+      if(currentProductImportPlan)preview.innerHTML=productImportPreviewHtml(currentProductImportPlan,mode.value);
+    });
     input?.addEventListener('change',async()=>{
-      const file=input.files?.[0];currentProductImportPlan=null;start.disabled=true;if(!file)return;
+      const request=++fileSelection;
+      const file=input.files?.[0];currentProductImportPlan=null;start.disabled=true;
+      if(!file){preview.innerHTML='<div class="fl-cloud-empty">اختر ملف Excel أو ZIP لمعاينته.</div>';return;}
       preview.innerHTML='<div class="fl-cloud-empty">جاري قراءة Excel والصور…</div>';
-      try{const plan=await parseProductImportFile(file);currentProductImportPlan=plan;preview.innerHTML=productImportPreviewHtml(plan);start.disabled=false;}
-      catch(error){preview.innerHTML=`<div class="fl-cloud-note bad">${esc(error?.message||error)}</div>`;}
+      try{
+        const plan=await parseProductImportFile(file);
+        if(request!==fileSelection)return;
+        currentProductImportPlan=plan;preview.innerHTML=productImportPreviewHtml(plan,mode?.value||'upsert');start.disabled=false;
+      }catch(error){
+        if(request!==fileSelection)return;
+        preview.innerHTML=`<div class="fl-cloud-note bad">${esc(error?.message||error)}</div>`;
+      }
     });
     start?.addEventListener('click',()=>runProductExcelImport());
   }
