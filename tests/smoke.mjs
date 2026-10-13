@@ -378,7 +378,7 @@ assert.match(read('admin-import.js'), /xlsx-0\.20\.3/);
 // Behavioral matching regression: evaluate the real import resolver in isolation.
 {
   const from=adminImport.indexOf('  function resolveImportedProduct(');
-  const to=adminImport.indexOf('\n  async function runProductExcelImport(',from);
+  const to=adminImport.indexOf('\n  }\n',from)+5;
   assert.ok(from>=0&&to>from,'Missing product match resolver');
   const source=adminImport.slice(from,to).trim();
   const importKey=value=>String(value||'').trim().toLowerCase().replace(/[\s_\-\/]+/g,' ');
