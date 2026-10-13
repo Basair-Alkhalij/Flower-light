@@ -569,12 +569,13 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
       : `تكبير صورة ${item.caption || item.alt || 'المنتج'}`);
 
     const image = document.createElement('img');
-    image.src = item.image_thumb || item.image;
     image.alt = item.alt;
     image.loading = imageLoading;
     image.decoding = 'async';
-    // Later product cards should never compete with visible images on mobile.
+    // Configure lazy loading and priority BEFORE assigning src so the request
+    // does not start eagerly while the card is being built.
     if (index >= 4) image.fetchPriority = 'low';
+    image.src = item.image_thumb || item.image;
 
     const badge = document.createElement('span');
     badge.className = 'image-zoom-badge';
@@ -2169,10 +2170,12 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
   }
 
   function preloadLightboxNeighbors() {
-    if (!lightboxNavigationAvailable()) return;
+    if (!lightboxNavigationAvailable() || navigator.connection?.saveData) return;
     [neighborLightboxImage(-1), neighborLightboxImage(1)].forEach(src => {
       if (!src) return;
       const image = new Image();
+      image.fetchPriority = 'low';
+      image.decoding = 'async';
       image.src = src;
     });
   }
