@@ -343,6 +343,32 @@
     throw new Error('مصدر صورة غير معروف');
   }
 
+  function previewProductImportCounts(plan,mode='upsert'){
+    const idMap=new Map(products.map(product=>[String(product.id),product]));
+    const codeMap=new Map();
+    for(const product of products){
+      const key=importKey(product.model);
+      if(!key)continue;
+      if(!codeMap.has(key))codeMap.set(key,[]);
+      codeMap.get(key).push(product);
+    }
+    const counts={created:0,updated:0,skipped:0,conflicts:0,conflictRows:[]};
+    for(const section of plan.sections){
+      for(const row of section.products){
+        try{
+          const existing=resolveImportedProduct(row,idMap,codeMap);
+          if(!existing)counts.created++;
+          else if(mode==='new_only')counts.skipped++;
+          else counts.updated++;
+        }catch(error){
+          counts.conflicts++;
+          if(counts.conflictRows.length<5)counts.conflictRows.push(section.name+' / '+row.name+': '+error.message);
+        }
+      }
+    }
+    return counts;
+  }
+
   function productImportPreviewHtml(plan){
     const rows=plan.sections.map(section=>`<div class="fl-import-section"><strong>${esc(section.name)}</strong><span>${section.products.length} منتج</span><small>${section.products.reduce((n,p)=>n+p.imageSources.length,0)} صور جاهزة${section.products.some(p=>p.unresolvedImages.length)?' · يوجد صور غير موجودة':''}</small></div>`).join('');
     const warnings=plan.sections.flatMap(s=>s.products.filter(p=>p.unresolvedImages.length).map(p=>`${s.name} / ${p.name}: ${p.unresolvedImages.join('، ')}`)).slice(0,8);
