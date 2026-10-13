@@ -683,6 +683,36 @@ test('design footer label and number replace website URL and hide when empty',as
   expect(result.withoutNumber).not.toContain('مندوب الجملة');
 });
 
+test('acceptance: Excel export contains all 1005 product rows and preserves identifiers',async({page})=>{
+  await installSupabaseMock(page);
+  await page.goto(new URL('?admin=1',base).href,{waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>Boolean(window.FL_ADMIN_CORE&&window.FL_ADMIN_IMPORT));
+  const result=await page.evaluate(async()=>{
+    const core=window.FL_ADMIN_CORE;
+    core.categories=[{id:'section-large',name:'Large Section',sort_order:1,is_visible:true}];
+    core.productImages=[];
+    core.products=Array.from({length:1005},(_,i)=>({
+      id:'id-'+i,category_id:'section-large',name:'Product '+i,model:'SKU-'+i,
+      caption:'Description '+i,price:100+i,sort_order:i,is_visible:true,specifications:[]
+    }));
+    const sheets={};
+    window.JSZip={};
+    window.XLSX={utils:{
+      book_new:()=>({SheetNames:[],Sheets:{}}),
+      aoa_to_sheet:rows=>({rows}),
+      book_append_sheet:(wb,ws,name)=>{wb.SheetNames.push(name);wb.Sheets[name]=ws;sheets[name]=ws.rows;},
+      encode_col:n=>{let out='';for(let k=n+1;k;k=Math.floor((k-1)/26))out=String.fromCharCode(65+(k-1)%26)+out;return out;}
+    },writeFile:(wb,name)=>{window.__excelExport={sheets:wb.Sheets,name};}};
+    await window.FL_ADMIN_IMPORT.downloadExcelTemplate();
+    const all=window.__excelExport?.sheets?.['Large Section']?.rows||[];
+    return {count:all.length-1,first:all[1]?.slice(0,4),last:all[1005]?.slice(0,4),fileName:window.__excelExport?.name||''};
+  });
+  expect(result.count).toBe(1005);
+  expect(result.first).toEqual(['id-0','Product 0','','SKU-0']);
+  expect(result.last).toEqual(['id-1004','Product 1004','','SKU-1004']);
+  expect(result.fileName).toMatch(/Flower-Light-Products-.*\.xlsx$/);
+});
+
 test('admin routes are isolated and noindex',async({page})=>{
   await installSupabaseMock(page);
   await page.goto(new URL('?admin=1',base).href,{waitUntil:'domcontentloaded'});

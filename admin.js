@@ -1142,15 +1142,33 @@
     if(selectedProductNode.startsWith('category:')) selectedCategory=selectedProductNode.slice(9);
   }
 
+  // Supabase/PostgREST commonly limits each response to 1,000 rows.
+  // Read every page before replacing the live admin arrays so exports are complete.
+  async function loadAllCatalogRows(table,columns='*'){
+    const pageSize=1000;
+    const all=[];
+    for(let start=0;;start+=pageSize){
+      const {data,error}=await db.from(table).select(columns)
+        .order('sort_order',{ascending:true})
+        .order('created_at',{ascending:true})
+        .order('id',{ascending:true})
+        .range(start,start+pageSize-1);
+      if(error)return {data:null,error};
+      if(!Array.isArray(data))return {data:null,error:new Error(`تعذر التحقق من اكتمال بيانات ${table}`)};
+      all.push(...data);
+      if(data.length<pageSize)return {data:all,error:null};
+    }
+  }
+
   async function loadCatalogAdminData(){
     const allowed=allowedAdminViews();
     const needCatalog=allowed.has('sections') || allowed.has('products');
     if(!needCatalog){categories=[];products=[];productImages=[];siteCatalogs=[];normalizeCatalogSelections();return;}
     const [{data:c,error:ce},{data:p,error:pe},{data:pi,error:pie},{data:sc,error:sce}] = await Promise.all([
-      db.from('categories').select('*').order('sort_order',{ascending:true}).order('created_at',{ascending:true}),
-      db.from('products').select('*').order('sort_order',{ascending:true}).order('created_at',{ascending:true}),
-      db.from('product_images').select('id,product_id,image_path,sort_order,is_primary,created_at').order('sort_order',{ascending:true}).order('created_at',{ascending:true}),
-      db.from('site_catalogs').select('*').order('sort_order',{ascending:true}).order('created_at',{ascending:true})
+      loadAllCatalogRows('categories'),
+      loadAllCatalogRows('products'),
+      loadAllCatalogRows('product_images','id,product_id,image_path,sort_order,is_primary,created_at'),
+      loadAllCatalogRows('site_catalogs')
     ]);
     if(ce||pe||pie) throw ce||pe||pie;
     const catalogMissing=sce && ['42P01','PGRST205'].includes(String(sce?.code||''));

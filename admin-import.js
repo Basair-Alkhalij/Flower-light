@@ -381,7 +381,12 @@
     if(button){button.disabled=true;button.classList.add('loading');const title=button.querySelector('.fl-product-tool-title');if(title)title.textContent='جاري تجهيز Excel...';}
     try{
       await loadProductImportLibraries();
+      // Fail closed instead of downloading a spreadsheet that silently omits products.
+      const categoryIds=new Set(categories.map(row=>String(row.id)));
+      const unmatched=products.filter(row=>!categoryIds.has(String(row.category_id)));
+      if(unmatched.length)throw new Error(`تعذر تصدير ${unmatched.length} منتج لعدم العثور على أقسامها. حدّث البيانات ثم حاول مرة أخرى.`);
       const wb=window.XLSX.utils.book_new();const usedNames=new Set([CATEGORY_EXCEL_SHEET.toLowerCase()]);const categoryRows=[];
+      let exportedProductCount=0;
       const instructions=[
         ['بصائر الخليج — قالب شامل لاستيراد منتجات Flower Light'],
         ['كل ورقة بعد هذه التعليمات تمثل قسمًا في الموقع. املأ المنتجات في ورقة القسم المناسبة فقط.'],
@@ -416,6 +421,7 @@
         const specDefs=[...standardSpecDefs];const seen=new Set(standardSpecDefs.map(x=>x.key));
         rows.forEach(product=>normalizeSpecifications(product.specifications).forEach(spec=>{const key=spec.key||excelSpecKey(spec);if(!key||seen.has(key))return;seen.add(key);const en=(Array.isArray(product.specifications_en)?product.specifications_en:[]).find(item=>item?.key===spec.key);specDefs.push({key,label:spec.label,unit:spec.unit,english:en?.label||''});}));
         const headers=liveExcelHeaders(specDefs.flatMap(spec=>[excelSpecHeader(spec),englishSpecHeader(spec,spec.english)]));
+        exportedProductCount+=rows.length;
         const data=rows.map(product=>{
           const gallery=adminGalleryRows(product).slice(0,4);const images=gallery.map(item=>imageUrl(item.image_path)).filter(Boolean);
           while(images.length<4)images.push('');
@@ -445,6 +451,7 @@
       if(categoryRows.length)categoriesSheet['!autofilter']={ref:`A1:H${categoryRows.length+1}`};
       window.XLSX.utils.book_append_sheet(wb,categoriesSheet,CATEGORY_EXCEL_SHEET);
       const stamp=new Date().toISOString().slice(0,10);
+      if(exportedProductCount!==products.length)throw new Error('لم يكتمل تصدير جميع المنتجات؛ لم يتم إنشاء الملف.');
       window.XLSX.writeFile(wb,`Flower-Light-Products-${stamp}.xlsx`,{compression:true});
       notify(`تم تجهيز ملف Excel بكل المنتجات الحالية (${products.length} منتج)`);
     }catch(error){console.warn('[Excel export] failed',error);notify('تعذر تجهيز ملف Excel: '+(error?.message||error));}
