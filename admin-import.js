@@ -518,6 +518,20 @@
     return byId||matches[0]||null;
   }
 
+  async function saveImportedProductGallery(saved,imagePaths,previousImagePaths,replaceOldImages){
+    const {error}=await db.rpc('set_product_gallery_for_admin',{p_product_id:saved.id,p_image_paths:imagePaths,p_primary_path:imagePaths[0]});
+    if(error)throw error;
+    if(!replaceOldImages)return;
+    // Remove superseded image pairs only after the new gallery has been saved.
+    // Images still used by another product must remain in Storage.
+    const removable=previousImagePaths.filter(path=>isStoragePath(path)&&!imagePaths.includes(path)&&!storagePathUsedByOtherProduct(path,saved.id));
+    if(!removable.length)return;
+    try{
+      const {error:removeError}=await db.storage.from(bucket).remove([...new Set(removable.flatMap(productStoragePairPaths))]);
+      if(removeError)console.warn('[Excel import] old image cleanup failed',removeError);
+    }catch(error){console.warn('[Excel import] old image cleanup failed',error);}
+  }
+
   async function runProductExcelImport(){
     const plan=currentProductImportPlan;if(!plan)return;const start=document.getElementById('flExcelImportStart'),cancel=document.getElementById('flExcelImportCancel');
     const mode=document.getElementById('flExcelImportMode')?.value||'upsert';const progress=document.getElementById('flExcelImportProgress'),bar=document.getElementById('flExcelImportProgressBar'),text=document.getElementById('flExcelImportProgressText'),count=document.getElementById('flExcelImportProgressCount');
@@ -573,16 +587,7 @@
           if(existing){const {data,error}=await db.from('products').update(payload).eq('id',existing.id).select().single();if(error)throw error;saved=data;updated++;}
           else{const {data,error}=await db.from('products').insert({...payload,image_path:imagePaths[0]}).select().single();if(error)throw error;saved=data;createdId=saved.id;created++;newSort+=10;}
           if((row.imageSources.length&&!exportedUrlsUnchanged)||!existing){
-            const {error}=await db.rpc('set_product_gallery_for_admin',{p_product_id:saved.id,p_image_paths:imagePaths,p_primary_path:imagePaths[0]});if(error)throw error;
-            // Only remove superseded image pairs after the gallery update succeeded.
-            // Do not touch images that are still referenced by another product.
-            if(existing&&row.imageSources.length&&!exportedUrlsUnchanged){
-              const removable=previousImagePaths.filter(path=>isStoragePath(path)&&!imagePaths.includes(path)&&!storagePathUsedByOtherProduct(path,saved.id));
-              if(removable.length){
-                try{const {error:removeError}=await db.storage.from(bucket).remove([...new Set(removable.flatMap(productStoragePairPaths))]);if(removeError)console.warn('[Excel import] old image cleanup failed',removeError);}
-                catch(error){console.warn('[Excel import] old image cleanup failed',error);}
-              }
-            }
+            await saveImportedProductGallery(saved,imagePaths,previousImagePaths,Boolean(existing&&row.imageSources.length&&!exportedUrlsUnchanged));
           }
           idMap.set(String(saved.id),saved);if(importText(saved.model)){
             const key=importKey(saved.model);
