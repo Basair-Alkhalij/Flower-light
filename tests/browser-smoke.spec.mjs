@@ -1235,6 +1235,30 @@ test('acceptance: product PDF export produces a real readable PDF header',async(
 });
 
 
+test('acceptance: multi-product catalog PDF downloads a valid multi-page document',async({page})=>{
+  await installSupabaseMock(page);
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await injectCatalogFixtures(page);
+  await page.evaluate(()=>{
+    const section=window.FLOWER_LIGHT_PRODUCTS.extraSections[0];
+    section.items.push({...section.items[0],id:'prod-test-2',model:'WL-TEST-2',name:'جداري تجريبي ثان'});
+    window.flRenderProducts();
+  });
+  await page.locator('#openProducts').click();
+  await expect(page.locator('#catalogDownloadPdf')).toBeEnabled();
+  await page.locator('#catalogDownloadPdf').click();
+  await expect(page.locator('#exportChoiceModal')).toHaveClass(/open/);
+  const downloadPromise=page.waitForEvent('download',{timeout:45000});
+  await page.locator('#exportChoicePdf').click();
+  const download=await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/\.pdf$/);
+  const bytes=fs.readFileSync(await download.path());
+  expect(bytes.length).toBeGreaterThan(15000);
+  const pdf=bytes.toString('latin1');
+  expect(pdf.startsWith('%PDF-')).toBe(true);
+  expect((pdf.match(/\/Type \/Page\b/g)||[]).length).toBeGreaterThanOrEqual(2);
+});
+
 test('security: missing Turnstile site key must never fall back to direct customer insert',async({page})=>{
   await installSupabaseMock(page);
   const configSource=fs.readFileSync(new URL('../config.js',import.meta.url),'utf8');
