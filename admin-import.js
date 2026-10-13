@@ -492,20 +492,32 @@
   function openProductExcelImport(){
     currentProductImportPlan=null;
     openModal('استيراد المنتجات من Excel',`<div class="fl-excel-import">
-      <div class="fl-cloud-note"><b>قالب شامل بالعربي والإنجليزي:</b> اسم ووصف باللغتين + جميع المواصفات الفنية + الأسعار والصور والتوفر.<br><b>طريقتان مدعومتان:</b><br>1) ملف Excel وفيه الصور داخل الخلايا أو ملصوقة داخل صفوف المنتجات.<br>2) ملف ZIP يحتوي Excel + مجلد images، وتكتب أسماء الصور في أعمدة «الصورة 1…4».</div>
-      <div class="fl-cloud-field full"><label>اختر Excel أو ZIP</label><input id="flExcelImportFile" type="file" accept=".xlsx,.xls,.zip,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip"></div>
-      <div class="fl-cloud-field full"><label>طريقة التعامل مع الأكواد الموجودة</label><select id="flExcelImportMode"><option value="upsert">تحديث المنتج إذا كان الكود موجودًا + إضافة الجديد</option><option value="new_only">إضافة الجديد فقط وتخطي الأكواد الموجودة</option></select></div>
-      <div id="flExcelImportPreview" class="fl-import-preview"><div class="fl-cloud-empty">اختر الملف وسيظهر ملخص قبل الاستيراد.</div></div>
+      <div class="fl-cloud-note"><b>ثلاث خطوات:</b> اختر ملف Excel أو ZIP، راجع المعاينة، ثم ابدأ الاستيراد.<br><small>ملف ZIP مخصص عندما تكون الصور ملفات منفصلة داخل مجلد images؛ أما Excel فيمكن أن يتضمن روابط الصور أو صورًا مرفقة.</small></div>
+      <div class="fl-cloud-field full"><label for="flExcelImportFile">1. اختر Excel أو ZIP</label><input id="flExcelImportFile" type="file" accept=".xlsx,.xls,.zip,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip"></div>
+      <div class="fl-cloud-field full"><label for="flExcelImportMode">2. طريقة الاستيراد</label><select id="flExcelImportMode"><option value="upsert">تحديث الموجود وإضافة الجديد (الافتراضي)</option><option value="new_only">إضافة الجديد فقط، دون تحديث الموجود</option></select></div>
+      <div id="flExcelImportPreview" class="fl-import-preview"><div class="fl-cloud-empty">ستظهر معاينة المنتجات والصور والتعارضات بعد اختيار الملف.</div></div>
       <div id="flExcelImportProgress" class="fl-import-progress" hidden><div><span id="flExcelImportProgressText">جاري الاستيراد…</span><strong id="flExcelImportProgressCount">0/0</strong></div><progress id="flExcelImportProgressBar" max="100" value="0"></progress></div>
-      <div class="fl-cloud-dialog-actions"><button class="fl-cloud-btn primary" id="flExcelImportStart" type="button" disabled>استيراد الآن</button><button class="fl-cloud-btn" id="flExcelImportCancel" type="button">إلغاء</button></div>
+      <div class="fl-cloud-dialog-actions"><button class="fl-cloud-btn primary" id="flExcelImportStart" type="button" disabled>3. بدء الاستيراد</button><button class="fl-cloud-btn" id="flExcelImportCancel" type="button">إلغاء</button></div>
     </div>`);
     document.getElementById('flExcelImportCancel')?.addEventListener('click',closeModal);
-    const input=document.getElementById('flExcelImportFile'),start=document.getElementById('flExcelImportStart'),preview=document.getElementById('flExcelImportPreview');
+    const input=document.getElementById('flExcelImportFile'),start=document.getElementById('flExcelImportStart'),preview=document.getElementById('flExcelImportPreview'),mode=document.getElementById('flExcelImportMode');
+    let fileSelection=0;
+    mode?.addEventListener('change',()=>{
+      if(currentProductImportPlan)preview.innerHTML=productImportPreviewHtml(currentProductImportPlan,mode.value);
+    });
     input?.addEventListener('change',async()=>{
-      const file=input.files?.[0];currentProductImportPlan=null;start.disabled=true;if(!file)return;
+      const request=++fileSelection;
+      const file=input.files?.[0];currentProductImportPlan=null;start.disabled=true;
+      if(!file){preview.innerHTML='<div class="fl-cloud-empty">اختر ملف Excel أو ZIP لمعاينته.</div>';return;}
       preview.innerHTML='<div class="fl-cloud-empty">جاري قراءة Excel والصور…</div>';
-      try{const plan=await parseProductImportFile(file);currentProductImportPlan=plan;preview.innerHTML=productImportPreviewHtml(plan);start.disabled=false;}
-      catch(error){preview.innerHTML=`<div class="fl-cloud-note bad">${esc(error?.message||error)}</div>`;}
+      try{
+        const plan=await parseProductImportFile(file);
+        if(request!==fileSelection)return;
+        currentProductImportPlan=plan;preview.innerHTML=productImportPreviewHtml(plan,mode?.value||'upsert');start.disabled=false;
+      }catch(error){
+        if(request!==fileSelection)return;
+        preview.innerHTML=`<div class="fl-cloud-note bad">${esc(error?.message||error)}</div>`;
+      }
     });
     start?.addEventListener('click',()=>runProductExcelImport());
   }
