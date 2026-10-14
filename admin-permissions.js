@@ -50,7 +50,10 @@
       const save=document.getElementById('flPermissionsSave');
       const email=core.managedAdmin2Email;
       if(!email){notify('أنشئ حساب الأدمن أولًا من بيانات تسجيل الدخول');return;}
-      const selected=[...body.querySelectorAll('input[name="admin2_permission"]:checked')].map(input=>input.value);
+      // Ignore forged and disabled keys; only current server-supported permissions
+      // may be submitted while the new areas await an audited RLS migration.
+      const selected=[...body.querySelectorAll('input[name="admin2_permission"]:checked')]
+        .map(input=>input.value).filter(key=>delegatablePermissionKeys.has(key));
       save.disabled=true;save.textContent='جاري الحفظ...';
       try{
         const {data,error}=await core.db.rpc('owner_set_admin2_settings',{p_email:email,p_permissions:selected});
