@@ -70,6 +70,9 @@ begin
   if p_email is null or position('@' in btrim(p_email)) < 2 then
     raise exception 'Enter a valid admin=2 email' using errcode='22023';
   end if;
+  if cardinality(coalesce(p_permissions,'{}'::text[]))>12 then
+    raise exception 'Too many permissions' using errcode='22023';
+  end if;
   if exists(
     select 1 from unnest(coalesce(p_permissions,'{}'::text[])) as x(permission)
     where x.permission is null or x.permission <> all(v_allowed)
@@ -113,6 +116,10 @@ grant execute on function public.owner_set_admin2_settings(text,text[]) to authe
 
 -- D. Business rows: delegate only with the independent business-settings key.
 -- Owner-only policies remain in place. No anon or PUBLIC write grants.
+-- A repeat execution replaces only these named delegated policies.
+drop policy if exists "Subadmin business privacy by section" on public.business_privacy_settings;
+drop policy if exists "Subadmin public company fields by section" on public.business_public_fields;
+drop policy if exists "Subadmin bank accounts by section" on public.business_bank_accounts;
 create policy "Subadmin business privacy by section"
 on public.business_privacy_settings for all to authenticated
 using (public.has_admin_permission('business-settings'))
@@ -181,12 +188,129 @@ begin
   end if;
   if exists(
     select 1 from jsonb_array_elements(p_custom_filters) as x(item)
-    where jsonb_typeof(x.item)<>'object'
-      or x.item->>'key' !~ '^custom_filter_[a-z0-9]+$'
-      or length(x.item->>'label') not between 1 and 50
+    where jsonb_typeof(x.item) is distinct from 'object'
+      or coalesce(x.item->>'key','') !~ '^custom_filter_[a-z0-9]+
+  ) then
+    raise exception 'Invalid custom filter definition' using errcode='22023';
+  end if;
+  if exists(
+    select 1 from jsonb_array_elements(p_custom_filters) as x(item)
+    group by item->>'key' having count(*)>1
+  ) then
+    raise exception 'Duplicate custom filter ID' using errcode='22023';
+  end if;
+  if exists (
+    select 1 from unnest(p_filter_keys) as k(key)
+    where k.key is null or (
+      k.key <> all(v_standard)
+      and not exists(
+        select 1 from jsonb_array_elements(p_custom_filters) as x(item)
+        where x.item->>'key'=k.key
+      )
+    )
+  ) or cardinality(p_filter_keys) <> (select count(distinct k.key) from unnest(p_filter_keys) k(key))
+  then
+    raise exception 'Invalid or duplicate active filter' using errcode='22023';
+  end if;
+  update public.site_settings
+  set catalog_filter_keys=p_filter_keys, catalog_custom_filters=p_custom_filters
+  where id=1;
+  if not found then raise exception 'Site settings are missing' using errcode='P0002'; end if;
+end;
+$fn$;
+
+-- Template fields are changed one at a time; no access to other site settings.
+create or replace function public.admin_set_template_field(
+  p_key text, p_value text
+) returns void language plpgsql security definer
+set search_path=public,pg_temp as $fn$
+begin
+  if not public.has_admin_permission('template-settings') then
+    raise exception 'Template-settings permission required' using errcode='42501';
+  end if;
+  if p_key is null or p_key not in
+    ('master_barcode_path','design_footer_number','design_footer_label')
+    or p_value is null then
+    raise exception 'Invalid template field' using errcode='22023';
+  end if;
+  if p_key='master_barcode_path' then
+    if p_value<>'' and p_value !~
+      '^site-settings/master-barcode-[0-9a-fA-F-]{36}\.(png|jpg|webp|svg)$' then
+      raise exception 'Invalid barcode path' using errcode='22023';
+    end if;
+  elsif length(p_value)>40 then
+    raise exception 'Template field exceeds allowed length' using errcode='22023';
+  end if;
+  update public.site_settings set
+    master_barcode_path=case when p_key='master_barcode_path'
+      then p_value else master_barcode_path end,
+    design_footer_number=case when p_key='design_footer_number'
+      then p_value else design_footer_number end,
+    design_footer_label=case when p_key='design_footer_label'
+      then p_value else design_footer_label end
+  where id=1;
+  if not found then raise exception 'Site settings are missing' using errcode='P0002'; end if;
+end;
+$fn$;
+
+-- Postgres defaults EXECUTE to PUBLIC for new functions; revoke explicitly.
+revoke all on function public.admin_set_site_toggle(text,boolean) from public,anon;
+revoke all on function public.admin_save_catalog_filters(text[],jsonb) from public,anon;
+revoke all on function public.admin_set_template_field(text,text) from public,anon;
+grant execute on function public.admin_set_site_toggle(text,boolean) to authenticated;
+grant execute on function public.admin_save_catalog_filters(text[],jsonb) to authenticated;
+grant execute on function public.admin_set_template_field(text,text) to authenticated;
+
+-- G. Barcode files: permit only site-settings/ namespace for template editors.
+-- The product-images bucket's other folders, including site-assets, stay governed
+-- by existing policies. The server enforces folder checks even for direct API calls.
+drop policy if exists "Subadmin template barcode files" on storage.objects;
+create policy "Subadmin template barcode files"
+on storage.objects for all to authenticated
+using (
+  bucket_id='product-images'
+  and coalesce((storage.foldername(name))[1],'')='site-settings'
+  and name ~ '^site-settings/master-barcode-[0-9a-fA-F-]{36}\.(png|jpg|webp|svg)$'
+  and public.has_admin_permission('template-settings')
+)
+with check (
+  bucket_id='product-images'
+  and coalesce((storage.foldername(name))[1],'')='site-settings'
+  and name ~ '^site-settings/master-barcode-[0-9a-fA-F-]{36}\.(png|jpg|webp|svg)$'
+  and public.has_admin_permission('template-settings')
+);
+
+commit;
+
+-- READ-ONLY verification queries for a future authorized migration review:
+-- select conname, pg_get_constraintdef(oid) from pg_constraint
+--   where conrelid='public.admin_users'::regclass
+--     and conname='admin_users_permissions_check';
+-- select policyname, cmd, qual, with_check from pg_policies
+--   where schemaname='public' and tablename='site_settings';
+-- select proname, prosecdef from pg_proc where proname in
+--   ('admin_set_site_toggle','admin_save_catalog_filters','admin_set_template_field');
+--
+-- SECURITY NEGATIVE TESTS REQUIRED BEFORE THE OWNER ENABLES ANY NEW KEY:
+-- 1) anon/no-login calls to all 4 RPCs: DENIED.
+-- 2) subadmin with only 'analytics','datasheet','leads':
+--    every new settings RPC and business/bank write DENIED.
+-- 3) with ONLY search-filters: update filters allowed; changing PWA, barcode,
+--    privacy fields, banks, credentials and permissions DENIED.
+-- 4) with ONLY site-settings: toggle allowed; filters and barcode DENIED.
+-- 5) with ONLY template-settings: barcode/footers allowed; other settings
+--    and Storage outside site-settings/master-barcode-* DENIED.
+-- 6) with ONLY business-settings: business tables allowed; banks DENIED.
+-- 7) with ONLY bank-settings: banks allowed; business/privacy DENIED.
+-- 8) sections-only may not delete a category; sections + products may.
+-- 9) owner-only account management and permission grants remain DENIED.
+-- 10) verify no change to existing subadmin assignments after migration.
+
+      or length(coalesce(x.item->>'key',''))>40
+      or coalesce(length(btrim(x.item->>'label')),0) not between 1 and 50
       or (x.item - 'key' - 'label') <> '{}'::jsonb
-      or jsonb_typeof(x.item->'key')<>'string'
-      or jsonb_typeof(x.item->'label')<>'string'
+      or jsonb_typeof(x.item->'key') is distinct from 'string'
+      or jsonb_typeof(x.item->'label') is distinct from 'string'
   ) then
     raise exception 'Invalid custom filter definition' using errcode='22023';
   end if;
