@@ -30,8 +30,8 @@
   let quoteListSettingError='';
 
   async function load(){
-    if(!isPrimaryAdmin)return;
-    await window.FL_ADMIN_BUSINESS?.load();
+    if(!core.canManageSection('site-settings')&&!core.canManageSection('template-settings')&&!core.canManageSection('business-settings'))return;
+    if(core.canManageSection('business-settings'))await window.FL_ADMIN_BUSINESS?.load();
     customerLeadGateSettingError='';
     masterBarcodeSettingError='';
     designFooterNumberSettingError='';
@@ -97,9 +97,28 @@
     return path;
   }
 
+  async function saveSiteToggle(key,value){
+    if(!core.canManageSection('site-settings'))throw new Error('Site settings permission denied');
+    return isPrimaryAdmin
+      ? db.from('site_settings').upsert({id:1,[key]:value},{onConflict:'id'})
+      : db.rpc('admin_set_site_toggle',{p_key:key,p_value:value});
+  }
+  async function saveTemplateField(key,value){
+    if(!core.canManageSection('template-settings'))throw new Error('Template settings permission denied');
+    return isPrimaryAdmin
+      ? db.from('site_settings').upsert({id:1,[key]:value},{onConflict:'id'})
+      : db.rpc('admin_set_template_field',{p_key:key,p_value:value});
+  }
+  async function saveTemplateFooter(number,label){
+    if(!core.canManageSection('template-settings'))throw new Error('Template settings permission denied');
+    return isPrimaryAdmin
+      ? db.from('site_settings').upsert({id:1,design_footer_number:number,design_footer_label:label},{onConflict:'id'})
+      : db.rpc('admin_save_template_footer',{p_number:number,p_label:label});
+  }
+
   // Returns the Owner site-setting cards as one HTML string (empty for the sub-admin).
   function cardsHtml(scope='all'){
-    const leadGateCard=isPrimaryAdmin?`<form id="flCustomerLeadGateSettingsForm" class="fl-cloud-card fl-lead-gate-settings-card">
+    const leadGateCard=core.canManageSection('site-settings')?`<form id="flCustomerLeadGateSettingsForm" class="fl-cloud-card fl-lead-gate-settings-card">
       <div class="fl-credentials-card-head"><div><span class="fl-account-badge owner">دخول المنتجات</span><h3>طلب بيانات العميل قبل عرض المنتجات</h3></div></div>
       <p>تحكم من هنا في ظهور نموذج الاسم ورقم الجوال للعميل عند فتح قسم المنتجات.</p>
       ${customerLeadGateSettingError?`<div class="fl-cloud-note bad">تعذر قراءة الإعداد. شغّل <b>SUPABASE_SETUP.sql</b> في Supabase مرة واحدة ثم أعد تحميل الصفحة.</div>`:''}
@@ -110,7 +129,7 @@
       </label>
       <div class="fl-cloud-actions"><button class="fl-cloud-btn primary" id="flCustomerLeadGateSave" type="submit" ${customerLeadGateSettingError?'disabled':''}>حفظ الإعداد</button></div>
     </form>`:'';
-    const pwaInstallCard=isPrimaryAdmin?`<form id="flPwaInstallSettingsForm" class="fl-cloud-card fl-pwa-install-settings-card">
+    const pwaInstallCard=core.canManageSection('site-settings')?`<form id="flPwaInstallSettingsForm" class="fl-cloud-card fl-pwa-install-settings-card">
       <div class="fl-credentials-card-head"><div><span class="fl-account-badge owner">تطبيق الجوال</span><h3>إظهار خيار تثبيت التطبيق للعملاء</h3></div></div>
       <p>تحكم في ظهور تنبيه التثبيت للعملاء. على أندرويد والكمبيوتر لا يظهر التنبيه إلا بعد أن يعلن المتصفح نفسه عن توفر نافذة تثبيت أصلية عبر beforeinstallprompt؛ ولا نعرض مسار «إنشاء اختصار» يدويًا. على iPhone/iPad تظهر إرشادات Safari لإضافة تطبيق الويب إلى الشاشة الرئيسية.</p>
       ${pwaInstallSettingError?`<div class="fl-cloud-note bad">تعذر قراءة إعداد تثبيت التطبيق. شغّل ملف الهجرة <b>2026-10-05_pwa_install_toggle.sql</b> في Supabase ثم أعد تحميل الصفحة.</div>`:''}
@@ -121,7 +140,7 @@
       </label>
       <div class="fl-cloud-actions"><button class="fl-cloud-btn primary" id="flPwaInstallSettingsSave" type="submit" ${pwaInstallSettingError?'disabled':''}>حفظ الإعداد</button></div>
     </form>`:'';
-    const quoteListCard=isPrimaryAdmin?`<form id="flQuoteListSettingsForm" class="fl-cloud-card fl-quote-list-settings-card">
+    const quoteListCard=core.canManageSection('site-settings')?`<form id="flQuoteListSettingsForm" class="fl-cloud-card fl-quote-list-settings-card">
       <div class="fl-credentials-card-head"><div><span class="fl-account-badge owner">طلبات الأسعار</span><h3>إظهار قائمة طلب عرض السعر للزوار</h3></div></div>
       <p>تحكم في ظهور زر «أضف لقائمة الطلب» والشريط العائم ونافذة طلب عرض السعر داخل الموقع العام. إخفاء الميزة لا يحذف القوائم المحفوظة في أجهزة الزوار.</p>
       ${quoteListSettingError?`<div class="fl-cloud-note bad">تعذر قراءة إعداد قائمة طلب السعر. شغّل ملف الترقية <b>supabase/UPGRADE_EXISTING_V111.sql</b> في Supabase ثم أعد تحميل الصفحة.</div>`:''}
@@ -133,7 +152,7 @@
       <div class="fl-cloud-actions"><button class="fl-cloud-btn primary" id="flQuoteListSettingsSave" type="submit" ${quoteListSettingError?'disabled':''}>حفظ الإعداد</button></div>
     </form>`:'';
     const barcodePreviewUrl=masterBarcodePath?imageUrl(masterBarcodePath):'';
-    const masterBarcodeCard=isPrimaryAdmin?`<form id="flMasterBarcodeSettingsForm" class="fl-cloud-card fl-master-barcode-card">
+    const masterBarcodeCard=core.canManageSection('template-settings')?`<form id="flMasterBarcodeSettingsForm" class="fl-cloud-card fl-master-barcode-card">
       <div class="fl-credentials-card-head"><div><span class="fl-account-badge owner">قالب المنتجات</span><h3>الباركود الرئيسي</h3></div></div>
       <p>ارفع باركودًا واحدًا للموقع. عند وجوده سيظهر تلقائيًا في القالب المعتمد للداتا شيت وصور/PDF المنتجات والأقسام. إذا لم تضف باركودًا فلن يظهر شيء.</p>
       ${masterBarcodeSettingError?`<div class="fl-cloud-note bad">تعذر قراءة إعداد الباركود. شغّل <b>SUPABASE_SETUP.sql</b> في Supabase مرة واحدة ثم أعد تحميل الصفحة.</div>`:''}
@@ -148,7 +167,7 @@
       </div>
       <div class="fl-cloud-actions"><button class="fl-cloud-btn primary" id="flMasterBarcodeSave" type="submit" ${masterBarcodeSettingError?'disabled':''}>حفظ الباركود</button></div>
     </form>`:'';
-    const designFooterNumberCard=isPrimaryAdmin?`<form id="flDesignFooterNumberSettingsForm" class="fl-cloud-card fl-design-footer-number-card">
+    const designFooterNumberCard=core.canManageSection('template-settings')?`<form id="flDesignFooterNumberSettingsForm" class="fl-cloud-card fl-design-footer-number-card">
       <div class="fl-credentials-card-head"><div><span class="fl-account-badge owner">قالب المنتجات</span><h3>رقم التذييل في التصاميم</h3></div></div>
       <p>يمكنك تحديد تسمية لهذا الرقم مثل "مندوب الجملة" أو "خدمة العملاء" مع الرقم نفسه. سيظهران بدل رابط الموقع الإلكتروني في أسفل القالب المعتمد للداتا شيت وصور/PDF المنتجات والأقسام. إذا تركت الرقم فارغًا فلن يظهر شيء في هذا الموضع.</p>
       ${designFooterNumberSettingError?`<div class="fl-cloud-note bad">تعذر قراءة إعداد رقم التذييل. شغّل <b>SUPABASE_SETUP.sql</b> في Supabase مرة واحدة ثم أعد تحميل الصفحة.</div>`:''}
@@ -165,8 +184,8 @@
 
   // Wires the cards' forms; `renderOverview` is re-run after each successful save.
   function bind(renderOverview){
-    if(!isPrimaryAdmin)return;
-    window.FL_ADMIN_BUSINESS?.bind(renderOverview);
+    if(!core.canManageSection('site-settings')&&!core.canManageSection('template-settings')&&!core.canManageSection('business-settings'))return;
+    if(core.canManageSection('business-settings'))window.FL_ADMIN_BUSINESS?.bind(renderOverview);
     document.getElementById('flPwaInstallSettingsForm')?.addEventListener('submit',async event=>{
       event.preventDefault();
       const toggle=document.getElementById('flPwaInstallEnabled');
@@ -175,7 +194,7 @@
       const enabled=Boolean(toggle.checked);
       save.disabled=true;save.textContent='جاري الحفظ...';
       try{
-        const {error}=await db.from('site_settings').upsert({id:1,pwa_install_enabled:enabled},{onConflict:'id'});
+        const {error}=await saveSiteToggle('pwa_install_enabled',enabled);
         if(error)throw error;
         pwaInstallEnabled=enabled;
         pwaInstallSettingError='';
@@ -196,7 +215,7 @@
       const enabled=Boolean(toggle.checked);
       save.disabled=true;save.textContent='جاري الحفظ...';
       try{
-        const {error}=await db.from('site_settings').upsert({id:1,quote_list_enabled:enabled},{onConflict:'id'});
+        const {error}=await saveSiteToggle('quote_list_enabled',enabled);
         if(error)throw error;
         quoteListEnabled=enabled;
         quoteListSettingError='';
@@ -217,7 +236,7 @@
       const enabled=Boolean(toggle.checked);
       save.disabled=true;save.textContent='جاري الحفظ...';
       try{
-        const {error}=await db.from('site_settings').upsert({id:1,require_customer_lead:enabled},{onConflict:'id'});
+        const {error}=await saveSiteToggle('require_customer_lead',enabled);
         if(error)throw error;
         customerLeadGateEnabled=enabled;
         customerLeadGateSettingError='';
@@ -256,7 +275,7 @@
         let nextPath=oldPath;
         if(remove)nextPath='';
         if(file){uploadedPath=await uploadMasterBarcodeFile(file);nextPath=uploadedPath;}
-        const {error}=await db.from('site_settings').upsert({id:1,master_barcode_path:nextPath},{onConflict:'id'});
+        const {error}=await saveTemplateField('master_barcode_path',nextPath);
         if(error)throw error;
         masterBarcodePath=nextPath;
         masterBarcodeSettingError='';
@@ -282,7 +301,7 @@
       const nextLabel=String(labelInput?.value||'').trim().slice(0,40);
       save.disabled=true;save.textContent='جاري الحفظ...';
       try{
-        const {error}=await db.from('site_settings').upsert({id:1,design_footer_number:next,design_footer_label:nextLabel},{onConflict:'id'});
+        const {error}=await saveTemplateFooter(next,nextLabel);
         if(error)throw error;
         designFooterNumber=next;
         designFooterLabel=nextLabel;
