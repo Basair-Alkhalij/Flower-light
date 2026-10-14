@@ -125,6 +125,25 @@ if (!process.argv.includes('--check')) {
     throw new Error(`Unable to prepare pinned Supabase browser bundle: ${error?.message||error}`);
   }
 
+  // jsPDF is used by every PDF export but was loaded from an external CDN only
+  // when a visitor clicked download. Ship an integrity-verified, same-origin copy
+  // so visitor-side PDF downloads do not depend on reaching that CDN.
+  const jsPdfVendorUrl='https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js';
+  try{
+    const response=await fetch(jsPdfVendorUrl,{redirect:'follow'});
+    if(!response.ok)throw new Error(`HTTP ${response.status}`);
+    const bytes=Buffer.from(await response.arrayBuffer());
+    if(bytes.length<150_000)throw new Error('jsPDF vendor file is unexpectedly small');
+    const digest=crypto.createHash('sha256').update(bytes).digest('base64');
+    const pinnedDigest='5lUfzcMvCdaFOyxRJtGNAdlEfg2mGKQaEevu4PbCDVQ=';
+    if(digest!==pinnedDigest)throw new Error('Pinned jsPDF SHA-256 mismatch');
+    fs.writeFileSync(path.join(out,'jspdf-vendor.js'),bytes);
+    sizes['jspdf-vendor.js']={source:bytes.length,minified:bytes.length,gzip:zlib.gzipSync(bytes,{level:9}).length};
+    console.log('JSPDF_VENDOR_SHA256',digest);
+  }catch(error){
+    throw new Error(`Unable to prepare pinned jsPDF browser bundle: ${error?.message||error}`);
+  }
+
   // PDF.js's patched ESM files are fetched once during CI and served locally.
   // Both files must use exactly the same upstream release (main + worker).
   const pdfjsBase='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/';
