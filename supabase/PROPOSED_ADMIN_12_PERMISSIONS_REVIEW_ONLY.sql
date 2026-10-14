@@ -138,10 +138,20 @@ grant execute on function public.owner_get_delegatable_permissions() to authenti
 -- Owner-only policies remain in place. No anon or PUBLIC write grants.
 -- A repeat execution replaces only these named delegated policies.
 drop policy if exists "Subadmin business privacy by section" on public.business_privacy_settings;
+drop policy if exists "Subadmin read business privacy" on public.business_privacy_settings;
+drop policy if exists "Subadmin insert business privacy" on public.business_privacy_settings;
+drop policy if exists "Subadmin update business privacy" on public.business_privacy_settings;
 drop policy if exists "Subadmin public company fields by section" on public.business_public_fields;
 drop policy if exists "Subadmin bank accounts by section" on public.business_bank_accounts;
-create policy "Subadmin business privacy by section"
-on public.business_privacy_settings for all to authenticated
+-- The privacy singleton may be read/upserted but NEVER deleted by subadmin.
+create policy "Subadmin read business privacy"
+on public.business_privacy_settings for select to authenticated
+using (public.has_admin_permission('business-settings'));
+create policy "Subadmin insert business privacy"
+on public.business_privacy_settings for insert to authenticated
+with check (public.has_admin_permission('business-settings'));
+create policy "Subadmin update business privacy"
+on public.business_privacy_settings for update to authenticated
 using (public.has_admin_permission('business-settings'))
 with check (public.has_admin_permission('business-settings'));
 
