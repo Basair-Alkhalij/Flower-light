@@ -276,11 +276,12 @@ const edgeAllowed=edgeAdmin.match(/const allowedPermissions = new Set\(\[([\s\S]
 for(const permission of ['analytics','profile','contacts','leads','datasheet']) assert.match(edgeAllowed,new RegExp(`['\"]${permission}['\"]`));
 for(const key of ['sections','products','search-filters','template-settings','site-settings','business-settings','bank-settings']) assert.match(edgeAllowed,new RegExp(`['\"]${key}['\"]`));
 for(const forbidden of ['credentials','permissions','quotes','services']) assert.doesNotMatch(edgeAllowed,new RegExp(`['\"]${forbidden}['\"]`));
-const hardeningStart=sql.lastIndexOf('STAGE88 ADMIN=2 FINAL PERMISSION HARDENING');
+const hardeningStart=sql.lastIndexOf('STAGE88 ADMIN=2 LEGACY ROLE COMPATIBILITY');
 const hardeningEnd=sql.indexOf('STAGE88 GLOBAL MASTER BARCODE',hardeningStart);
 const hardening=sql.slice(hardeningStart,hardeningEnd>hardeningStart?hardeningEnd:undefined);
 for(const permission of ['analytics','profile','contacts','leads','datasheet']) assert.match(hardening,new RegExp(`['\"]${permission}['\"]`));
-for(const forbidden of ['sections','products','quotes','services']) assert.doesNotMatch(hardening,new RegExp(`['\"]${forbidden}['\"]`));
+for(const permission of ['sections','products','search-filters','template-settings','site-settings','business-settings','bank-settings']) assert.match(hardening,new RegExp(`['\"]${permission}['\"]`));
+for(const forbidden of ['credentials','permissions','quotes','services']) assert.doesNotMatch(hardening,new RegExp(`['\"]${forbidden}['\"]`));
 assert.match(hardening,/where a\.role='subadmin'/);
 
 // STAGE88: every local static reference resolves to a real release file.
