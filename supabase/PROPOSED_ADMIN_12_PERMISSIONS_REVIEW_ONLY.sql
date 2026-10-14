@@ -109,6 +109,26 @@ $fn$;
 revoke all on function public.owner_set_admin2_settings(text,text[]) from public,anon;
 grant execute on function public.owner_set_admin2_settings(text,text[]) to authenticated;
 
+-- Owner-only capability handshake. An unchanged production DB without this RPC
+-- keeps the existing five switches enabled; after the migration, all 12 become
+-- selectable. A failed RPC never turns ON new permissions in the frontend.
+create or replace function public.owner_get_delegatable_permissions()
+returns text[] language plpgsql stable security definer
+set search_path=public,pg_temp as $fn$
+begin
+  if not public.is_site_owner() then
+    raise exception 'Owner access required' using errcode='42501';
+  end if;
+  return array[
+    'analytics','datasheet','profile','contacts','leads',
+    'sections','products','search-filters','template-settings',
+    'site-settings','business-settings','bank-settings'
+  ]::text[];
+end;
+$fn$;
+revoke all on function public.owner_get_delegatable_permissions() from public,anon;
+grant execute on function public.owner_get_delegatable_permissions() to authenticated;
+
 -- C. The existing category, product, image, PDF-catalog RLS and Storage policies
 -- already check has_admin_permission('sections') / ('products').
 -- Do not replace or broaden them. In particular, category DELETE requires BOTH
