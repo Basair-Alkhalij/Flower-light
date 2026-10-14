@@ -101,7 +101,12 @@
       }catch(_){}
       const item={name,model,caption,specifications,image,image_path:'',gallery:[{image,image_path:'',is_primary:true,sort_order:0}]};
       const choice=await (renderer.askExportChoice?renderer.askExportChoice({title:'تحميل الداتا شيت',subtitle:'اختر تنزيل الداتا شيت كملف PDF أو صورة JPG عالية الدقة.',pdfLabel:'تحميل PDF',jpgLabel:'تحميل JPG'}):Promise.resolve('pdf'));
-      if(!choice){button.disabled=false;button.textContent='صمّم وتحميل';return;}
+      if(!choice)return;
+      // Load the PDF engine before composing the image, so a missing engine
+      // produces an immediate, visible error instead of an apparent dead button.
+      if(choice==='pdf')button.textContent='جاري تحميل أداة PDF…';
+      const JsPdf=choice==='pdf'?await renderer.loadJsPdf():null;
+      button.textContent='جاري تجهيز الداتا شيت…';
       const exportScale=choice==='jpg'?(renderer.scales?.jpg||3):(renderer.scales?.pdf||2);
       const page=renderer.createSinglePage
         ? await renderer.createSinglePage(item,image,0,1,{scale:exportScale})
@@ -114,7 +119,6 @@
       if(choice==='jpg'){
         await renderer.downloadCanvasAsJpg(canvas,`${fileBase}.jpg`,renderer.qualities?.jpg||0.94);
       }else{
-        const JsPdf=await renderer.loadJsPdf();
         const pdf=new JsPdf({orientation:'portrait',unit:'mm',format:'a4',compress:true});
         pdf.addImage(canvas.toDataURL('image/jpeg',renderer.qualities?.pdf||0.94),'JPEG',0,0,210,297,undefined,'FAST');
         const blob=pdf.output('blob');
