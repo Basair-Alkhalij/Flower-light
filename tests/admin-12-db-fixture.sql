@@ -2,11 +2,15 @@
 -- Never execute this file against a Supabase project.
 create role authenticated nologin;
 create role anon nologin;
+create role service_role nologin;
 create schema auth;
 create schema storage;
 create function auth.uid() returns uuid language sql stable as $$
   select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid
 $$;
+create function auth.role() returns text language sql stable as $
+  select nullif(current_setting('request.jwt.claim.role',true),'')
+$;
 create table auth.users(id uuid primary key,email text unique not null);
 insert into auth.users values
  ('11111111-1111-4111-8111-111111111111','owner@example.invalid'),
@@ -56,6 +60,18 @@ create table public.business_privacy_settings (
  id int primary key,retention_days int,show_all boolean
 );
 insert into public.business_privacy_settings values(1,180,true);
+-- Synthetic aged/fresh customer leads for permission-sensitive retention checks.
+create table public.customer_leads (
+ id int primary key,
+ created_at timestamptz not null
+);
+insert into public.customer_leads(id,created_at) values
+ (1,now()-interval '250 days'),(2,now()-interval '2 days');
+alter table public.customer_leads enable row level security;
+create policy "Admin manage leads by permission" on public.customer_leads for all
+  to authenticated using(public.is_site_owner() or public.has_admin_permission('leads'))
+  with check(public.is_site_owner() or public.has_admin_permission('leads'));
+grant select,insert,update,delete on public.customer_leads to authenticated;
 create table public.business_public_fields (
  id int primary key,label text,value text
 );
