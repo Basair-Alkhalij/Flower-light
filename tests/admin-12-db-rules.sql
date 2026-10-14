@@ -135,6 +135,27 @@ select public.review_expect_rows(
 select public.review_expect_rows(
  'update public.site_settings set quote_list_enabled=true where id=1',0);
 
+-- Sections permission alone may edit category but must not delete it.
+set request.jwt.claim.sub='11111111-1111-4111-8111-111111111111';
+select public.owner_set_admin2_settings('assistant@example.invalid',array['sections']);
+set request.jwt.claim.sub='22222222-2222-4222-8222-222222222222';
+select public.review_expect_rows(
+ 'update public.categories set name=''Category renamed'' where id=1',1);
+select public.review_expect_rows(
+ 'delete from public.categories where id=1',0);
+-- Even products-only cannot delete a category; both keys are required.
+set request.jwt.claim.sub='11111111-1111-4111-8111-111111111111';
+select public.owner_set_admin2_settings('assistant@example.invalid',array['products']);
+set request.jwt.claim.sub='22222222-2222-4222-8222-222222222222';
+select public.review_expect_rows(
+ 'delete from public.categories where id=1',0);
+set request.jwt.claim.sub='11111111-1111-4111-8111-111111111111';
+select public.owner_set_admin2_settings('assistant@example.invalid',
+ array['sections','products']);
+set request.jwt.claim.sub='22222222-2222-4222-8222-222222222222';
+select public.review_expect_rows(
+ 'delete from public.categories where id=1',1);
+
 -- Test anonymous client cannot invoke the new RPCs.
 reset role;
 set role anon;
