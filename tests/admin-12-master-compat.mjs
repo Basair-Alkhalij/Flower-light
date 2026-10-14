@@ -13,7 +13,7 @@ const beginMarker='-- BEGIN REVIEWED ADMIN 12-SECTION RECONCILIATION';
 const endMarker='-- END REVIEWED ADMIN 12-SECTION RECONCILIATION';
 assert.equal(master.split(beginMarker).length,2,'Only one reviewed migration marker in master');
 assert.equal(master.split(endMarker).length,2,'Only one reviewed migration tail in master');
-const begin=master.indexOf('-- DO NOT RUN IN PRODUCTION WITHOUT A SEPARATE, EXPLICIT OWNER APPROVAL.',master.indexOf(beginMarker));
+const begin=master.indexOf('-- FLOWER LIGHT — ADMIN 12-SECTION DELEGATION (REVIEW ONLY / NOT APPROVED)',master.indexOf(beginMarker));
 const end=master.indexOf(endMarker);
 assert.ok(begin>=0 && end>begin,'Reviewed migration region must exist inside master');
 const embedded=master.slice(begin,end).trim();
