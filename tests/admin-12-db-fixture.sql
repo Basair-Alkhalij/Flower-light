@@ -95,3 +95,20 @@ grant select,insert,update,delete on
  public.business_public_fields,public.business_bank_accounts,
  storage.objects to authenticated;
 grant execute on function storage.foldername(text) to authenticated;
+-- Reproduce the category policies exactly as specified by the source setup.
+create table public.categories(id int primary key,name text not null);
+insert into public.categories values(1,'Synthetic category');
+alter table public.categories enable row level security;
+create policy "Admin read all categories" on public.categories for select to authenticated
+  using (public.is_site_owner() or public.has_admin_permission('sections')
+    or public.has_admin_permission('products'));
+create policy "Admin insert categories" on public.categories for insert to authenticated
+  with check(public.is_site_owner() or public.has_admin_permission('sections'));
+create policy "Admin update categories" on public.categories for update to authenticated
+  using(public.is_site_owner() or public.has_admin_permission('sections'))
+  with check(public.is_site_owner() or public.has_admin_permission('sections'));
+create policy "Admin delete categories" on public.categories for delete to authenticated
+  using(public.is_site_owner() or
+    (public.has_admin_permission('sections') and public.has_admin_permission('products')));
+grant select,insert,update,delete on public.categories to authenticated;
+
