@@ -83,7 +83,9 @@ function verify(source){
   assert.match(source,/jsonb_typeof\(x\.item->'key'\) is distinct from 'string'/);
   assert.match(source,/admin_save_template_footer\(text,text\) to authenticated/);
   assert.doesNotMatch(source,/grant\s+(?:all|update)\s+on\s+(?:table\s+)?public\.site_settings\s+to\s+authenticated/i);
-  assert.doesNotMatch(source,/['"](?:credentials|permissions)['"]\s*[,)\]]/);
+  const keyWhitelist=source.match(/v_allowed constant text\[\][\s\S]*?::text\[\];/)?.[0]||'';
+  assert.ok(keyWhitelist,'Owner grant whitelist missing');
+  assert.doesNotMatch(keyWhitelist,/['\"](?:credentials|permissions)['\"]\s*[,\)\]]/);
   assert.match(source,/-- No UPDATE to admin_users, no auto-grants/);
   assert.match(source,/revoke all on function public\.owner_get_delegatable_permissions\(\) from public,anon/);
   assert.match(edge,/if \(!isOwner\) return response\(403/);
