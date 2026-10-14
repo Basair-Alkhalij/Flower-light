@@ -1309,6 +1309,7 @@
     normalizeLeadPhone,
     vcardEscape,
     adminViewItems,
+    ownerSettingsViewItems,
     delegatablePermissionKeys,
     normalizePermissionList,
     renderApp,
