@@ -21,7 +21,7 @@
   }
 
   async function load(){
-    if(!core.isPrimaryAdmin)return;
+    if(!core.canManageSection('business-settings'))return;
     loaded=false;error='';
     try{
       const settingsResult=await db.from('business_privacy_settings').select('id,show_all,retention_days,show_retention_days').eq('id',1).maybeSingle();
@@ -60,7 +60,7 @@
   }
 
   function cardsHtml(){
-    if(!core.isPrimaryAdmin)return '';
+    if(!core.canManageSection('business-settings'))return '';
     const esc=core.esc;
     return `<form id="flBusinessSettingsForm" class="fl-cloud-card fl-business-settings-card">
       <div class="fl-credentials-card-head"><div><span class="fl-account-badge owner">بيانات المنشأة</span><h3>بطاقة بيانات الشركة أسفل الموقع</h3></div></div>
@@ -89,7 +89,7 @@
   }
 
   function bind(renderOverview){
-    if(!core.isPrimaryAdmin)return;
+    if(!core.canManageSection('business-settings'))return;
     const list=document.getElementById('flBusinessFieldsList');
     const empty=document.getElementById('flBusinessEmptyFields');
     if(!list)return;
