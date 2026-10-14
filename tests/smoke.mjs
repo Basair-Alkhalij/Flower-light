@@ -267,13 +267,15 @@ assert.match(read('SUPABASE_SETUP.sql'), /STAGE88_MASTER_BARCODE_OK/);
 assert.match(read('SUPABASE_SETUP.sql'), /STAGE88_FINAL_OK/);
 
 // STAGE88: Admin 2 permissions must be identical across UI, SQL and Edge Function.
-assert.match(admin, /delegatablePermissionKeys = new Set\(\[\.\.\.validPermissionKeys\]\.filter\(key=>!\['sections','products'\]\.includes\(key\)\)\)/);
+assert.match(admin, /delegatablePermissionKeys=new Set\(\['analytics','datasheet','profile','contacts','leads'\]\)/);
+assert.match(admin, /owner_get_delegatable_permissions/);
 assert.match(admin, /currentAdminPermissions=new Set\(normalizePermissionList\(data\)\)/);
 assert.match(siteLoader, /if \(adminPanel === '2'\) document\.getElementById\('flCloudPrimaryAdmin'\)\?\.remove\(\)/);
 const edgeAdmin=read('supabase/functions/manage-admin-account/index.ts');
 const edgeAllowed=edgeAdmin.match(/const allowedPermissions = new Set\(\[([\s\S]*?)\]\)/)?.[1]||'';
 for(const permission of ['analytics','profile','contacts','leads','datasheet']) assert.match(edgeAllowed,new RegExp(`['\"]${permission}['\"]`));
-for(const forbidden of ['sections','products','quotes','services']) assert.doesNotMatch(edgeAllowed,new RegExp(`['\"]${forbidden}['\"]`));
+for(const key of ['sections','products','search-filters','template-settings','site-settings','business-settings','bank-settings']) assert.match(edgeAllowed,new RegExp(`['\"]${key}['\"]`));
+for(const forbidden of ['credentials','permissions','quotes','services']) assert.doesNotMatch(edgeAllowed,new RegExp(`['\"]${forbidden}['\"]`));
 const hardeningStart=sql.lastIndexOf('STAGE88 ADMIN=2 FINAL PERMISSION HARDENING');
 const hardeningEnd=sql.indexOf('STAGE88 GLOBAL MASTER BARCODE',hardeningStart);
 const hardening=sql.slice(hardeningStart,hardeningEnd>hardeningStart?hardeningEnd:undefined);
@@ -385,6 +387,8 @@ const permsJs=read('admin-permissions.js');
   assert.match(draft,/-- DO NOT RUN IN PRODUCTION WITHOUT A SEPARATE, EXPLICIT OWNER APPROVAL/);
   assert.match(draft,/-- No UPDATE to admin_users, no auto-grants/);
   assert.match(draft,/-- F\. Settings all share one row\./);
+  assert.match(draft,/create or replace function public\.owner_get_delegatable_permissions\(\)/);
+  assert.match(draft,/create or replace function public\.admin_save_template_footer\(/);
   assert.doesNotMatch(draft,/create policy\s+["'][^"']*subadmin[^"']*["']\s+on public\.site_settings/i);
   for(const name of ['admin_set_site_toggle','admin_save_catalog_filters','admin_set_template_field']){
     assert.match(draft,new RegExp('create or replace function public\\.'+name+'\\('));
