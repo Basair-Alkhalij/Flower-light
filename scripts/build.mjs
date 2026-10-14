@@ -11,7 +11,11 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
 const versionParts=String(pkg.version||'').split('.');
 if(versionParts.length!==3 || versionParts.some(part=>!/^\d+$/.test(part))) throw new Error('package.json version must be numeric semver (x.y.z)');
-const releaseVersion=versionParts.join('');
+// Each deployed commit needs a unique asset/cache key. A fixed package version
+// reused across merges leaves existing PWA visitors on stale cached JS and CSS.
+// GitHub Actions always supplies a 40-character GITHUB_SHA for the built commit.
+const buildCommit=String(process.env.GITHUB_SHA||'').trim();
+const releaseVersion=versionParts.join('')+(/^[0-9a-f]{40}$/i.test(buildCommit)?'-'+buildCommit.slice(0,12):'');
 const VERSION_TOKEN='__FL_VERSION__';
 const JSONLD_CSP_TOKEN='__FL_JSONLD_CSP_HASH__';
 const DEFAULT_SITE_URL='https://basair-alkhalij.github.io/Flower-light/';

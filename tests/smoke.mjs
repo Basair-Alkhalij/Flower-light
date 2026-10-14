@@ -35,6 +35,27 @@ const cssComparableFile = file => read(file).replace(/\s*([{};,])\s*/g,'$1');
 const manageAdmin = read('supabase/functions/manage-admin-account/index.ts');
 const sql = read('SUPABASE_SETUP.sql');
 
+// Step 15: a new GitHub Pages commit must invalidate the public shell cache.
+{
+  const buildScript=read('scripts/build.mjs');
+  const releaseExpression=buildScript.match(/^const releaseVersion=(.+);$/m)?.[1];
+  assert.ok(releaseExpression,'Missing release version formula');
+  assert.match(buildScript,/process\.env\.GITHUB_SHA/,'CI build must be commit-specific');
+  const makeVersion=buildCommit=>vm.runInNewContext('('+releaseExpression+')',{
+    versionParts:['1','1','26'],buildCommit
+  });
+  const versionA=makeVersion('a'.repeat(40));
+  const versionB=makeVersion('b'.repeat(40));
+  assert.match(versionA,/^1126-a{12}$/);
+  assert.match(versionB,/^1126-b{12}$/);
+  assert.notEqual(versionA,versionB,'Different releases cannot share one cache key');
+  assert.equal(makeVersion(''), '1126','Local build without CI SHA must retain release number');
+  assert.match(read('sw.js'),/flower-light-shell-v__FL_VERSION__/);
+  assert.match(index,/app\.js\?v=__FL_VERSION__/);
+  assert.equal(JSON.parse(read('package-lock.json')).version,JSON.parse(read('package.json')).version);
+}
+
+
 assert.match(index, /Basair Gulf Flower Light/);
 assert.doesNotMatch(index, /\?v=70/);
 assert.doesNotMatch(index, /\?v=78/);
