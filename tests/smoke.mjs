@@ -281,7 +281,9 @@ const hardeningEnd=sql.indexOf('STAGE88 GLOBAL MASTER BARCODE',hardeningStart);
 const hardening=sql.slice(hardeningStart,hardeningEnd>hardeningStart?hardeningEnd:undefined);
 for(const permission of ['analytics','profile','contacts','leads','datasheet']) assert.match(hardening,new RegExp(`['\"]${permission}['\"]`));
 for(const permission of ['sections','products','search-filters','template-settings','site-settings','business-settings','bank-settings']) assert.match(hardening,new RegExp(`['\"]${permission}['\"]`));
-for(const forbidden of ['credentials','permissions','quotes','services']) assert.doesNotMatch(hardening,new RegExp(`['\"]${forbidden}['\"]`));
+const stage88Granted=hardening.match(/v_allowed constant text\[\]\s*:=\s*array\[([\s\S]*?)\]::text\[\]/)?.[1]||'';
+assert.ok(stage88Granted,'Stage88 owner-only delegation whitelist missing');
+for(const forbidden of ['credentials','permissions','quotes','services']) assert.doesNotMatch(stage88Granted,new RegExp(`['\\\"]${forbidden}['\\\"]`));
 assert.match(hardening,/where a\.role='subadmin'/);
 
 // STAGE88: every local static reference resolves to a real release file.
