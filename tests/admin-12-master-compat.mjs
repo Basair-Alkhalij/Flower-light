@@ -20,6 +20,10 @@ const embedded=master.slice(begin,end).trim();
 assert.equal(embedded,delta,'Master migration tail differs from reviewed incremental SQL; regenerate before merging');
 assert.match(master.slice(0,2000),/do NOT rerun this historical consolidated master/i);
 assert.match(master.slice(0,1200),/DO NOT EXECUTE THIS FULL MASTER/i);
+assert.match(master,/do \$master_existing_guard\$[\s\S]*?to_regclass\('public\.admin_users'\) is not null[\s\S]*?FL_MASTER_EXISTING_DATABASE_DENIED/);
+assert.ok(master.indexOf('FL_MASTER_EXISTING_DATABASE_DENIED')<master.indexOf('create extension if not exists pgcrypto;'),
+  'The fail-closed guard must execute before any historical master statement');
+
 const legacy=master.slice(0,master.indexOf(beginMarker));
 const checks=[
  ['historical normalizer',/where p\.permission\s*=\s*any\(array\[([\s\S]*?)\]::text\[\]\)/g],
