@@ -25,7 +25,8 @@ $$;
 
 set role authenticated;
 set request.jwt.claim.sub='22222222-2222-4222-8222-222222222222';
-do $$
+set request.jwt.claim.role='authenticated';
+do $
 begin
  if public.is_site_owner() then raise exception 'Assistant detected as owner'; end if;
  if not public.has_admin_permission('leads') then raise exception 'Migration erased existing leads permission'; end if;
@@ -48,6 +49,19 @@ select public.review_expect_rows(
  'update public.site_settings set quote_list_enabled=false where id=1',0);
 select public.review_expect_rows(
  'update public.business_privacy_settings set retention_days=90 where id=1',0);
+
+-- The pre-existing leads permission authorizes retention maintenance and
+-- deletes only expired synthetic rows, leaving fresh records untouched.
+do $
+declare removed integer;
+begin
+ removed:=public.purge_expired_customer_leads();
+ if removed<>1 then raise exception 'Leads-only purge removed % rows (expected 1)',removed; end if;
+ if (select count(*) from public.customer_leads)<>1 then
+   raise exception 'Purge altered recent customer leads';
+ end if;
+end;
+$;
 
 -- Confirm the owner can enumerate available keys but cannot grant owner-only keys.
 set request.jwt.claim.sub='11111111-1111-4111-8111-111111111111';
@@ -75,8 +89,14 @@ $$;
 
 -- Search-filters ON: may update exactly filters, NOT site toggle or barcode.
 select public.owner_set_admin2_settings('assistant@example.invalid',array['search-filters']);
+-- Restore an expired synthetic row to verify that unauthorized purge fails
+-- without silently deleting or changing records.
+reset role;
+insert into public.customer_leads(id,created_at) values(3,now()-interval '250 days');
+set role authenticated;
 set request.jwt.claim.sub='22222222-2222-4222-8222-222222222222';
 select public.admin_save_catalog_filters(array['wattage'],'[]'::jsonb);
+select public.review_expect_42501('select public.purge_expired_customer_leads()');
 select public.review_expect_42501(
  'select public.admin_set_site_toggle(''quote_list_enabled'',false)');
 select public.review_expect_42501(
@@ -91,6 +111,7 @@ set request.jwt.claim.sub='11111111-1111-4111-8111-111111111111';
 select public.owner_set_admin2_settings('assistant@example.invalid',array['site-settings']);
 set request.jwt.claim.sub='22222222-2222-4222-8222-222222222222';
 select public.admin_set_site_toggle('quote_list_enabled',false);
+select public.review_expect_42501('select public.purge_expired_customer_leads()');
 select public.review_expect_42501(
  'select public.admin_save_catalog_filters(array[''cct''],''[]''::jsonb)');
 select public.review_expect_42501(
@@ -103,6 +124,7 @@ set request.jwt.claim.sub='11111111-1111-4111-8111-111111111111';
 select public.owner_set_admin2_settings('assistant@example.invalid',array['template-settings']);
 set request.jwt.claim.sub='22222222-2222-4222-8222-222222222222';
 select public.admin_save_template_footer('01234','supplier');
+select public.review_expect_42501('select public.purge_expired_customer_leads()');
 select public.review_expect_42501(
  'select public.admin_set_site_toggle(''quote_list_enabled'',true)');
 select public.review_expect_42501(
@@ -120,6 +142,7 @@ select public.owner_set_admin2_settings('assistant@example.invalid',array['busin
 set request.jwt.claim.sub='22222222-2222-4222-8222-222222222222';
 select public.review_expect_rows(
  'update public.business_privacy_settings set retention_days=160 where id=1',1);
+select public.review_expect_42501('select public.purge_expired_customer_leads()');
 select public.review_expect_rows(
  'delete from public.business_privacy_settings where id=1',0);
 select public.review_expect_42501(
@@ -130,6 +153,7 @@ set request.jwt.claim.sub='11111111-1111-4111-8111-111111111111';
 select public.owner_set_admin2_settings('assistant@example.invalid',array['bank-settings']);
 set request.jwt.claim.sub='22222222-2222-4222-8222-222222222222';
 insert into public.business_bank_accounts(id,bank_name) values(1,'fixture bank');
+select public.review_expect_42501('select public.purge_expired_customer_leads()');
 select public.review_expect_rows(
  'update public.business_privacy_settings set retention_days=155 where id=1',0);
 select public.review_expect_rows(
@@ -160,11 +184,35 @@ select public.review_expect_rows(
 reset role;
 set role anon;
 set request.jwt.claim.sub='';
+set request.jwt.claim.role='anon';
+select public.review_expect_42501('select public.purge_expired_customer_leads()');
 select public.review_expect_42501(
  'select public.admin_set_site_toggle(''quote_list_enabled'',true)');
 select public.review_expect_42501(
  'select public.owner_get_delegatable_permissions()');
 reset role;
+
+-- Preserve the existing service_role maintenance path for scheduled jobs.
+-- It is not an interactive admin and is the only API role exempt from the
+-- delegated leads permission check.
+set role service_role;
+set request.jwt.claim.role='service_role';
+set request.jwt.claim.sub='';
+do $
+declare removed integer;
+begin
+  removed:=public.purge_expired_customer_leads();
+  if removed<>1 then raise exception 'service_role retention purge removed % rows, expected 1',removed; end if;
+end;
+$;
+reset role;
+do $
+begin
+  if (select count(*) from public.customer_leads)<>1 then
+    raise exception 'Unauthorised purge or service-role retention changed unexpected records';
+  end if;
+end;
+$;
 
 -- All test row writes occurred exclusively in the isolated CI service.
 \echo ADMIN_12_POSTGRES_SECURITY_OK
