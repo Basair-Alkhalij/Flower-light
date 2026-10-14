@@ -14,11 +14,12 @@
 -- Purpose: one consolidated, non-destructive schema/security file for the current website release.
 --
 -- IMPORTANT:
+-- * Historical setup is NEW-INSTALLATION-ONLY; never apply it over existing business data.
 -- * This file does NOT delete products, categories, contacts, customer leads, quotations, or catalogs.
 -- * It intentionally excludes the old CLEAR_CATALOG_ONCE.sql destructive script.
 -- * On an EXISTING database, do NOT rerun this historical consolidated master. Use the reviewed incremental migration after explicit approval.
 -- * For a BRAND-NEW installation only, first create the owner in Supabase Authentication, then replace
---   OWNER_EMAIL_HERE near the end of this file with that email and run/re-run the file.
+--   OWNER_EMAIL_HERE near the end of this file before the first run. Do not rerun this master.
 -- * The old independent panel-password system is not used.
 
 
@@ -28,6 +29,19 @@
 
 -- Flower Light product catalog - Supabase setup
 -- Run this ONCE in Supabase Dashboard > SQL Editor.
+
+-- Fail closed on ANY previously initialized Flower Light database. This file
+-- contains historical setup steps (including data normalization and policy
+-- re-creation); it must NEVER be rerun over production or a prior installation.
+-- Apply only the separately reviewed, explicitly approved incremental SQL there.
+do $master_existing_guard$
+begin
+  if to_regclass('public.admin_users') is not null then
+    raise exception 'FL_MASTER_EXISTING_DATABASE_DENIED: use reviewed incremental migration, never the historical setup master'
+      using errcode='42501';
+  end if;
+end;
+$master_existing_guard$;
 
 create extension if not exists pgcrypto;
 
