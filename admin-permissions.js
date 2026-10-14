@@ -14,15 +14,35 @@
   }
   const { esc, notify, layout, body, adminViewItems, delegatablePermissionKeys, normalizePermissionList } = core;
 
+  // Preview of the full administrative menu. Current database rules support
+  // five delegated areas; all other areas remain disabled until the owner
+  // approves and applies a complete RLS/RPC permission migration.
+  const permissionGroups=[
+    ['المنتجات والكتالوج',['sections','products','datasheet']],
+    ['المتابعة والتواصل',['leads','contacts','profile','analytics']],
+    ['الفلاتر وقوالب المنتجات',['search-filters','template-settings']],
+    ['الموقع والمنشأة',['site-settings','business-settings','bank-settings']]
+  ];
+
   function renderPermissions(){
-    const rows=adminViewItems.filter(([key])=>delegatablePermissionKeys.has(key)).map(([key,label])=>`<label class="fl-permission-row"><span class="fl-permission-copy"><strong>${esc(label)}</strong><small>السماح للأدمن بفتح وإدارة هذا الجزء</small></span><input type="checkbox" name="admin2_permission" value="${key}" ${core.managedAdmin2Permissions.has(key)?'checked':''}><span class="fl-permission-check" aria-hidden="true">✓</span></label>`).join('');
+    const labels=new Map([...adminViewItems,...(core.ownerSettingsViewItems||[])]);
+    const supported=delegatablePermissionKeys;
+    const enabled=core.managedAdmin2Permissions;
+    const groups=permissionGroups.map(([title,keys])=>{
+      const rows=keys.filter(key=>labels.has(key)).map(key=>{
+        const active=supported.has(key);
+        const description=active?'السماح للأدمن بفتح وإدارة هذا الجزء':'قيد التجهيز — يحتاج تحديث حماية Supabase قبل تفعيله';
+        return `<label class="fl-permission-row" data-permission-key="${esc(key)}"><span class="fl-permission-copy"><strong>${esc(labels.get(key))}</strong><small>${esc(description)}</small></span><input type="checkbox" name="admin2_permission" value="${esc(key)}" ${active&&enabled.has(key)?'checked':''} ${active?'':'disabled'}><span class="fl-permission-check" aria-hidden="true">✓</span></label>`;
+      }).join('');
+      return `<section class="fl-permission-group"><h3>${esc(title)}</h3><div class="fl-permission-list">${rows}</div></section>`;
+    }).join('');
     const accountReady=Boolean(core.managedAdmin2Email);
-    layout(`<div class="fl-cloud-head"><div><h2>صلاحيات الأدمن</h2><p>حدد الأجزاء التي يستطيع الأدمن إدارتها. الرئيسية تبقى ظاهرة دائمًا، بينما الأقسام والمنتجات للمدير فقط.</p></div></div>
-      <div class="fl-cloud-note ok">هذه صلاحيات حقيقية داخل قاعدة البيانات، وليست مجرد إخفاء للأزرار.</div>
+    layout(`<div class="fl-cloud-head"><div><h2>صلاحيات الأدمن لكل قسم</h2><p>اختر وصول الأدمن بشكل مستقل لكل جزء من لوحة الإدارة. حسابات الدخول والصلاحيات تبقى حصرية للمدير الأساسي.</p></div></div>
+      <div class="fl-cloud-note">يمكن تعديل الصلاحيات الحالية. الخيارات الأخرى ظاهرة للمعاينة ولكنها مُعطَّلة حتى اعتماد تحديث حماية قاعدة البيانات؛ لن يتم منح وصول جديد من مجرد تغيير الواجهة.</div>
       <div class="fl-cloud-note ${accountReady?'ok':'bad'}">${accountReady?`حساب الأدمن المرتبط: <b dir="ltr">${esc(core.managedAdmin2Email)}</b>`:'لم يتم إنشاء حساب الأدمن بعد. أنشئه أولًا من «بيانات تسجيل الدخول».'}</div>
       <form id="flPermissionsForm" class="fl-cloud-card fl-permissions-card">
-        <div class="fl-permission-list">${rows}</div>
-        <div class="fl-cloud-actions"><button class="fl-cloud-btn primary" id="flPermissionsSave" type="submit" ${accountReady?'':'disabled'}>حفظ الصلاحيات</button><button class="fl-cloud-btn secondary" id="flOpenCredentialsFromPermissions" type="button">بيانات تسجيل الدخول</button></div>
+        <div class="fl-permission-groups">${groups}</div>
+        <div class="fl-cloud-actions"><button class="fl-cloud-btn primary" id="flPermissionsSave" type="submit" ${accountReady?'':'disabled'}>حفظ الصلاحيات المتاحة</button><button class="fl-cloud-btn secondary" id="flOpenCredentialsFromPermissions" type="button">بيانات تسجيل الدخول</button></div>
       </form>`);
     document.getElementById('flOpenCredentialsFromPermissions')?.addEventListener('click',()=>{core.view='credentials';core.renderApp();});
     document.getElementById('flPermissionsForm')?.addEventListener('submit',async event=>{
