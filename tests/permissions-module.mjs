@@ -23,12 +23,13 @@ const P=win.FL_ADMIN_PERMISSIONS; assert.ok(P,'module registered');
 P.renderPermissions();
 assert.match(html,/a2@example\.com/);
 assert.match(html,/name="admin2_permission"/);
-const listHtml=html.split('fl-permission-list')[1]||'';
+const listHtml=html;
 assert.match(listHtml,/>A</); assert.match(listHtml,/>L</);
-assert.doesNotMatch(listHtml,/>S</,'sections is not delegatable'); assert.doesNotMatch(listHtml,/>P</,'products is not delegatable');
+assert.match(listHtml,/data-permission-key="sections"[\\s\\S]*?<input[^>]*disabled/,'sections must be listed but not yet delegatable');
+assert.match(listHtml,/data-permission-key="products"[\\s\\S]*?<input[^>]*disabled/,'products must be listed but not yet delegatable');
 
 await listeners['flPermissionsForm:submit']({preventDefault(){}});
-assert.equal(JSON.stringify(rpcCalls[0]),JSON.stringify(['owner_set_admin2_settings',{p_email:'a2@example.com',p_permissions:['products_view','leads']}]));
+assert.equal(JSON.stringify(rpcCalls[0]),JSON.stringify(['owner_set_admin2_settings',{p_email:'a2@example.com',p_permissions:['leads']}]),'unknown and unsupported keys cannot be sent');
 assert.equal(JSON.stringify([...state.perms]),JSON.stringify(['leads']),'unknown/non-delegatable keys filtered by normalizePermissionList');
 assert.ok(notified.includes('تم حفظ صلاحيات الأدمن'));
 
