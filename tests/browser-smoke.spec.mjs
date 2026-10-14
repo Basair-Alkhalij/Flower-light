@@ -1265,6 +1265,29 @@ test('acceptance: product PDF export produces a real readable PDF header',async(
 });
 
 
+test('release: PDF downloads still work when the external jsPDF CDN is blocked',async({page})=>{
+  test.skip(process.env.FL_TEST_DIST!=='1','Self-hosted vendor is generated only for production builds');
+  await installSupabaseMock(page);
+  const externalRequests=[];
+  await page.route('**/npm/jspdf@*/dist/jspdf.umd.min.js',route=>{
+    externalRequests.push(route.request().url());
+    return route.abort();
+  });
+  await page.goto(base,{waitUntil:'load'});
+  await injectCatalogFixtures(page);
+  await page.locator('#openProducts').click();
+  await page.locator('.product-download-pdf-button').click();
+  const downloadPromise=page.waitForEvent('download',{timeout:40000});
+  await page.locator('#exportChoicePdf').click();
+  const download=await downloadPromise;
+  const bytes=fs.readFileSync(await download.path());
+  expect(bytes.subarray(0,5).toString('latin1')).toBe('%PDF-');
+  expect(bytes.length).toBeGreaterThan(10000);
+  const vendor=await page.evaluate(()=>document.querySelector('script[data-fl-jspdf]')?.getAttribute('src')||'');
+  expect(vendor).toMatch(/^jspdf-vendor\.js\?v=/);
+  expect(externalRequests).toHaveLength(0);
+});
+
 test('acceptance: multi-product catalog PDF downloads a valid multi-page document',async({page})=>{
   await installSupabaseMock(page);
   await page.goto(base,{waitUntil:'domcontentloaded'});
