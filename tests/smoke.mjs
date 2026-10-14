@@ -373,6 +373,31 @@ const permsJs=read('admin-permissions.js');
   assert.match(preview,/value="analytics"[^>]*checked/);
 }
 
+// Review-only SQL must remain fail-closed until the owner separately authorizes it.
+{
+  const draft=read('supabase/PROPOSED_ADMIN_12_PERMISSIONS_REVIEW_ONLY.sql');
+  const keys=['analytics','datasheet','profile','contacts','leads','sections','products',
+    'search-filters','template-settings','site-settings','business-settings','bank-settings'];
+  const allowedSection=draft.match(/-- A\. Permission names:[\s\S]*?(?=-- B\. Owner-only RPC)/)?.[0]||'';
+  assert.ok(allowedSection,'Missing explicit database permission constraint');
+  for(const key of keys)assert.ok(allowedSection.includes("'"+key+"'"),'Missing SQL grant key '+key);
+  assert.doesNotMatch(allowedSection,/'(?:credentials|permissions)'/,'No access delegation for owner controls');
+  assert.match(draft,/-- DO NOT RUN IN PRODUCTION WITHOUT A SEPARATE, EXPLICIT OWNER APPROVAL/);
+  assert.match(draft,/-- No UPDATE to admin_users, no auto-grants/);
+  assert.match(draft,/-- F\. Settings all share one row\./);
+  assert.doesNotMatch(draft,/create policy\s+["'][^"']*subadmin[^"']*["']\s+on public\.site_settings/i);
+  for(const name of ['admin_set_site_toggle','admin_save_catalog_filters','admin_set_template_field']){
+    assert.match(draft,new RegExp('create or replace function public\\.'+name+'\\('));
+  }
+  for(const section of ['business-settings','bank-settings','search-filters','site-settings','template-settings']){
+    assert.match(draft,new RegExp("has_admin_permission\\('"+section+"'\\)"));
+  }
+  assert.match(draft,/bucket_id='product-images'/);
+  assert.match(draft,/storage\.foldername\(name\)/);
+  assert.match(draft,/category DELETE requires BOTH/);
+  assert.match(draft,/revoke all on function public\.admin_save_catalog_filters\(text\[\],jsonb\) from public,anon/);
+}
+
 assert.match(siteLoader,/admin-permissions\.js\?v=__FL_VERSION__/);
 assert.match(permsJs,/window\.FL_ADMIN_PERMISSIONS\s*=/);
 assert.match(permsJs,/owner_set_admin2_settings/);
