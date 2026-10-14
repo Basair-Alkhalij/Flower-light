@@ -931,7 +931,10 @@
     ['template-settings','قالب المنتجات']
   ];
   const validPermissionKeys = new Set(adminViewItems.map(([key])=>key));
-  const delegatablePermissionKeys = new Set([...validPermissionKeys].filter(key=>!['sections','products'].includes(key)));
+  const allAdminPermissionKeys=new Set([...validPermissionKeys,...ownerSettingsViewItems.map(([key])=>key)]);
+  // Default to the five existing permissions until the owner-only capability RPC
+  // confirms that the database was migrated. Never guess from visible UI elements.
+  const delegatablePermissionKeys=new Set(['analytics','datasheet','profile','contacts','leads']);
   let currentAdminRole='';
   let currentAdminEmail='';
   let currentAdminPermissions=new Set();
@@ -978,7 +981,7 @@
 
   function normalizePermissionList(value){
     const list=Array.isArray(value) ? value : (Array.isArray(value?.permissions) ? value.permissions : []);
-    return [...new Set(list.map(String).filter(key=>delegatablePermissionKeys.has(key)))];
+    return [...new Set(list.map(String).filter(key=>allAdminPermissionKeys.has(key)))];
   }
 
   async function loadCurrentAdminAccess(){
@@ -995,6 +998,15 @@
     }
     if(primaryAdminBtn) primaryAdminBtn.hidden = currentAdminRole !== 'owner';
     if(isPrimaryAdmin){
+      const {data:capabilities,error:capabilityError}=await db.rpc('owner_get_delegatable_permissions');
+      // An older database legitimately lacks this RPC; keep the existing five
+      // editable permissions and never enable new keys on a failed capability check.
+      if(!capabilityError && Array.isArray(capabilities)){
+        delegatablePermissionKeys.clear();
+        for(const key of capabilities){
+          if(allAdminPermissionKeys.has(key))delegatablePermissionKeys.add(key);
+        }
+      }
       const {data:settings,error:settingsError}=await db.rpc('owner_get_admin2_settings');
       if(settingsError)throw settingsError;
       managedAdmin2Email=String(settings?.email||'');
@@ -1305,10 +1317,12 @@
     shell,
     body,
     allowedAdminViews,
+    canManageSection:key=>allowedAdminViews().has(key),
     leadPhoneDigits,
     normalizeLeadPhone,
     vcardEscape,
     adminViewItems,
+    ownerSettingsViewItems,
     delegatablePermissionKeys,
     normalizePermissionList,
     renderApp,
@@ -1403,11 +1417,11 @@
     else if(view==='profile') renderProfile();
     else if(view==='contacts') renderContacts();
     else if(view==='leads') renderSplitSection('FL_ADMIN_LEADS','renderLeads');
-    else if(view==='search-filters' && isPrimaryAdmin) renderSplitSection('FL_ADMIN_SEARCH_FILTERS','render');
-    else if(view==='site-settings' && isPrimaryAdmin) renderOwnerSettingsPage('site');
-    else if(view==='business-settings' && isPrimaryAdmin) renderOwnerSettingsPage('business');
-    else if(view==='bank-settings' && isPrimaryAdmin) renderOwnerSettingsPage('banks');
-    else if(view==='template-settings' && isPrimaryAdmin) renderOwnerSettingsPage('template');
+    else if(view==='search-filters' && allowedAdminViews().has('search-filters')) renderSplitSection('FL_ADMIN_SEARCH_FILTERS','render');
+    else if(view==='site-settings' && allowedAdminViews().has('site-settings')) renderOwnerSettingsPage('site');
+    else if(view==='business-settings' && allowedAdminViews().has('business-settings')) renderOwnerSettingsPage('business');
+    else if(view==='bank-settings' && allowedAdminViews().has('bank-settings')) renderOwnerSettingsPage('banks');
+    else if(view==='template-settings' && allowedAdminViews().has('template-settings')) renderOwnerSettingsPage('template');
     else if(view==='credentials' && isPrimaryAdmin) renderCredentials();
     else if(view==='permissions' && isPrimaryAdmin) renderSplitSection('FL_ADMIN_PERMISSIONS','renderPermissions');
     else renderOverview();

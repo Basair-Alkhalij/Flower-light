@@ -20,7 +20,7 @@ const db={
   }
 };
 const core={
-  esc:value=>String(value??''),notify:msg=>notified.push(msg),layout:html=>{rendered=html;},isPrimaryAdmin:true,
+  esc:value=>String(value??''),notify:msg=>notified.push(msg),layout:html=>{rendered=html;},isPrimaryAdmin:true,canManageSection:key=>key==='search-filters',
   PRODUCT_SPEC_FIELDS:[{key:'wattage',label:'القدرة'},{key:'cct',label:'حرارة اللون'},{key:'color',label:'اللون'}],
   get db(){return db;}
 };

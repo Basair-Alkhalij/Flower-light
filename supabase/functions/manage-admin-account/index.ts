@@ -36,6 +36,13 @@ const allowedPermissions = new Set([
   'contacts',
   'leads',
   'datasheet',
+  'sections',
+  'products',
+  'search-filters',
+  'template-settings',
+  'site-settings',
+  'business-settings',
+  'bank-settings',
 ])
 
 type AdminClient = ReturnType<typeof createClient>

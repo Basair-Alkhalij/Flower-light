@@ -40,7 +40,7 @@
   }
 
   async function load(){
-    if(!core.isPrimaryAdmin)return;
+    if(!core.canManageSection('bank-settings'))return;
     loaded=false;error='';
     try{
       const result=await db.from('business_bank_accounts').select('id,bank_name,beneficiary_name,iban,account_number,swift_code,note,is_visible,is_primary,sort_order').order('is_primary',{ascending:false}).order('sort_order',{ascending:true}).order('created_at',{ascending:true});
@@ -82,7 +82,7 @@
   }
 
   function cardsHtml(){
-    if(!core.isPrimaryAdmin)return '';
+    if(!core.canManageSection('bank-settings'))return '';
     const esc=core.esc;
     return `<form id="flBankAccountsForm" class="fl-cloud-card fl-bank-settings-card">
       <div class="fl-credentials-card-head"><div><span class="fl-account-badge owner">الحسابات البنكية</span><h3>بيانات استقبال الحوالات</h3></div></div>
@@ -98,7 +98,7 @@
   }
 
   function bind(renderPage){
-    if(!core.isPrimaryAdmin)return;
+    if(!core.canManageSection('bank-settings'))return;
     const list=document.getElementById('flBankAccountsList');
     const empty=document.getElementById('flBankEmpty');
     if(!list)return;

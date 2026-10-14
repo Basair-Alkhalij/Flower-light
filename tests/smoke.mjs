@@ -267,18 +267,23 @@ assert.match(read('SUPABASE_SETUP.sql'), /STAGE88_MASTER_BARCODE_OK/);
 assert.match(read('SUPABASE_SETUP.sql'), /STAGE88_FINAL_OK/);
 
 // STAGE88: Admin 2 permissions must be identical across UI, SQL and Edge Function.
-assert.match(admin, /delegatablePermissionKeys = new Set\(\[\.\.\.validPermissionKeys\]\.filter\(key=>!\['sections','products'\]\.includes\(key\)\)\)/);
+assert.match(admin, /delegatablePermissionKeys=new Set\(\['analytics','datasheet','profile','contacts','leads'\]\)/);
+assert.match(admin, /owner_get_delegatable_permissions/);
 assert.match(admin, /currentAdminPermissions=new Set\(normalizePermissionList\(data\)\)/);
 assert.match(siteLoader, /if \(adminPanel === '2'\) document\.getElementById\('flCloudPrimaryAdmin'\)\?\.remove\(\)/);
 const edgeAdmin=read('supabase/functions/manage-admin-account/index.ts');
 const edgeAllowed=edgeAdmin.match(/const allowedPermissions = new Set\(\[([\s\S]*?)\]\)/)?.[1]||'';
 for(const permission of ['analytics','profile','contacts','leads','datasheet']) assert.match(edgeAllowed,new RegExp(`['\"]${permission}['\"]`));
-for(const forbidden of ['sections','products','quotes','services']) assert.doesNotMatch(edgeAllowed,new RegExp(`['\"]${forbidden}['\"]`));
-const hardeningStart=sql.lastIndexOf('STAGE88 ADMIN=2 FINAL PERMISSION HARDENING');
+for(const key of ['sections','products','search-filters','template-settings','site-settings','business-settings','bank-settings']) assert.match(edgeAllowed,new RegExp(`['\"]${key}['\"]`));
+for(const forbidden of ['credentials','permissions','quotes','services']) assert.doesNotMatch(edgeAllowed,new RegExp(`['\"]${forbidden}['\"]`));
+const hardeningStart=sql.lastIndexOf('STAGE88 ADMIN=2 LEGACY ROLE COMPATIBILITY');
 const hardeningEnd=sql.indexOf('STAGE88 GLOBAL MASTER BARCODE',hardeningStart);
 const hardening=sql.slice(hardeningStart,hardeningEnd>hardeningStart?hardeningEnd:undefined);
 for(const permission of ['analytics','profile','contacts','leads','datasheet']) assert.match(hardening,new RegExp(`['\"]${permission}['\"]`));
-for(const forbidden of ['sections','products','quotes','services']) assert.doesNotMatch(hardening,new RegExp(`['\"]${forbidden}['\"]`));
+for(const permission of ['sections','products','search-filters','template-settings','site-settings','business-settings','bank-settings']) assert.match(hardening,new RegExp(`['\"]${permission}['\"]`));
+const stage88Granted=hardening.match(/v_allowed constant text\[\]\s*:=\s*array\[([\s\S]*?)\]::text\[\]/)?.[1]||'';
+assert.ok(stage88Granted,'Stage88 owner-only delegation whitelist missing');
+for(const forbidden of ['credentials','permissions','quotes','services']) assert.doesNotMatch(stage88Granted,new RegExp(`['\\\"]${forbidden}['\\\"]`));
 assert.match(hardening,/where a\.role='subadmin'/);
 
 // STAGE88: every local static reference resolves to a real release file.
@@ -341,6 +346,65 @@ assert.match(leadsJs,/customer_leads/);
 
 // Module split part 3: permissions screen lives in admin-permissions.js.
 const permsJs=read('admin-permissions.js');
+
+// Draft UI: all 12 admin sections are listed, but sections disallowed by current
+// database permissions must stay disabled until RLS/RPC changes are approved.
+{
+  let preview='';
+  const legacy=['analytics','datasheet','profile','contacts','leads'];
+  const views=[['analytics','الإحصائيات'],['datasheet','صمّم داتا شيت'],['sections','الأقسام'],['products','المنتجات'],['profile','البيانات الشخصية'],['contacts','وسائل التواصل'],['leads','جهات اتصال العملاء']];
+  const settings=[['search-filters','فلاتر البحث'],['site-settings','إعدادات الموقع'],['business-settings','بيانات الشركة'],['bank-settings','الحسابات البنكية'],['template-settings','قالب المنتجات']];
+  const core={
+    esc:s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'),
+    notify:()=>{},layout:s=>{preview=s;},body:{querySelectorAll:()=>[]},
+    adminViewItems:views,ownerSettingsViewItems:settings,
+    delegatablePermissionKeys:new Set(legacy),
+    normalizePermissionList:v=>v.permissions||[],
+    managedAdmin2Email:'test@example.com',
+    managedAdmin2Permissions:new Set(['analytics'])
+  };
+  const context={window:{FL_ADMIN_CORE:core},console,document:{getElementById:()=>({addEventListener(){}})}};
+  vm.runInNewContext(permsJs,context);
+  context.window.FL_ADMIN_PERMISSIONS.renderPermissions();
+  const allKeys=[...views,...settings].map(row=>row[0]);
+  for(const key of allKeys){
+    const markup=preview.match(new RegExp('<label[^>]*data-permission-key="'+key+'"[^>]*>([\\s\\S]*?)<\\/label>'))?.[1]||'';
+    assert.ok(markup,'Missing permission option: '+key);
+    if(legacy.includes(key))assert.doesNotMatch(markup,/<input[^>]*disabled/,'Legacy permission must remain selectable: '+key);
+    else assert.match(markup,/<input[^>]*disabled/,'New permission must not become active before RLS upgrade: '+key);
+  }
+  assert.equal((preview.match(/data-permission-key=/g)||[]).length,12);
+  assert.doesNotMatch(preview,/data-permission-key="(?:credentials|permissions)"/,'Owner access management is never delegated');
+  assert.match(preview,/value="analytics"[^>]*checked/);
+}
+
+// Review-only SQL must remain fail-closed until the owner separately authorizes it.
+{
+  const draft=read('supabase/PROPOSED_ADMIN_12_PERMISSIONS_REVIEW_ONLY.sql');
+  const keys=['analytics','datasheet','profile','contacts','leads','sections','products',
+    'search-filters','template-settings','site-settings','business-settings','bank-settings'];
+  const allowedSection=draft.match(/-- A\. Permission names:[\s\S]*?(?=-- B\. Owner-only RPC)/)?.[0]||'';
+  assert.ok(allowedSection,'Missing explicit database permission constraint');
+  for(const key of keys)assert.ok(allowedSection.includes("'"+key+"'"),'Missing SQL grant key '+key);
+  assert.doesNotMatch(allowedSection,/'(?:credentials|permissions)'/,'No access delegation for owner controls');
+  assert.match(draft,/-- DO NOT RUN IN PRODUCTION WITHOUT A SEPARATE, EXPLICIT OWNER APPROVAL/);
+  assert.match(draft,/-- No UPDATE to admin_users, no auto-grants/);
+  assert.match(draft,/-- F\. Settings all share one row\./);
+  assert.match(draft,/create or replace function public\.owner_get_delegatable_permissions\(\)/);
+  assert.match(draft,/create or replace function public\.admin_save_template_footer\(/);
+  assert.doesNotMatch(draft,/create policy\s+["'][^"']*subadmin[^"']*["']\s+on public\.site_settings/i);
+  for(const name of ['admin_set_site_toggle','admin_save_catalog_filters','admin_set_template_field']){
+    assert.match(draft,new RegExp('create or replace function public\\.'+name+'\\('));
+  }
+  for(const section of ['business-settings','bank-settings','search-filters','site-settings','template-settings']){
+    assert.match(draft,new RegExp("has_admin_permission\\('"+section+"'\\)"));
+  }
+  assert.match(draft,/bucket_id='product-images'/);
+  assert.match(draft,/storage\.foldername\(name\)/);
+  assert.match(draft,/category DELETE requires BOTH/);
+  assert.match(draft,/revoke all on function public\.admin_save_catalog_filters\(text\[\],jsonb\) from public,anon/);
+}
+
 assert.match(siteLoader,/admin-permissions\.js\?v=__FL_VERSION__/);
 assert.match(permsJs,/window\.FL_ADMIN_PERMISSIONS\s*=/);
 assert.match(permsJs,/owner_set_admin2_settings/);

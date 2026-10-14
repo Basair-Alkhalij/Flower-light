@@ -58,7 +58,7 @@
   }
 
   async function load(){
-    if(!isPrimaryAdmin)return;
+    if(!core.canManageSection('search-filters'))return;
     settingError='';
     try{
       const {data,error}=await db.from('site_settings').select('catalog_filter_keys,catalog_custom_filters').eq('id',1).maybeSingle();
@@ -113,7 +113,7 @@
   }
 
   function render(){
-    if(!isPrimaryAdmin)return;
+    if(!core.canManageSection('search-filters'))return;
     layout(`<div class="fl-cloud-head"><div><h2>فلاتر البحث</h2><p>تحكم بما يظهر للزائر ورتّب الفلاتر المفعلة كما تريد.</p></div></div>
       ${settingError?`<div class="fl-cloud-note bad">تعذر قراءة إعداد فلاتر البحث. شغّل <b>supabase/UPGRADE_EXISTING_V111.sql</b> في Supabase ثم حدّث الصفحة.</div>`:''}
       <section class="fl-cloud-card">
@@ -150,8 +150,11 @@
     const button=document.getElementById('flSearchFiltersSave');
     if(button){button.disabled=true;button.textContent='جاري الحفظ...';}
     try{
+      if(!core.canManageSection('search-filters'))throw new Error('Search filters permission denied');
       const payload={id:1,catalog_filter_keys:selectedKeys.slice(),catalog_custom_filters:customFilters};
-      const {error}=await db.from('site_settings').upsert(payload,{onConflict:'id'});
+      const {error}=isPrimaryAdmin
+        ? await db.from('site_settings').upsert(payload,{onConflict:'id'})
+        : await db.rpc('admin_save_catalog_filters',{p_filter_keys:payload.catalog_filter_keys,p_custom_filters:payload.catalog_custom_filters});
       if(error)throw error;
       publish();
       notify(selectedKeys.length?'تم حفظ تشغيل الفلاتر وترتيبها':'تم إيقاف جميع الفلاتر؛ البحث النصي فقط سيبقى ظاهرًا');

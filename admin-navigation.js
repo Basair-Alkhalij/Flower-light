@@ -15,14 +15,14 @@
       ['المنتجات والكتالوج',from(mainViews)],
       ['المتابعة والتواصل',from(contactViews)]
     ];
+    const settings=(ownerSettingsViewItems||[]).filter(([key])=>permit.has(key));
+    const settingsFrom=keys=>keys.map(key=>settings.find(row=>row[0]===key)).filter(Boolean);
+    result.push(['الفلاتر وقوالب المنتجات',settingsFrom(catalogSettings)]);
+    result.push(['الموقع والمنشأة',settingsFrom(companySettings)]);
+    const known=new Set([...catalogSettings,...companySettings]);
+    const other=settings.filter(([key])=>!known.has(key));
+    if(other.length)result.push(['إعدادات إضافية',other]);
     if(isPrimaryAdmin){
-      const ownerItems=ownerSettingsViewItems||[];
-      const ownerFrom=keys=>keys.map(key=>ownerItems.find(row=>row[0]===key)).filter(Boolean);
-      result.push(['الفلاتر وقوالب المنتجات',ownerFrom(catalogSettings)]);
-      result.push(['الموقع والمنشأة',ownerFrom(companySettings)]);
-      const known=new Set([...catalogSettings,...companySettings]);
-      const other=ownerItems.filter(([key])=>!known.has(key));
-      if(other.length) result.push(['إعدادات إضافية',other]);
       result.push(['الحسابات والصلاحيات',[['credentials','بيانات تسجيل الدخول'],['permissions','صلاحيات الأدمن']]]);
     }
     return result.filter(([,items])=>items.length);

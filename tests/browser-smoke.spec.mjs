@@ -888,7 +888,7 @@ test('owner can add rename reorder hide and delete flexible business fields',asy
       };
       throw new Error('Unexpected table '+name);
     }
-    window.FL_ADMIN_CORE={isPrimaryAdmin:true,esc:s=>String(s??'').replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;'),notify(){},db:{from:table,rpc:async()=>({data:0,error:null})}};
+    window.FL_ADMIN_CORE={isPrimaryAdmin:true,canManageSection:()=>window.FL_ADMIN_CORE.isPrimaryAdmin,esc:s=>String(s??'').replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;'),notify(){},db:{from:table,rpc:async()=>({data:0,error:null})}};
   });
   await page.addScriptTag({url:new URL('admin-business.js?v=__FL_VERSION__',base).href});
   await page.evaluate(async()=>{await window.FL_ADMIN_BUSINESS.load();const render=()=>{document.body.innerHTML=window.FL_ADMIN_BUSINESS.cardsHtml();window.FL_ADMIN_BUSINESS.bind(render);};render();});
@@ -950,7 +950,7 @@ test('owner can manage bank accounts and validate Saudi IBAN',async({page})=>{
       update(){return {eq:async()=>({error:null})};},
       upsert:async rows=>{window.__bankSaved=rows;return {error:null};}
     });
-    window.FL_ADMIN_CORE={isPrimaryAdmin:true,esc:s=>String(s??'').replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;'),notify(){},db:{from:table}};
+    window.FL_ADMIN_CORE={isPrimaryAdmin:true,canManageSection:()=>window.FL_ADMIN_CORE.isPrimaryAdmin,esc:s=>String(s??'').replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;'),notify(){},db:{from:table}};
   });
   await page.addScriptTag({url:new URL('admin-banks.js?v=__FL_VERSION__',base).href});
   await page.evaluate(async()=>{await window.FL_ADMIN_BANKS.load();document.body.innerHTML=window.FL_ADMIN_BANKS.cardsHtml();window.FL_ADMIN_BANKS.bind(()=>{});});

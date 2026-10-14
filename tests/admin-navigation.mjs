@@ -22,11 +22,32 @@ assert.match(owner,/الحسابات والصلاحيات/);
 assert.match(owner,/الفلاتر وقوالب المنتجات/);
 assert.match(owner,/الموقع والمنشأة/);
 assert.ok(!owner.includes('data-cloud-view="search-filters"') === false);
-const expanded=nav.groups({view:'products',allowed:new Set(['overview',...content.map(x=>x[0])]),adminViewItems:content,ownerSettingsViewItems:[...ownerSettings,['template-settings','قالب المنتجات'],['business-settings','بيانات الشركة'],['bank-settings','الحسابات البنكية']],isPrimaryAdmin:true});
+const expanded=nav.groups({view:'products',allowed:new Set(['overview',...content.map(x=>x[0]),...ownerSettings.map(x=>x[0]),'template-settings','business-settings','bank-settings']),adminViewItems:content,ownerSettingsViewItems:[...ownerSettings,['template-settings','قالب المنتجات'],['business-settings','بيانات الشركة'],['bank-settings','الحسابات البنكية']],isPrimaryAdmin:true});
 assert.ok(expanded.find(([name])=>name==='الفلاتر وقوالب المنتجات')[1].some(([key])=>key==='template-settings'));
 assert.ok(expanded.find(([name])=>name==='الموقع والمنشأة')[1].some(([key])=>key==='bank-settings'));
 assert.ok(!expanded.find(([name])=>name==='الموقع والمنشأة')[1].some(([key])=>key==='search-filters'));
 
 assert.match(owner,/<option value="search-filters" selected>/);
 assert.match(owner,/aria-label="أقسام الإدارة"/);
+const delegated=nav.render({view:'site-settings',allowed:new Set(['overview','leads','site-settings']),adminViewItems:content,ownerSettingsViewItems:ownerSettings,isPrimaryAdmin:false});
+assert.match(delegated,/data-cloud-view="site-settings"/);
+assert.doesNotMatch(delegated,/data-cloud-view="search-filters"/);
+assert.doesNotMatch(delegated,/data-cloud-view="permissions"/);
+// A delegated subadmin may enter exactly the owner-selected section, never
+// any other section or the credentials/permissions owner-only controls.
+const allDelegatable=[...content,['profile','البيانات الشخصية'],...ownerSettings,
+  ['template-settings','قالب المنتجات'],['business-settings','بيانات الشركة'],
+  ['bank-settings','الحسابات البنكية']];
+const navigationKeys=new Set(allDelegatable.map(([key])=>key));
+assert.equal(navigationKeys.size,12);
+for(const selectedKey of navigationKeys){
+  const groupList=nav.groups({view:selectedKey,
+    allowed:new Set(['overview',selectedKey]),
+    adminViewItems:allDelegatable.filter(([key])=>!['site-settings','search-filters','template-settings','business-settings','bank-settings'].includes(key)),
+    ownerSettingsViewItems:allDelegatable.filter(([key])=>['site-settings','search-filters','template-settings','business-settings','bank-settings'].includes(key)),
+    isPrimaryAdmin:false});
+  const actual=groupList.flatMap(([,rows])=>rows.map(([key])=>key));
+  assert.deepEqual(Array.from(actual),['overview',selectedKey],'Permission isolation for '+selectedKey);
+}
+
 console.log('ADMIN_NAVIGATION_MODULE_OK');
