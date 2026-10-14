@@ -48,14 +48,15 @@ function verify(source){
     line=>/^\s*$/.test(line)||/^\s*--/.test(line)
   ),'Executable or duplicated SQL found after COMMIT');
   assert.equal((source.match(/\$preflight\$/g)||[]).length,2,'preflight DO block');
-  assert.equal((source.match(/\$fn\$/g)||[]).length,12,'six complete SQL functions');
+  assert.equal((source.match(/\$fn\$/g)||[]).length,14,'seven complete SQL functions');
   const intended=[
     ['owner_set_admin2_settings','is_site_owner'],
     ['owner_get_delegatable_permissions','is_site_owner'],
     ['admin_set_site_toggle','site-settings'],
     ['admin_save_catalog_filters','search-filters'],
     ['admin_set_template_field','template-settings'],
-    ['admin_save_template_footer','template-settings']
+    ['admin_save_template_footer','template-settings'],
+    ['purge_expired_customer_leads',"has_admin_permission('leads')"]
   ];
   for(const [fn,guard] of intended){
     const matcher=new RegExp('create or replace function public\\.'+fn+'\\([\\s\\S]*?as \\$fn\\$([\\s\\S]*?)\\$fn\\$;');
@@ -92,6 +93,9 @@ function verify(source){
     'Custom-filter validation must end in a closed, anchored SQL string');
   assert.match(source,/jsonb_typeof\(x\.item->'key'\) is distinct from 'string'/);
   assert.match(source,/admin_save_template_footer\(text,text\) to authenticated/);
+  assert.match(source,/if v_role='authenticated' and not public\.has_admin_permission\('leads'\)/);
+  assert.doesNotMatch(source,/if v_role\s*=\s*'authenticated' and not public\.is_site_admin\(\)/);
+  assert.match(source,/grant execute on function public\.purge_expired_customer_leads\(\) to authenticated,service_role/);
   assert.doesNotMatch(source,/grant\s+(?:all|update)\s+on\s+(?:table\s+)?public\.site_settings\s+to\s+authenticated/i);
   const keyWhitelist=source.match(/v_allowed constant text\[\][\s\S]*?::text\[\];/)?.[0]||'';
   assert.ok(keyWhitelist,'Owner grant whitelist missing');
@@ -106,6 +110,10 @@ verify(draft);
 // duplication that previously slipped past UI-only checks.
 assert.throws(()=>verify(draft.replace(/^\s*commit;$/m,'')));
 assert.throws(()=>verify(draft+draft));
+assert.throws(()=>verify(draft.replace(
+  "not public.has_admin_permission('leads')",
+  "not public.is_site_admin()"
+)));
 assert.throws(()=>verify(draft.replace(
   "'^custom_filter_[a-z0-9]+$'",
   "'^custom_filter_[a-z0-9]+"
