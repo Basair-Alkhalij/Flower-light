@@ -35,6 +35,21 @@ const cssComparableFile = file => read(file).replace(/\s*([{};,])\s*/g,'$1');
 const manageAdmin = read('supabase/functions/manage-admin-account/index.ts');
 const sql = read('SUPABASE_SETUP.sql');
 
+// Step 15 follow-up: PDF export must not depend on a third-party CDN at runtime.
+{
+  const build=read('scripts/build.mjs');
+  const sw=read('sw.js');
+  const live=read('tests/live-site-smoke.mjs');
+  assert.match(build,/jspdf@4\.2\.1\/dist\/jspdf\.umd\.min\.js/);
+  assert.match(build,/Pinned jsPDF SHA-256 mismatch/);
+  assert.match(build,/jspdf-vendor\.js/);
+  assert.match(app,/jspdf-vendor\.js\?v=__FL_VERSION__/);
+  assert.match(app,/script\.src = JSPDF_PRIMARY_URL/);
+  assert.match(sw,/path\.endsWith\('\/jspdf-vendor\.js'\)/);
+  assert.match(live,/LIVE_JSPDF_VENDOR_OK/);
+  assert.match(adminDatasheet,/choice==='pdf'\?await renderer\.loadJsPdf\(\):null/);
+}
+
 // Step 15: a new GitHub Pages commit must invalidate the public shell cache.
 {
   const buildScript=read('scripts/build.mjs');
