@@ -75,6 +75,16 @@ function verify(source){
     'Broad delegated write policy for shared site_settings would bypass scoped RPCs');
   assert.match(source,/role='owner'\s+or\s+permissions <@/);
   assert.match(source,/category DELETE requires BOTH/);
+  // The sensitive privacy singleton is never deletable by a business-only admin.
+  const privacyStart=source.indexOf('-- D. Business rows:');
+  const privacyEnd=source.indexOf('-- E. Bank accounts',privacyStart);
+  assert.ok(privacyStart>=0&&privacyEnd>privacyStart);
+  const privacy=source.slice(privacyStart,privacyEnd);
+  for(const operation of ['select','insert','update']){
+    assert.match(privacy,new RegExp('on public\\.business_privacy_settings for '+operation+' to authenticated'));
+  }
+  assert.doesNotMatch(privacy,/on public\\.business_privacy_settings for (?:all|delete) to authenticated/i);
+  assert.match(privacy,/NEVER deleted by subadmin/);
   assert.match(source,/bucket_id='product-images'/);
   assert.match(source,/storage\.foldername\(name\)/);
   assert.match(source,/\^site-settings\/master-barcode-/);
