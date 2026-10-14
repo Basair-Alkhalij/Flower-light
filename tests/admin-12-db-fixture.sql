@@ -106,6 +106,8 @@ create policy "owner storage" on storage.objects
  for all to authenticated using(public.is_site_owner())
  with check(public.is_site_owner());
 grant usage on schema public,auth,storage to authenticated,anon;
+-- The fixture's service role models the existing trusted scheduled-maintenance API role.
+grant usage on schema public,auth to service_role;
 grant select,insert,update,delete on
  public.site_settings,public.business_privacy_settings,
  public.business_public_fields,public.business_bank_accounts,
