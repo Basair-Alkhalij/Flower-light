@@ -106,6 +106,20 @@ function verify(source){
   assert.match(browser,/owner_get_delegatable_permissions/);
 }
 verify(draft);
+// Keep the incremental migration byte-for-byte synchronized with the
+// historical master appendix. The historical setup MUST NOT be run on a
+// production database; only the reviewed incremental file is intended.
+const master=fs.readFileSync(new URL('../SUPABASE_SETUP.sql',import.meta.url),'utf8');
+const masterBegin='-- BEGIN REVIEWED ADMIN 12-SECTION RECONCILIATION';
+const masterEnd='-- END REVIEWED ADMIN 12-SECTION RECONCILIATION';
+assert.equal(master.split(masterBegin).length,2,'Master must have exactly one reviewed appendix start');
+assert.equal(master.split(masterEnd).length,2,'Master must have exactly one reviewed appendix end');
+const masterAppendix=master.split(masterBegin)[1].split(masterEnd)[0];
+const draftStart=draft.indexOf('-- FLOWER LIGHT');
+assert.ok(draftStart>=0,'Reviewed incremental SQL header missing');
+assert.ok(masterAppendix.includes(draft.trim()),'Historical master appendix has drifted from incremental SQL');
+assert.match(master.slice(0,650),/DO NOT EXECUTE THIS FULL MASTER/);
+
 // Mutation regressions: catch the exact malformed draft and accidental merge
 // duplication that previously slipped past UI-only checks.
 assert.throws(()=>verify(draft.replace(/^\s*commit;$/m,'')));
