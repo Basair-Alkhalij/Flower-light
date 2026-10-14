@@ -26,13 +26,13 @@ $$;
 set role authenticated;
 set request.jwt.claim.sub='22222222-2222-4222-8222-222222222222';
 set request.jwt.claim.role='authenticated';
-do $
+do $fixture$
 begin
  if public.is_site_owner() then raise exception 'Assistant detected as owner'; end if;
  if not public.has_admin_permission('leads') then raise exception 'Migration erased existing leads permission'; end if;
  if public.has_admin_permission('site-settings') then raise exception 'Migration auto-granted site-settings'; end if;
 end;
-$$;
+$fixture$;
 select public.review_expect_42501(
  'select public.owner_get_delegatable_permissions()');
 select public.review_expect_42501(
@@ -52,7 +52,7 @@ select public.review_expect_rows(
 
 -- The pre-existing leads permission authorizes retention maintenance and
 -- deletes only expired synthetic rows, leaving fresh records untouched.
-do $
+do $fixture$
 declare removed integer;
 begin
  removed:=public.purge_expired_customer_leads();
@@ -61,7 +61,7 @@ begin
    raise exception 'Purge altered recent customer leads';
  end if;
 end;
-$;
+$fixture$;
 
 -- Confirm the owner can enumerate available keys but cannot grant owner-only keys.
 set request.jwt.claim.sub='11111111-1111-4111-8111-111111111111';
@@ -198,21 +198,21 @@ reset role;
 set role service_role;
 set request.jwt.claim.role='service_role';
 set request.jwt.claim.sub='';
-do $
+do $fixture$
 declare removed integer;
 begin
   removed:=public.purge_expired_customer_leads();
   if removed<>1 then raise exception 'service_role retention purge removed % rows, expected 1',removed; end if;
 end;
-$;
+$fixture$;
 reset role;
-do $
+do $fixture$
 begin
   if (select count(*) from public.customer_leads)<>1 then
     raise exception 'Unauthorised purge or service-role retention changed unexpected records';
   end if;
 end;
-$;
+$fixture$;
 
 -- All test row writes occurred exclusively in the isolated CI service.
 \echo ADMIN_12_POSTGRES_SECURITY_OK
