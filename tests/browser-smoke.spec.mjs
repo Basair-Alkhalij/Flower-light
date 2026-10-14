@@ -1318,6 +1318,55 @@ test('acceptance: admin datasheet shared renderer downloads a real PDF with embe
   expect(bytes.subarray(0,5).toString('latin1')).toBe('%PDF-');
 });
 
+// Regression: the previous PDF test checked only the %PDF header. A valid PDF can
+// still contain a blank datasheet image, so render the resulting PDF with real PDF.js.
+test('regression: admin datasheet PDF retains the uploaded photo when actually viewed',async({page})=>{
+  test.skip(process.env.FL_TEST_DIST!=='1','Bundled PDF.js is available in the built site');
+  await installSupabaseMock(page);
+  await page.goto(base,{waitUntil:'load'});
+  await page.waitForFunction(()=>Boolean(window.flDatasheetPdf?.loadJsPdf && window.flDatasheetPdf?.createSinglePage));
+  const result=await page.evaluate(async()=>{
+    const renderer=window.flDatasheetPdf;
+    const photo=document.createElement('canvas');
+    photo.width=320;photo.height=320;
+    const photoContext=photo.getContext('2d');
+    photoContext.fillStyle='#ed175a';
+    photoContext.fillRect(0,0,320,320);
+    const image=photo.toDataURL('image/png');
+    const item={name:'اختبار صورة PDF',model:'PHOTO-IN-PDF',image,caption:'',specifications:[],gallery:[{image,image_path:''}]};
+    const {canvas,failedImages}=await renderer.createSinglePage(item,image,0,1,{scale:renderer.scales.pdf});
+    const sourcePixel=[...canvas.getContext('2d').getImageData(1000,960,1,1).data];
+    const JsPdf=await renderer.loadJsPdf();
+    const pdf=new JsPdf({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+    pdf.addImage(canvas.toDataURL('image/jpeg',renderer.qualities.pdf),'JPEG',0,0,210,297,undefined,'FAST');
+
+    const pdfjs=await import(new URL('pdfjs/pdf.min.mjs',document.baseURI).href);
+    pdfjs.GlobalWorkerOptions.workerSrc=new URL('pdfjs/pdf.worker.min.mjs',document.baseURI).href;
+    const task=pdfjs.getDocument({data:new Uint8Array(pdf.output('arraybuffer')),isEvalSupported:false});
+    const pdfDoc=await task.promise;
+    try{
+      const pdfPage=await pdfDoc.getPage(1);
+      const initialViewport=pdfPage.getViewport({scale:1});
+      const viewport=pdfPage.getViewport({scale:1000/initialViewport.width});
+      const rendered=document.createElement('canvas');
+      rendered.width=Math.ceil(viewport.width);
+      rendered.height=Math.ceil(viewport.height);
+      const ctx=rendered.getContext('2d');
+      await pdfPage.render({canvasContext:ctx,viewport,background:'#ffffff'}).promise;
+      const pdfPixel=[...ctx.getImageData(500,480,1,1).data];
+      return {failedImages,sourcePixel,pdfPixel,pages:pdfDoc.numPages,pdfBytes:pdf.output('arraybuffer').byteLength};
+    }finally{await pdfDoc.destroy();}
+  });
+  expect(result.failedImages).toBe(0);
+  expect(result.pages).toBe(1);
+  expect(result.pdfBytes).toBeGreaterThan(10000);
+  expect(result.sourcePixel[0]).toBeGreaterThan(210);
+  expect(result.pdfPixel[0]).toBeGreaterThan(210);
+  expect(result.pdfPixel[1]).toBeLessThan(80);
+  expect(result.pdfPixel[2]).toBeGreaterThan(50);
+  expect(result.pdfPixel[2]).toBeLessThan(165);
+});
+
 test('security: missing Turnstile site key must never fall back to direct customer insert',async({page})=>{
   await installSupabaseMock(page);
   const configSource=fs.readFileSync(new URL('../config.js',import.meta.url),'utf8');
