@@ -96,6 +96,13 @@ assert.match(form,/window\.FL_ADMIN_PRODUCT_FORM\s*=/);
 assert.match(importJs,/window\.FL_ADMIN_IMPORT\s*=/);
 assert.match(importJs,/uploadProductImagePair/);
 assert.match(app,/image_thumb/);
+assert.match(app,/jspdf-vendor\\.js\\?v=/,'Published export must load local jsPDF');
+const pdfVendor=await get('jspdf-vendor.js?v='+releaseVersion);
+const jsPdfBytes=Buffer.from(await pdfVendor.arrayBuffer());
+assert.ok(jsPdfBytes.length>150_000,'Published jsPDF vendor is missing or incomplete');
+const {createHash}=await import('node:crypto');
+assert.equal(createHash('sha256').update(jsPdfBytes).digest('base64'),'5lUfzcMvCdaFOyxRJtGNAdlEfg2mGKQaEevu4PbCDVQ=','Published jsPDF hash mismatch');
+console.log('LIVE_JSPDF_VENDOR_OK',jsPdfBytes.length);
 
 assert.doesNotMatch(css,/\\n\\n/);
 const normalize=value=>value.trim().replace(/\s+/g,' ').replace(/\s*:\s*/g,':');
