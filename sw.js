@@ -93,6 +93,8 @@ function isShellRequest(url) {
     path.endsWith('/config.js') ||
     path.endsWith('/public-sync.js') ||
     path.endsWith('/supabase-vendor.js') ||
+    // Cache jsPDF only after a PDF is requested; don't download it for every visitor.
+    path.endsWith('/jspdf-vendor.js') ||
     path.endsWith('/catalog-search.js') ||
     path.endsWith('/company-logo.png') ||
     path.endsWith('/manifest.webmanifest') ||
