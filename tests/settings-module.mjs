@@ -11,7 +11,7 @@ const dbStub={
     upsert:async(row,opts)=>{upserts.push(row);Object.assign(siteRow,row);return {error:null}} }; },
   storage:{from:()=>({upload:async()=>({error:null}),remove:async()=>({error:null})})},
 };
-const make=(isPrimaryAdmin)=>({esc:s=>String(s??''),notify:m=>notified.push(m),imageUrl:p=>'https://img/'+p,isStoragePath:p=>!!p&&!/^https?:/.test(p),bucket:'product-images',isPrimaryAdmin,PRODUCT_SPEC_FIELDS:[{key:'wattage',label:'القدرة'},{key:'cct',label:'حرارة اللون'},{key:'color',label:'اللون'}],get db(){return dbStub}});
+const make=(isPrimaryAdmin)=>({esc:s=>String(s??''),notify:m=>notified.push(m),imageUrl:p=>'https://img/'+p,isStoragePath:p=>!!p&&!/^https?:/.test(p),bucket:'product-images',isPrimaryAdmin,canManageSection:()=>isPrimaryAdmin,PRODUCT_SPEC_FIELDS:[{key:'wattage',label:'القدرة'},{key:'cct',label:'حرارة اللون'},{key:'color',label:'اللون'}],get db(){return dbStub}});
 const win={FL_ADMIN_CORE:make(true)};
 vm.runInContext(src,vm.createContext({window:win,document:doc,console,Set,Boolean,String,Array,Number,URL,Proxy,Promise,crypto:{randomUUID:()=>'uuid'}}));
 const S=win.FL_ADMIN_SETTINGS; assert.ok(S,'module registered');
