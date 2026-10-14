@@ -167,7 +167,8 @@
 
         settings={...settings,...settingsPayload};
         loadedFieldIds=new Set(publicFields.map(field=>field.id));
-        try{await db.rpc('purge_expired_customer_leads');}catch(_){ }
+        // Business-settings alone must not trigger unrelated customer-lead maintenance.
+        if(core.canManageSection('leads'))try{await db.rpc('purge_expired_customer_leads');}catch(_){ }
         core.notify('تم حفظ بطاقة بيانات المنشأة وترتيب الخانات');
         await renderOverview();
       }catch(e){
