@@ -273,13 +273,35 @@ begin
 end;
 $fn$;
 
+-- Save the two related footer fields as a single atomic, scoped update.
+create or replace function public.admin_save_template_footer(
+  p_number text, p_label text
+) returns void language plpgsql security definer
+set search_path=public,pg_temp as $fn$
+begin
+  if not public.has_admin_permission('template-settings') then
+    raise exception 'Template-settings permission required' using errcode='42501';
+  end if;
+  if p_number is null or p_label is null
+    or length(p_number)>40 or length(p_label)>40 then
+    raise exception 'Invalid footer values' using errcode='22023';
+  end if;
+  update public.site_settings
+    set design_footer_number=p_number,design_footer_label=p_label
+  where id=1;
+  if not found then raise exception 'Site settings are missing' using errcode='P0002'; end if;
+end;
+$fn$;
+
 -- Postgres defaults EXECUTE to PUBLIC for new functions; revoke explicitly.
 revoke all on function public.admin_set_site_toggle(text,boolean) from public,anon;
 revoke all on function public.admin_save_catalog_filters(text[],jsonb) from public,anon;
 revoke all on function public.admin_set_template_field(text,text) from public,anon;
+revoke all on function public.admin_save_template_footer(text,text) from public,anon;
 grant execute on function public.admin_set_site_toggle(text,boolean) to authenticated;
 grant execute on function public.admin_save_catalog_filters(text[],jsonb) to authenticated;
 grant execute on function public.admin_set_template_field(text,text) to authenticated;
+grant execute on function public.admin_save_template_footer(text,text) to authenticated;
 
 -- G. Barcode files: permit only site-settings/ namespace for template editors.
 -- The product-images bucket's other folders, including site-assets, stay governed
