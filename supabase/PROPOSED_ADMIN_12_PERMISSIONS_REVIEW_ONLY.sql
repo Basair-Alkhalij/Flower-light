@@ -337,6 +337,46 @@ with check (
   and public.has_admin_permission('template-settings')
 );
 
+-- H. Expired customer-lead maintenance must honor the independently delegated
+-- 'leads' permission. The current deployed SECURITY DEFINER routine accepts any
+-- logged-in subadmin because it uses is_site_admin(), bypassing this boundary.
+-- Preserve the existing 180-day fallback, 1..36500 retention clamp, return type,
+-- service_role access, and trusted internal scheduled invocation behavior.
+create or replace function public.purge_expired_customer_leads()
+returns integer
+language plpgsql
+security definer
+set search_path=public,pg_temp
+as $fn$
+declare
+  v_keep_days integer := 180;
+  v_deleted integer := 0;
+  v_role text := coalesce(auth.role(), '');
+begin
+  if v_role='authenticated' and not public.has_admin_permission('leads') then
+    raise exception 'Leads permission required' using errcode='42501';
+  end if;
+
+  select greatest(1,least(36500,coalesce(retention_days,180)))
+  into v_keep_days
+  from public.business_privacy_settings
+  where id=1;
+
+  v_keep_days := coalesce(v_keep_days,180);
+
+  delete from public.customer_leads
+  where created_at < now() - make_interval(days=>v_keep_days);
+
+  get diagnostics v_deleted = row_count;
+  return v_deleted;
+end;
+$fn$;
+
+-- Do not grant any database client or anonymous user access. Preserve the
+-- existing authenticated and service_role grants for permitted callers.
+revoke all on function public.purge_expired_customer_leads() from public,anon;
+grant execute on function public.purge_expired_customer_leads() to authenticated,service_role;
+
 commit;
 
 -- READ-ONLY verification queries for a future authorized migration review:
