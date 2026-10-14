@@ -33,4 +33,21 @@ const delegated=nav.render({view:'site-settings',allowed:new Set(['overview','le
 assert.match(delegated,/data-cloud-view="site-settings"/);
 assert.doesNotMatch(delegated,/data-cloud-view="search-filters"/);
 assert.doesNotMatch(delegated,/data-cloud-view="permissions"/);
+// A delegated subadmin may enter exactly the owner-selected section, never
+// any other section or the credentials/permissions owner-only controls.
+const allDelegatable=[...content,['profile','البيانات الشخصية'],...ownerSettings,
+  ['template-settings','قالب المنتجات'],['business-settings','بيانات الشركة'],
+  ['bank-settings','الحسابات البنكية']];
+const navigationKeys=new Set(allDelegatable.map(([key])=>key));
+assert.equal(navigationKeys.size,12);
+for(const selectedKey of navigationKeys){
+  const groupList=nav.groups({view:selectedKey,
+    allowed:new Set(['overview',selectedKey]),
+    adminViewItems:allDelegatable.filter(([key])=>!['site-settings','search-filters','template-settings','business-settings','bank-settings'].includes(key)),
+    ownerSettingsViewItems:allDelegatable.filter(([key])=>['site-settings','search-filters','template-settings','business-settings','bank-settings'].includes(key)),
+    isPrimaryAdmin:false});
+  const actual=groupList.flatMap(([,rows])=>rows.map(([key])=>key));
+  assert.deepEqual(Array.from(actual),['overview',selectedKey],'Permission isolation for '+selectedKey);
+}
+
 console.log('ADMIN_NAVIGATION_MODULE_OK');
