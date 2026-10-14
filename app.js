@@ -1882,6 +1882,10 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
 
   const JSPDF_CDN_URL = 'https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js';
   const JSPDF_SRI = 'sha256-5lUfzcMvCdaFOyxRJtGNAdlEfg2mGKQaEevu4PbCDVQ=';
+  // Built Pages use the verified same-origin vendor. Unbuilt development pages
+  // still load the pinned CDN asset because jspdf-vendor.js exists only in dist.
+  const JSPDF_PRIMARY_URL = '__FL_VERSION__'.startsWith('__FL_')
+    ? JSPDF_CDN_URL : 'jspdf-vendor.js?v=__FL_VERSION__';
   let jsPdfLoadPromise = null;
 
   function loadJsPdfOnDemand() {
@@ -1895,7 +1899,7 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
         if (JsPdf) resolve(JsPdf);
         else reject(new Error('jsPDF loaded but the constructor is unavailable.'));
       };
-      const fail = () => reject(new Error('Unable to load jsPDF from CDN.'));
+      const fail = () => reject(new Error('تعذر تحميل أداة PDF. حدّث الموقع وتحقق من الاتصال ثم حاول مجددًا.'));
 
       if (existing) {
         existing.addEventListener('load', finish, { once: true });
@@ -1904,7 +1908,7 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
       }
 
       const script = document.createElement('script');
-      script.src = JSPDF_CDN_URL;
+      script.src = JSPDF_PRIMARY_URL;
       script.async = true;
       script.dataset.flJspdf = '1';
       script.integrity = JSPDF_SRI;

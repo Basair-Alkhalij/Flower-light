@@ -1265,6 +1265,29 @@ test('acceptance: product PDF export produces a real readable PDF header',async(
 });
 
 
+test('release: PDF downloads still work when the external jsPDF CDN is blocked',async({page})=>{
+  test.skip(process.env.FL_TEST_DIST!=='1','Self-hosted vendor is generated only for production builds');
+  await installSupabaseMock(page);
+  const externalRequests=[];
+  await page.route('**/npm/jspdf@*/dist/jspdf.umd.min.js',route=>{
+    externalRequests.push(route.request().url());
+    return route.abort();
+  });
+  await page.goto(base,{waitUntil:'load'});
+  await injectCatalogFixtures(page);
+  await page.locator('#openProducts').click();
+  await page.locator('.product-download-pdf-button').click();
+  const downloadPromise=page.waitForEvent('download',{timeout:40000});
+  await page.locator('#exportChoicePdf').click();
+  const download=await downloadPromise;
+  const bytes=fs.readFileSync(await download.path());
+  expect(bytes.subarray(0,5).toString('latin1')).toBe('%PDF-');
+  expect(bytes.length).toBeGreaterThan(10000);
+  const vendor=await page.evaluate(()=>document.querySelector('script[data-fl-jspdf]')?.getAttribute('src')||'');
+  expect(vendor).toMatch(/^jspdf-vendor\.js\?v=/);
+  expect(externalRequests).toHaveLength(0);
+});
+
 test('acceptance: multi-product catalog PDF downloads a valid multi-page document',async({page})=>{
   await installSupabaseMock(page);
   await page.goto(base,{waitUntil:'domcontentloaded'});
@@ -1287,6 +1310,42 @@ test('acceptance: multi-product catalog PDF downloads a valid multi-page documen
   const pdf=bytes.toString('latin1');
   expect(pdf.startsWith('%PDF-')).toBe(true);
   expect((pdf.match(/\/Type \/Page\b/g)||[]).length).toBeGreaterThanOrEqual(2);
+});
+
+test('release: admin datasheet PDF submit works without any external jsPDF request',async({page})=>{
+  test.skip(process.env.FL_TEST_DIST!=='1','Self-hosted vendor is generated only for production builds');
+  await installSupabaseMock(page);
+  let externalJsPdfCalls=0;
+  await page.route('**/npm/jspdf@*/dist/jspdf.umd.min.js',route=>{externalJsPdfCalls++;return route.abort();});
+  await page.goto(new URL('?admin=1',base).href,{waitUntil:'load'});
+  await page.waitForFunction(()=>Boolean(window.FL_ADMIN_DATASHEET?.renderDatasheetDesigner));
+  await page.evaluate(()=>{
+    const core=window.FL_ADMIN_CORE;
+    core.view='datasheet';
+    core.db.rpc=async()=>({data:[{key:'datasheet_1',label:'القدرة',unit:'W'}],error:null});
+    window.FL_ADMIN_DATASHEET.renderDatasheetDesigner();
+  });
+  await page.waitForSelector('#flDatasheetDesignerForm');
+  const pngBytes=await page.evaluate(()=>{
+    const c=document.createElement('canvas');
+    c.width=200;c.height=200;
+    c.getContext('2d').fillStyle='#e62a59';
+    c.getContext('2d').fillRect(0,0,c.width,c.height);
+    return [...Uint8Array.from(atob(c.toDataURL('image/png').split(',')[1]),s=>s.charCodeAt(0))];
+  });
+  await page.locator('#flDatasheetImage').setInputFiles({name:'test.png',mimeType:'image/png',buffer:Buffer.from(pngBytes)});
+  await page.locator('#flDatasheetName').evaluate(el=>{el.value='اختبار داتا شيت';});
+  await page.locator('#flDatasheetCode').evaluate(el=>{el.value='DATASHEET-LOCAL';});
+  await page.evaluate(()=>document.getElementById('flDatasheetDesignerForm').requestSubmit());
+  await expect.poll(()=>page.evaluate(()=>document.getElementById('exportChoiceModal')?.classList.contains('open'))).toBe(true);
+  const downloadPromise=page.waitForEvent('download',{timeout:45000});
+  await page.evaluate(()=>document.getElementById('exportChoicePdf')?.click());
+  const download=await downloadPromise;
+  expect(download.suggestedFilename()).toBe('DATASHEET-LOCAL-datasheet.pdf');
+  const bytes=fs.readFileSync(await download.path());
+  expect(bytes.subarray(0,5).toString('latin1')).toBe('%PDF-');
+  expect(bytes.length).toBeGreaterThan(10000);
+  expect(externalJsPdfCalls).toBe(0);
 });
 
 test('acceptance: admin datasheet shared renderer downloads a real PDF with embedded image',async({page})=>{
