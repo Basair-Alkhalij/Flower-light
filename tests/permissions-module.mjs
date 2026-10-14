@@ -25,8 +25,8 @@ assert.match(html,/a2@example\.com/);
 assert.match(html,/name="admin2_permission"/);
 const listHtml=html;
 assert.match(listHtml,/>A</); assert.match(listHtml,/>L</);
-assert.match(listHtml,/data-permission-key="sections"[\\s\\S]*?<input[^>]*disabled/,'sections must be listed but not yet delegatable');
-assert.match(listHtml,/data-permission-key="products"[\\s\\S]*?<input[^>]*disabled/,'products must be listed but not yet delegatable');
+assert.match(listHtml,/data-permission-key="sections"[\s\S]*?<input[^>]*disabled/,'sections must be listed but not yet delegatable');
+assert.match(listHtml,/data-permission-key="products"[\s\S]*?<input[^>]*disabled/,'products must be listed but not yet delegatable');
 
 await listeners['flPermissionsForm:submit']({preventDefault(){}});
 assert.equal(JSON.stringify(rpcCalls[0]),JSON.stringify(['owner_set_admin2_settings',{p_email:'a2@example.com',p_permissions:['leads']}]),'unknown and unsupported keys cannot be sent');
