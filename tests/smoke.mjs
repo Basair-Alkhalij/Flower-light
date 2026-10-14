@@ -341,6 +341,38 @@ assert.match(leadsJs,/customer_leads/);
 
 // Module split part 3: permissions screen lives in admin-permissions.js.
 const permsJs=read('admin-permissions.js');
+
+// Draft UI: all 12 admin sections are listed, but sections disallowed by current
+// database permissions must stay disabled until RLS/RPC changes are approved.
+{
+  let preview='';
+  const legacy=['analytics','datasheet','profile','contacts','leads'];
+  const views=[['analytics','الإحصائيات'],['datasheet','صمّم داتا شيت'],['sections','الأقسام'],['products','المنتجات'],['profile','البيانات الشخصية'],['contacts','وسائل التواصل'],['leads','جهات اتصال العملاء']];
+  const settings=[['search-filters','فلاتر البحث'],['site-settings','إعدادات الموقع'],['business-settings','بيانات الشركة'],['bank-settings','الحسابات البنكية'],['template-settings','قالب المنتجات']];
+  const core={
+    esc:s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'),
+    notify:()=>{},layout:s=>{preview=s;},body:{querySelectorAll:()=>[]},
+    adminViewItems:views,ownerSettingsViewItems:settings,
+    delegatablePermissionKeys:new Set(legacy),
+    normalizePermissionList:v=>v.permissions||[],
+    managedAdmin2Email:'test@example.com',
+    managedAdmin2Permissions:new Set(['analytics'])
+  };
+  const context={window:{FL_ADMIN_CORE:core},console,document:{getElementById:()=>({addEventListener(){}})}};
+  vm.runInNewContext(permsJs,context);
+  context.window.FL_ADMIN_PERMISSIONS.renderPermissions();
+  const allKeys=[...views,...settings].map(row=>row[0]);
+  for(const key of allKeys){
+    const markup=preview.match(new RegExp('<label[^>]*data-permission-key="'+key+'"[^>]*>([\\s\\S]*?)<\\/label>'))?.[1]||'';
+    assert.ok(markup,'Missing permission option: '+key);
+    if(legacy.includes(key))assert.doesNotMatch(markup,/<input[^>]*disabled/,'Legacy permission must remain selectable: '+key);
+    else assert.match(markup,/<input[^>]*disabled/,'New permission must not become active before RLS upgrade: '+key);
+  }
+  assert.equal((preview.match(/data-permission-key=/g)||[]).length,12);
+  assert.doesNotMatch(preview,/data-permission-key="(?:credentials|permissions)"/,'Owner access management is never delegated');
+  assert.match(preview,/value="analytics"[^>]*checked/);
+}
+
 assert.match(siteLoader,/admin-permissions\.js\?v=__FL_VERSION__/);
 assert.match(permsJs,/window\.FL_ADMIN_PERMISSIONS\s*=/);
 assert.match(permsJs,/owner_set_admin2_settings/);
