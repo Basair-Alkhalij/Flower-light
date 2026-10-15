@@ -76,6 +76,12 @@ assert.doesNotMatch(index, /\?v=70/);
 assert.doesNotMatch(index, /\?v=78/);
 assert.doesNotMatch(index, /\?v=79/);
 assert.match(index, /style\.css\?v=__FL_VERSION__/);
+// The public hero's static logo is discoverable before JavaScript boots;
+// keep the portrait high priority when Supabase supplies its dynamic URL.
+assert.match(index, /<link rel="preload" as="image" href="company-logo\.png\?v=__FL_VERSION__" fetchpriority="high">/);
+assert.match(index, /id="siteLogo" src="company-logo\.png\?v=__FL_VERSION__"[^>]*fetchpriority="high"/);
+assert.match(index, /id="sitePortrait"[^>]*decoding="async" fetchpriority="high"/);
+assert.match(read('scripts/measure-mobile-performance.mjs'), /lcpElement/);
 assert.match(index, /share-image\.jpg/);
 assert.match(index, /<meta id="robotsMeta" name="robots" content="index,follow,max-image-preview:large"/);
 assert.match(siteBootstrap, /'1': 'لوحة المدير \| بصائر الخليج'/);

@@ -1393,8 +1393,14 @@ test('security: missing Turnstile site key must never fall back to direct custom
   await expect(page.locator('#flLeadGate')).toHaveClass(/open/);
   await page.locator('#flLeadName').fill('Secure customer');
   await page.locator('#flLeadMobile').fill('0501234567');
-  await page.waitForTimeout(1000);
-  await page.locator('#flLeadSubmit').click();
+  // Test the client-side fail-closed security guard via a valid native submission.
+  // A synthetic button click can be ignored by the browser's constraint
+  // validation before our submit handler ever runs; verify validity explicitly.
+  await page.waitForTimeout(1100);
+  await page.locator('#flLeadForm').evaluate(form=>{
+    if(!form.checkValidity())throw new Error('Lead form is unexpectedly invalid before security test');
+    form.requestSubmit();
+  });
   await expect(page.locator('#flLeadError')).toContainText('التحقق الأمني غير مهيأ');
   await expect(page.locator('#flLeadGate')).toHaveClass(/open/);
   await expect.poll(()=>page.evaluate(()=>localStorage.getItem('flower_light_customer_access_v1'))).toBeNull();
@@ -1442,6 +1448,8 @@ test('performance: visible logo priority and lazy offscreen product thumbnails',
   await expect(page.locator('#siteWatermark')).toHaveAttribute('loading','lazy');
   await expect(page.locator('#siteWatermark')).toHaveAttribute('fetchpriority','low');
   await expect(page.locator('#siteLogo')).toHaveAttribute('fetchpriority','high');
+  await expect(page.locator('link[rel="preload"][as="image"][href^="company-logo.png"]')).toHaveCount(1);
+  await expect(page.locator('#sitePortrait')).toHaveAttribute('fetchpriority','high');
   await page.evaluate(()=>{
     const items=window.FLOWER_LIGHT_PRODUCTS.extraSections[0].items;
     for(let index=1;index<8;index++)items.push({...items[0],id:'prod-test-'+index,name:'جداري '+index});
