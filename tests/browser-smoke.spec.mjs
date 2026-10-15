@@ -1442,6 +1442,8 @@ test('performance: visible logo priority and lazy offscreen product thumbnails',
   await expect(page.locator('#siteWatermark')).toHaveAttribute('loading','lazy');
   await expect(page.locator('#siteWatermark')).toHaveAttribute('fetchpriority','low');
   await expect(page.locator('#siteLogo')).toHaveAttribute('fetchpriority','high');
+  await expect(page.locator('link[rel="preload"][as="image"][href^="company-logo.png"]')).toHaveCount(1);
+  await expect(page.locator('#sitePortrait')).toHaveAttribute('fetchpriority','high');
   await page.evaluate(()=>{
     const items=window.FLOWER_LIGHT_PRODUCTS.extraSections[0].items;
     for(let index=1;index<8;index++)items.push({...items[0],id:'prod-test-'+index,name:'جداري '+index});
