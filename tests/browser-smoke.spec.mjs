@@ -1393,13 +1393,12 @@ test('security: missing Turnstile site key must never fall back to direct custom
   await expect(page.locator('#flLeadGate')).toHaveClass(/open/);
   await page.locator('#flLeadName').fill('Secure customer');
   await page.locator('#flLeadMobile').fill('0501234567');
-  // Test the client-side fail-closed security guard via a valid native submission.
-  // A synthetic button click can be ignored by the browser's constraint
-  // validation before our submit handler ever runs; verify validity explicitly.
+  // Exercise the app's submit listener directly. Native HTML constraint checks
+  // are a separate browser concern and could block the event before the
+  // Turnstile fail-closed logic under test runs.
   await page.waitForTimeout(1100);
   await page.locator('#flLeadForm').evaluate(form=>{
-    if(!form.checkValidity())throw new Error('Lead form is unexpectedly invalid before security test');
-    form.requestSubmit();
+    form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
   });
   await expect(page.locator('#flLeadError')).toContainText('التحقق الأمني غير مهيأ');
   await expect(page.locator('#flLeadGate')).toHaveClass(/open/);
