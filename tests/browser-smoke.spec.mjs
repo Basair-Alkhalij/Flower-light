@@ -1393,8 +1393,14 @@ test('security: missing Turnstile site key must never fall back to direct custom
   await expect(page.locator('#flLeadGate')).toHaveClass(/open/);
   await page.locator('#flLeadName').fill('Secure customer');
   await page.locator('#flLeadMobile').fill('0501234567');
-  await page.waitForTimeout(1000);
-  await page.locator('#flLeadSubmit').click();
+  // Test the server-side security invariant via a valid native form submission.
+  // A synthetic button click can be ignored by the browser's constraint
+  // validation before our submit handler ever runs; verify validity explicitly.
+  await page.waitForTimeout(1100);
+  await page.locator('#flLeadForm').evaluate(form=>{
+    if(!form.checkValidity())throw new Error('Lead form is unexpectedly invalid before security test');
+    form.requestSubmit();
+  });
   await expect(page.locator('#flLeadError')).toContainText('التحقق الأمني غير مهيأ');
   await expect(page.locator('#flLeadGate')).toHaveClass(/open/);
   await expect.poll(()=>page.evaluate(()=>localStorage.getItem('flower_light_customer_access_v1'))).toBeNull();
