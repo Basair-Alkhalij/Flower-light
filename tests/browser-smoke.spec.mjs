@@ -1393,7 +1393,7 @@ test('security: missing Turnstile site key must never fall back to direct custom
   await expect(page.locator('#flLeadGate')).toHaveClass(/open/);
   await page.locator('#flLeadName').fill('Secure customer');
   await page.locator('#flLeadMobile').fill('0501234567');
-  // Test the server-side security invariant via a valid native form submission.
+  // Test the client-side fail-closed security guard via a valid native submission.
   // A synthetic button click can be ignored by the browser's constraint
   // validation before our submit handler ever runs; verify validity explicitly.
   await page.waitForTimeout(1100);
