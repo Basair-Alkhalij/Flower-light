@@ -361,6 +361,8 @@
   }
 
   const BUNDLED_SITE_LOGO=new URL('company-logo.png?v=__FL_VERSION__',document.baseURI).href;
+  // Decorative-only transparent asset: never fall back to the white-backed brand logo.
+  const BUNDLED_SITE_WATERMARK=new URL('company-watermark.svg?v=__FL_VERSION__',document.baseURI).href;
   function bundledSiteLogo(){
     return BUNDLED_SITE_LOGO;
   }
@@ -391,7 +393,7 @@
 
     const activeLogo=bundledSiteLogo();
     setImage('siteLogo',activeLogo,brand||company||'Logo');
-    setImage('siteWatermark',activeLogo,'');
+    setImage('siteWatermark',BUNDLED_SITE_WATERMARK,'');
     setImage('sitePortrait',profile.portrait_path,fullName||'');
     setText('siteBrandName',displayBrand);
     setText('siteCompanyName',displayCompany);

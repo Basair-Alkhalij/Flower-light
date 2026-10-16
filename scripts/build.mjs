@@ -167,7 +167,7 @@ if (!process.argv.includes('--check')) {
 
   for(const entry of fs.readdirSync(root,{withFileTypes:true})){
     const name=entry.name;
-    if(!entry.isFile() || !(/\.(html|js|css|png|jpg|jpeg|ico|webmanifest|xml)$/.test(name) || ['robots.txt','.nojekyll'].includes(name))) continue;
+    if(!entry.isFile() || !(/\.(html|js|css|png|jpg|jpeg|svg|ico|webmanifest|xml)$/.test(name) || ['robots.txt','.nojekyll'].includes(name))) continue;
     const data=fs.readFileSync(path.join(root,name));
     let output=data;
     if(/\.(js|css)$/.test(name)){

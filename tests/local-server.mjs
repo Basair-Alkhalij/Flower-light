@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..',process.env.FL_TEST_DIST==='1'?'dist':'.');
 const port=Number(process.env.PORT||4173);
-const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.ico':'image/x-icon','.sql':'text/plain; charset=utf-8','.txt':'text/plain; charset=utf-8','.webmanifest':'application/manifest+json; charset=utf-8','.xml':'application/xml; charset=utf-8'};
+const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.ico':'image/x-icon','.sql':'text/plain; charset=utf-8','.txt':'text/plain; charset=utf-8','.webmanifest':'application/manifest+json; charset=utf-8','.xml':'application/xml; charset=utf-8'};
 const server=http.createServer((req,res)=>{
   const url=new URL(req.url||'/',`http://127.0.0.1:${port}`);
   let pathname=decodeURIComponent(url.pathname);

@@ -1447,6 +1447,16 @@ test('performance: visible logo priority and lazy offscreen product thumbnails',
   await expect(page.locator('#siteWatermark')).toHaveAttribute('loading','lazy');
   await expect(page.locator('#siteWatermark')).toHaveAttribute('fetchpriority','low');
   await expect(page.locator('#siteLogo')).toHaveAttribute('fetchpriority','high');
+  await expect(page.locator('#siteWatermark')).toHaveAttribute('src',/company-watermark\.svg\?v=/);
+  // The new watermark must genuinely have a transparent background; the header
+  // keeps its original opaque logo while the dark card uses this isolated asset.
+  const watermarkAlpha=await page.locator('#siteWatermark').evaluate(async image=>{
+    await image.decode();
+    const canvas=document.createElement('canvas');canvas.width=380;canvas.height=380;
+    canvas.getContext('2d').drawImage(image,0,0,380,380);
+    return canvas.getContext('2d').getImageData(0,0,1,1).data[3];
+  });
+  expect(watermarkAlpha).toBe(0);
   await expect(page.locator('link[rel="preload"][as="image"][href^="company-logo.png"]')).toHaveCount(1);
   await expect(page.locator('#sitePortrait')).toHaveAttribute('fetchpriority','high');
   await page.evaluate(()=>{
