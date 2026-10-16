@@ -37,6 +37,7 @@ const SHELL_URLS = [
   './supabase-vendor.js?v=__FL_VERSION__',
   './catalog-search.js?v=__FL_VERSION__',
   './company-logo.png?v=__FL_VERSION__',
+  './company-watermark.svg?v=__FL_VERSION__',
   './manifest.webmanifest',
   './favicon-32.png?v=__FL_VERSION__',
   './favicon-192.png?v=__FL_VERSION__',
@@ -97,6 +98,7 @@ function isShellRequest(url) {
     path.endsWith('/jspdf-vendor.js') ||
     path.endsWith('/catalog-search.js') ||
     path.endsWith('/company-logo.png') ||
+    path.endsWith('/company-watermark.svg') ||
     path.endsWith('/manifest.webmanifest') ||
     path.endsWith('/favicon-32.png') ||
     path.endsWith('/favicon-192.png') ||
