@@ -82,6 +82,20 @@ assert.match(index, /<link rel="preload" as="image" href="company-logo\.png\?v=_
 assert.match(index, /id="siteLogo" src="company-logo\.png\?v=__FL_VERSION__"[^>]*fetchpriority="high"/);
 assert.match(index, /id="sitePortrait"[^>]*decoding="async" fetchpriority="high"/);
 assert.match(read('scripts/measure-mobile-performance.mjs'), /lcpElement/);
+// The watermark is a standalone transparent SVG, never the white-backed header logo.
+const watermarkSvg=read('company-watermark.svg');
+assert.match(watermarkSvg,/<svg[\s\S]*viewBox="0 0 380 380"/);
+assert.match(watermarkSvg,/fill-rule="evenodd"/);
+assert.doesNotMatch(watermarkSvg,/<(?:image|rect|foreignObject|script)\b/i);
+assert.doesNotMatch(watermarkSvg,/data:image\/|company-logo\.png|<style/i);
+assert.match(sync,/const BUNDLED_SITE_WATERMARK=new URL\('company-watermark\.svg\?v=__FL_VERSION__'/);
+assert.match(sync,/setImage\('siteWatermark',BUNDLED_SITE_WATERMARK,''\)/);
+assert.match(sync,/setImage\('siteLogo',activeLogo,/);
+assert.match(read('scripts/build.mjs'),/svg\|ico\|webmanifest/);
+assert.match(sw,/company-watermark\.svg\?v=__FL_VERSION__/);
+assert.match(sw,/path\.endsWith\('\/company-watermark\.svg'\)/);
+assert.match(read('theme-dark.css'),/\.watermark\{filter:none;mix-blend-mode:screen;opacity:\.045\}/);
+assert.match(read('tests/local-server.mjs'),/\.svg':'image\/svg\+xml/);
 assert.match(index, /share-image\.jpg/);
 assert.match(index, /<meta id="robotsMeta" name="robots" content="index,follow,max-image-preview:large"/);
 assert.match(siteBootstrap, /'1': 'لوحة المدير \| بصائر الخليج'/);
