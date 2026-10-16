@@ -92,8 +92,8 @@ assert.match(sync,/const BUNDLED_SITE_WATERMARK=new URL\('company-watermark\.svg
 assert.match(sync,/setImage\('siteWatermark',BUNDLED_SITE_WATERMARK,''\)/);
 assert.match(sync,/setImage\('siteLogo',activeLogo,/);
 assert.match(read('scripts/build.mjs'),/svg\|ico\|webmanifest/);
-assert.match(sw,/company-watermark\.svg\?v=__FL_VERSION__/);
-assert.match(sw,/path\.endsWith\('\/company-watermark\.svg'\)/);
+assert.match(read('sw.js'),/company-watermark\.svg\?v=__FL_VERSION__/);
+assert.match(read('sw.js'),/path\.endsWith\('\/company-watermark\.svg'\)/);
 assert.match(read('theme-dark.css'),/\.watermark\{filter:none;mix-blend-mode:screen;opacity:\.045\}/);
 assert.match(read('tests/local-server.mjs'),/\.svg':'image\/svg\+xml/);
 assert.match(index, /share-image\.jpg/);
