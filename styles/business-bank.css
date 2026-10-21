@@ -161,6 +161,35 @@ grid-column:auto}
   unicode-bidi:plaintext;
 }
 
+/* Optional name-only WhatsApp contacts, positioned below company information. */
+.fl-business-whatsapp-links{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:center;
+  gap:6px 12px;
+  margin:8px auto 2px;
+}
+.fl-business-whatsapp-link{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  max-width:100%;
+  color:#08764d;
+  font-size:11px;
+  font-weight:800;
+  line-height:1.55;
+  text-decoration:underline;
+  text-decoration-thickness:1px;
+  text-underline-offset:3px;
+  overflow-wrap:anywhere;
+}
+.fl-business-whatsapp-link:hover{color:#075c3d}
+.fl-business-whatsapp-link:focus-visible{outline:2px solid #16a36b;outline-offset:4px;border-radius:3px}
+.fl-business-whatsapp-icon{display:inline-block;flex-shrink:0;font-size:13px}
+.fl-business-editor-add-actions{display:flex;flex-wrap:wrap;gap:8px}
+.fl-business-whatsapp-help{margin:2px 0 10px!important;font-size:11px!important;color:#586b61!important}
+
 /* ===== v109 · collapsible public bank accounts + bank account editor ===== */
 .fl-bank-accounts{margin:14px 0 8px;direction:rtl;text-align:right}
 .fl-bank-accounts[hidden]{display:none!important}

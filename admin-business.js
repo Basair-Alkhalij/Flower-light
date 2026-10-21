@@ -20,6 +20,18 @@
     };
   }
 
+  // Reuse the existing flexible company-field storage: no schema changes needed.
+  // The special value is never shown as raw text to visitors.
+  function whatsappDigits(input){
+    const raw=String(input||'').trim();
+    if(!/^\+?[\d\s()\-]+$/.test(raw))return '';
+    let digits=raw.replace(/\D/g,'');
+    if(digits.startsWith('00'))digits=digits.slice(2);
+    if(/^05\d{8}$/.test(digits))digits='966'+digits.slice(1);
+    else if(/^5\d{8}$/.test(digits))digits='966'+digits;
+    return /^\d{9,15}$/.test(digits)?digits:'';
+  }
+
   async function load(){
     if(!core.canManageSection('business-settings'))return;
     loaded=false;error='';
@@ -43,10 +55,12 @@
 
   function fieldRowHtml(field,index,total){
     const esc=core.esc;
-    return `<div class="fl-business-editor-row" data-business-row data-field-id="${esc(field.id)}">
+    const isWhatsapp=field.value.startsWith('whatsapp:');
+    const displayValue=isWhatsapp?field.value.slice('whatsapp:'.length):field.value;
+    return `<div class="fl-business-editor-row" data-business-row data-field-id="${esc(field.id)}" data-business-kind="${isWhatsapp?'whatsapp':'text'}">
       <div class="fl-business-editor-main">
-        <label class="fl-cloud-field"><span>اسم الخانة</span><input data-business-label type="text" maxlength="80" value="${esc(field.label)}" placeholder="مثال: السجل التجاري"></label>
-        <label class="fl-cloud-field"><span>القيمة</span><input data-business-value type="text" maxlength="300" value="${esc(field.value)}" placeholder="اكتب القيمة التي ستظهر للزائر" dir="auto"></label>
+        <label class="fl-cloud-field"><span>${isWhatsapp?'الاسم الذي يضغط عليه الزائر':'اسم الخانة'}</span><input data-business-label type="text" maxlength="80" value="${esc(field.label)}" placeholder="${isWhatsapp?'مثال: تواصل مع مدير المبيعات':'مثال: السجل التجاري'}"></label>
+        <label class="fl-cloud-field"><span>${isWhatsapp?'رقم واتساب':'القيمة'}</span><input data-business-value type="${isWhatsapp?'tel':'text'}" maxlength="300" value="${esc(displayValue)}" placeholder="${isWhatsapp?'مثال: 0501234567 أو +966501234567':'اكتب القيمة التي ستظهر للزائر'}" dir="${isWhatsapp?'ltr':'auto'}"></label>
       </div>
       <div class="fl-business-editor-controls">
         <label class="fl-cloud-check fl-business-visible"><input data-business-visible type="checkbox" ${field.is_visible?'checked':''}> ظاهر للزوار</label>
@@ -73,7 +87,8 @@
           <span class="fl-permission-check" aria-hidden="true">✓</span>
         </label>
 
-        <div class="fl-business-editor-head"><div><strong>الخانات الظاهرة أسفل الموقع</strong><small>يمكنك إضافة وحذف وتغيير ترتيب الخانات بحرية.</small></div><button id="flBusinessAddField" class="fl-cloud-btn" type="button">+ إضافة خانة</button></div>
+        <div class="fl-business-editor-head"><div><strong>الخانات الظاهرة أسفل الموقع</strong><small>يمكنك إضافة وحذف وتغيير ترتيب الخانات بحرية.</small></div><div class="fl-business-editor-add-actions"><button id="flBusinessAddField" class="fl-cloud-btn" type="button">+ إضافة خانة</button><button id="flBusinessAddWhatsApp" class="fl-cloud-btn" type="button">+ إضافة اسم واتساب</button></div></div>
+        <p class="fl-business-whatsapp-help">اسم واتساب يظهر أسفل معلومات الشركة كرابط. اضغط عليه لفتح محادثة مع الرقم الذي تحدده، ويمكنك التحكم في إظهاره وترتيبه وحذفه.</p>
         <div id="flBusinessFieldsList" class="fl-business-editor-list">${publicFields.map((field,index)=>fieldRowHtml(field,index,publicFields.length)).join('')}</div>
         <div id="flBusinessEmptyFields" class="fl-cloud-empty" ${publicFields.length?'hidden':''}>لا توجد خانات. اضغط «إضافة خانة» لإنشاء أول خانة.</div>
 
@@ -98,7 +113,9 @@
       publicFields=[...list.querySelectorAll('[data-business-row]')].map((row,index)=>normalizeField({
         id:row.dataset.fieldId,
         label:row.querySelector('[data-business-label]')?.value||'',
-        value:row.querySelector('[data-business-value]')?.value||'',
+        value:row.dataset.businessKind==='whatsapp'
+          ? 'whatsapp:'+(row.querySelector('[data-business-value]')?.value||'')
+          : (row.querySelector('[data-business-value]')?.value||''),
         is_visible:Boolean(row.querySelector('[data-business-visible]')?.checked),
         sort_order:index
       },index));
@@ -111,6 +128,13 @@
     document.getElementById('flBusinessAddField')?.addEventListener('click',()=>{
       syncFromDom();
       publicFields.push(normalizeField({label:'',value:'',is_visible:true,sort_order:publicFields.length},publicFields.length));
+      renderRows();
+      list.querySelector('[data-business-row]:last-child [data-business-label]')?.focus();
+    });
+
+    document.getElementById('flBusinessAddWhatsApp')?.addEventListener('click',()=>{
+      syncFromDom();
+      publicFields.push(normalizeField({label:'',value:'whatsapp:',is_visible:true,sort_order:publicFields.length},publicFields.length));
       renderRows();
       list.querySelector('[data-business-row]:last-child [data-business-label]')?.focus();
     });
@@ -142,6 +166,11 @@
           field.label=field.label.trim();field.value=field.value.trim();field.sort_order=index;
           if(!field.label)throw new Error(`اكتب اسم الخانة رقم ${index+1} أو احذفها.`);
           if(!field.value)throw new Error(`اكتب قيمة الخانة «${field.label}» أو احذفها.`);
+          if(field.value.startsWith('whatsapp:')){
+            const digits=whatsappDigits(field.value.slice('whatsapp:'.length));
+            if(!digits)throw new Error(`اكتب رقم واتساب صحيحًا للخانة «${field.label}» (9 إلى 15 رقمًا، ويمكن إدخال 05 أو +966).`);
+            field.value='whatsapp:'+digits;
+          }
           if(field.label.length>80||field.value.length>300)throw new Error('إحدى الخانات تتجاوز الطول المسموح.');
         }
 
