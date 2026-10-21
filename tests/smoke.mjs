@@ -96,6 +96,16 @@ assert.match(read('sw.js'),/company-watermark\.svg\?v=__FL_VERSION__/);
 assert.match(read('sw.js'),/path\.endsWith\('\/company-watermark\.svg'\)/);
 assert.match(read('theme-dark.css'),/\.watermark\{filter:none;mix-blend-mode:screen;opacity:\.045\}/);
 assert.match(read('tests/local-server.mjs'),/\.svg':'image\/svg\+xml/);
+// Admin-configurable name-only WhatsApp links reuse business_public_fields;
+// visitors see an allowlisted wa.me link, never the stored special marker.
+const businessAdmin=read('admin-business.js');
+const businessPublic=read('business-info.js');
+assert.match(businessAdmin,/flBusinessAddWhatsApp/);
+assert.match(businessAdmin,/whatsappDigits\(field\.value\.slice/);
+assert.match(businessPublic,/https:\/\/wa\.me\//);
+assert.match(businessPublic,/fl-business-whatsapp-links/);
+assert.match(businessPublic,/noopener noreferrer/);
+assert.match(css,/\.fl-business-whatsapp-link\{/);
 assert.match(index, /share-image\.jpg/);
 assert.match(index, /<meta id="robotsMeta" name="robots" content="index,follow,max-image-preview:large"/);
 assert.match(siteBootstrap, /'1': 'لوحة المدير \| بصائر الخليج'/);
