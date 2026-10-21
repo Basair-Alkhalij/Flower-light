@@ -845,7 +845,7 @@ for(const rpcFails of [false,true]){
 
 test('business privacy renders dynamic fields and honors all hiding',async({page})=>{
   let data={fields:[
-    {id:'legal',label:'الاسم التجاري',value:'شركة بصائر الخليج',sort_order:0},
+    {id:'legal',label:'الاسم التجاري',label_en:'Legal business name',value:'شركة بصائر الخليج',value_en:'Basair Gulf Company',sort_order:0},
     {id:'cr',label:'السجل التجاري',value:'1010230086',sort_order:1},
     {id:'tax',label:'الرقم الضريبي',value:'311199840200003',sort_order:2},
     {id:'contact',label:'للتواصل',value:'0560933353',sort_order:3}
@@ -855,6 +855,11 @@ test('business privacy renders dynamic fields and honors all hiding',async({page
   await expect(page.locator('[data-business-field="legal"]')).toContainText('شركة بصائر الخليج');
   await expect(page.locator('[data-business-field="contact"]')).toContainText('0560933353');
   await expect(page.locator('[data-business-field="retention_days"]')).toContainText('180 يوم');
+  await page.goto(new URL('privacy-en.html',base).href);
+  await expect(page.locator('[data-business-field="legal"]')).toContainText('Legal business name');
+  await expect(page.locator('[data-business-field="legal"]')).toContainText('Basair Gulf Company');
+  await expect(page.locator('[data-business-field="retention_days"]')).toContainText('180 days');
+  await page.goto(new URL('privacy.html',base).href);
   await expect(page.locator('.fl-business-info-head')).toContainText('بيانات المنشأة');
   data={fields:[{id:'legal',label:'الاسم الرسمي',value:'شركة معدلة',sort_order:0}],retention_days:90};
   await page.reload();
@@ -869,8 +874,8 @@ test('business privacy renders dynamic fields and honors all hiding',async({page
 
 test('company footer shows configurable WhatsApp names as safe clickable links',async({page})=>{
   let data={fields:[
-    {id:'company',label:'الاسم التجاري',value:'شركة بصائر الخليج',sort_order:0},
-    {id:'wa',label:'مندوب الجملة',value:'whatsapp:966501234567',sort_order:1}
+    {id:'company',label:'الاسم التجاري',label_en:'Legal business name',value:'شركة بصائر الخليج',value_en:'Basair Gulf Company',sort_order:0},
+    {id:'wa',label:'مندوب الجملة',label_en:'Wholesale Representative',value:'whatsapp:966501234567',sort_order:1}
   ]};
   await page.route('**/rest/v1/rpc/get_public_business_privacy',route=>route.fulfill({contentType:'application/json',body:JSON.stringify(data)}));
   await page.goto(base);
@@ -880,6 +885,14 @@ test('company footer shows configurable WhatsApp names as safe clickable links',
   await expect(link).toHaveAttribute('href','https://wa.me/966501234567');
   await expect(link).toHaveAttribute('rel','noopener noreferrer');
   await expect(page.locator('#flBusinessInfo')).not.toContainText('966501234567');
+  await expect(page.locator('#flBusinessInfo [data-business-field="company"]')).toContainText('شركة بصائر الخليج');
+  await page.locator('#flLanguageSwitch').click();
+  await expect(link).toContainText('Wholesale Representative');
+  await expect(link).toHaveAttribute('href','https://wa.me/966501234567');
+  await expect(page.locator('#flBusinessInfo [data-business-field="company"]')).toContainText('Legal business name');
+  await expect(page.locator('#flBusinessInfo [data-business-field="company"]')).toContainText('Basair Gulf Company');
+  await page.locator('#flLanguageSwitch').click();
+  await expect(link).toContainText('مندوب الجملة');
   await expect(page.locator('#flBusinessInfo [data-business-field="company"]')).toContainText('شركة بصائر الخليج');
   // The owner can turn visibility off; no stale link is rendered on refresh.
   data={fields:[{id:'company',label:'الاسم التجاري',value:'شركة بصائر الخليج',sort_order:0}]};
@@ -915,9 +928,12 @@ test('owner can add rename reorder hide and delete flexible business fields',asy
   await page.evaluate(async()=>{await window.FL_ADMIN_BUSINESS.load();const render=()=>{document.body.innerHTML=window.FL_ADMIN_BUSINESS.cardsHtml();window.FL_ADMIN_BUSINESS.bind(render);};render();});
   await expect(page.locator('[data-business-row]')).toHaveCount(2);
   await page.locator('[data-business-row]').nth(0).locator('[data-business-label]').fill('الاسم الرسمي');
+  await page.locator('[data-business-row]').nth(0).locator('[data-business-label-en]').fill('Registered name');
   await page.locator('[data-business-row]').nth(0).locator('[data-business-value]').fill('شركة بصائر الخليج الجديدة');
+  await page.locator('[data-business-row]').nth(0).locator('[data-business-value-en]').fill('Basair Gulf Updated');
   await page.locator('#flBusinessAddField').click();
   await page.locator('[data-business-row]').nth(2).locator('[data-business-label]').fill('خدمة العملاء');
+  await page.locator('[data-business-row]').nth(2).locator('[data-business-label-en]').fill('Customer service');
   await page.locator('[data-business-row]').nth(2).locator('[data-business-value]').fill('0500000000');
   await page.locator('[data-business-row]').nth(1).locator('[data-business-action="delete"]').click();
   await expect(page.locator('[data-business-row]')).toHaveCount(2);
@@ -925,6 +941,8 @@ test('owner can add rename reorder hide and delete flexible business fields',asy
   await expect(page.locator('[data-business-row]')).toHaveCount(3);
   const whatsappRow=page.locator('[data-business-row]').nth(2);
   await whatsappRow.locator('[data-business-label]').fill('مندوب الجملة');
+  await whatsappRow.locator('[data-business-label-en]').fill('Wholesale Representative');
+  await expect(whatsappRow.locator('[data-business-value-en]')).toHaveCount(0);
   await whatsappRow.locator('[data-business-value]').fill('not-a-number');
   await page.locator('#flBusinessSave').click();
   expect(await page.evaluate(()=>window.__businessFieldsSaved)).toBeNull();
@@ -936,6 +954,12 @@ test('owner can add rename reorder hide and delete flexible business fields',asy
   expect(saved.settings.show_all).toBe(true);
   expect(saved.fields.map(x=>x.label)).toEqual(['الاسم الرسمي','خدمة العملاء','مندوب الجملة']);
   expect(saved.fields.map(x=>x.sort_order)).toEqual([0,1,2]);
+  expect(saved.fields[0].label_en).toBe('Registered name');
+  expect(saved.fields[0].value_en).toBe('Basair Gulf Updated');
+  expect(saved.fields[1].label_en).toBe('Customer service');
+  expect(saved.fields[1].value_en).toBe('');
+  expect(saved.fields[2].label_en).toBe('Wholesale Representative');
+  expect(saved.fields[2].value_en).toBe('');
   expect(saved.fields[2].value).toBe('whatsapp:966501234567');
   expect(saved.deleted).toEqual(['22222222-2222-4222-8222-222222222222']);
   await page.locator('.fl-business-master-toggle').click();
