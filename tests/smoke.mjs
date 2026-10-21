@@ -110,14 +110,14 @@ assert.match(whatsappBusinessAdmin,/data-business-value-en/);
 assert.match(whatsappBusinessAdmin,/label_en:field\.label_en/);
 assert.match(businessPublic,/field\.label_en\|\|translateLabel/);
 assert.match(businessPublic,/field\.value_en\|\|field\.value/);
-const bilingualSql=read('supabase/migrations/20261021183000_bilingual_business_public_fields.sql');
-assert.match(bilingualSql,/add column if not exists label_en text not null default ''/i);
-assert.match(bilingualSql,/add column if not exists value_en text not null default ''/i);
-assert.match(bilingualSql,/'label_en',f\.label_en/);
-assert.match(bilingualSql,/'value_en',f\.value_en/);
-assert.match(bilingualSql,/where f\.is_visible=true and btrim\(f\.label\)<>'' and btrim\(f\.value\)<>''/);
-assert.match(bilingualSql,/revoke all on function public\.get_public_business_privacy\(\) from public/);
-assert.doesNotMatch(bilingualSql,/\b(?:drop table|truncate|delete from|update public\.business_public_fields)\b/i);
+const companyBilingualMigration=read('supabase/migrations/20261021183000_bilingual_business_public_fields.sql');
+assert.match(companyBilingualMigration,/add column if not exists label_en text not null default ''/i);
+assert.match(companyBilingualMigration,/add column if not exists value_en text not null default ''/i);
+assert.match(companyBilingualMigration,/'label_en',f\.label_en/);
+assert.match(companyBilingualMigration,/'value_en',f\.value_en/);
+assert.match(companyBilingualMigration,/where f\.is_visible=true and btrim\(f\.label\)<>'' and btrim\(f\.value\)<>''/);
+assert.match(companyBilingualMigration,/revoke all on function public\.get_public_business_privacy\(\) from public/);
+assert.doesNotMatch(companyBilingualMigration,/\b(?:drop table|truncate|delete from|update public\.business_public_fields)\b/i);
 assert.match(css,/\.fl-business-whatsapp-link\{/);
 assert.match(index, /share-image\.jpg/);
 assert.match(index, /<meta id="robotsMeta" name="robots" content="index,follow,max-image-preview:large"/);
@@ -1043,7 +1043,7 @@ assert.doesNotThrow(() => noAnalyticsWindow.flTrack('js_error', { message: 'Type
 
 // v116: authoritative bilingual product/category fields, preserving Arabic originals.
 const bilingualSql=read('supabase/UPGRADE_EXISTING_V116.sql');
-for(const field of ['name_en','description_en','caption_en','specifications_en'])assert.match(bilingualSql,new RegExp(field));
+for(const field of ['name_en','description_en','caption_en','specifications_en'])assert.match(companyBilingualMigration,new RegExp(field));
 assert.match(index,/flLanguageSwitch/);
 assert.match(admin,/flCatNameEn/);
 assert.match(admin,/flCatDescEn/);
