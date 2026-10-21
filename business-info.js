@@ -20,6 +20,25 @@
     return legacyFields.flatMap(([key,label])=>data?.[key]==null||String(data[key]).trim()===''?[]:[{id:key,label,value:String(data[key]).trim()}]);
   }
 
+  // Only a special field created from the admin's "WhatsApp name" action is a link.
+  // Compose an allowlisted wa.me destination; never use the field as an arbitrary URL.
+  function whatsappHref(value){
+    if(!String(value||'').startsWith('whatsapp:'))return '';
+    const digits=String(value).slice('whatsapp:'.length);
+    return /^\d{9,15}$/.test(digits)?'https://wa.me/'+digits:'';
+  }
+  function whatsappAnchor(field){
+    const a=document.createElement('a');
+    a.className='fl-business-whatsapp-link';
+    a.href=whatsappHref(field.value);
+    a.target='_blank';a.rel='noopener noreferrer';
+    a.setAttribute('aria-label',(english()?'Contact via WhatsApp: ':'تواصل عبر واتساب: ')+field.label);
+    const symbol=document.createElement('span');symbol.setAttribute('aria-hidden','true');symbol.className='fl-business-whatsapp-icon';symbol.textContent='↗';
+    const name=document.createElement('span');name.textContent=field.label;name.dir='auto';
+    a.append(symbol,name);
+    return a;
+  }
+
   function render(data){
     const fields=normalizedFields(data);
     if(onPrivacy && data?.retention_days!=null && String(data.retention_days).trim()!==''){
@@ -32,13 +51,23 @@
 
     if(!onPrivacy){
       const inline=document.createElement('div');inline.className='fl-business-info-inline';
-      fields.forEach(field=>{
+      const whatsappFields=fields.filter(field=>whatsappHref(field.value));
+      fields.filter(field=>!whatsappHref(field.value)).forEach(field=>{
         const item=document.createElement('span');item.className='fl-business-info-item';item.dataset.businessField=field.id;
         const label=document.createElement('span');label.className='fl-business-info-label';label.textContent=`${translateLabel(field.label)}:`;
         const value=document.createElement('strong');value.className='fl-business-info-value';value.textContent=field.value;value.dir='auto';
         item.append(label,value);inline.append(item);
       });
-      container.append(inline);container.hidden=false;return;
+      if(inline.childElementCount)container.append(inline);
+      if(whatsappFields.length){
+        const links=document.createElement('div');links.className='fl-business-whatsapp-links';
+        links.setAttribute('aria-label',english()?'WhatsApp contacts':'التواصل عبر واتساب');
+        whatsappFields.forEach(field=>{
+          const link=whatsappAnchor(field);link.dataset.businessField=field.id;links.append(link);
+        });
+        container.append(links);
+      }
+      container.hidden=false;return;
     }
 
     const head=document.createElement('div');head.className='fl-business-info-head';
@@ -53,8 +82,14 @@
     fields.forEach((field,index)=>{
       const item=document.createElement('div');item.className='fl-business-info-item'+(index===0?' is-primary':'');item.dataset.businessField=field.id;
       const label=document.createElement('span');label.className='fl-business-info-label';label.textContent=translateLabel(field.label);
-      const value=document.createElement('strong');value.className='fl-business-info-value';value.textContent=field.value;value.dir='auto';
-      item.append(label,value);grid.append(item);
+      if(whatsappHref(field.value)){
+        const link=whatsappAnchor(field);link.dataset.businessField=field.id;
+        item.append(label,link);
+      }else{
+        const value=document.createElement('strong');value.className='fl-business-info-value';value.textContent=field.value;value.dir='auto';
+        item.append(label,value);
+      }
+      grid.append(item);
     });
 
     container.append(head,grid);container.hidden=false;
