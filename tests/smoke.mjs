@@ -98,10 +98,10 @@ assert.match(read('theme-dark.css'),/\.watermark\{filter:none;mix-blend-mode:scr
 assert.match(read('tests/local-server.mjs'),/\.svg':'image\/svg\+xml/);
 // Admin-configurable name-only WhatsApp links reuse business_public_fields;
 // visitors see an allowlisted wa.me link, never the stored special marker.
-const businessAdmin=read('admin-business.js');
+const whatsappBusinessAdmin=read('admin-business.js');
 const businessPublic=read('business-info.js');
-assert.match(businessAdmin,/flBusinessAddWhatsApp/);
-assert.match(businessAdmin,/whatsappDigits\(field\.value\.slice/);
+assert.match(whatsappBusinessAdmin,/flBusinessAddWhatsApp/);
+assert.match(whatsappBusinessAdmin,/whatsappDigits\(field\.value\.slice/);
 assert.match(businessPublic,/https:\/\/wa\.me\//);
 assert.match(businessPublic,/fl-business-whatsapp-links/);
 assert.match(businessPublic,/noopener noreferrer/);
