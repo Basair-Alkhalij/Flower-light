@@ -14,13 +14,15 @@
     return {
       id:String(field?.id||crypto.randomUUID()),
       label:String(field?.label||'').slice(0,80),
+      label_en:String(field?.label_en||'').slice(0,80),
       value:String(field?.value||'').slice(0,300),
+      value_en:String(field?.value_en||'').slice(0,300),
       is_visible:field?.is_visible!==false,
       sort_order:Number.isInteger(Number(field?.sort_order))?Number(field.sort_order):index
     };
   }
 
-  // Reuse the existing flexible company-field storage: no schema changes needed.
+  // WhatsApp numbers retain the existing safe "whatsapp:" storage marker.
   // The special value is never shown as raw text to visitors.
   function whatsappDigits(input){
     const raw=String(input||'').trim();
@@ -41,7 +43,7 @@
       if(!settingsResult.data)throw new Error('Missing business privacy settings');
       settings={...settings,...settingsResult.data};
 
-      const fieldsResult=await db.from('business_public_fields').select('id,label,value,is_visible,sort_order').order('sort_order',{ascending:true});
+      const fieldsResult=await db.from('business_public_fields').select('id,label,label_en,value,value_en,is_visible,sort_order').order('sort_order',{ascending:true});
       if(fieldsResult.error)throw fieldsResult.error;
       publicFields=(fieldsResult.data||[]).map(normalizeField);
       loadedFieldIds=new Set(publicFields.map(field=>field.id));
@@ -59,8 +61,10 @@
     const displayValue=isWhatsapp?field.value.slice('whatsapp:'.length):field.value;
     return `<div class="fl-business-editor-row" data-business-row data-field-id="${esc(field.id)}" data-business-kind="${isWhatsapp?'whatsapp':'text'}">
       <div class="fl-business-editor-main">
-        <label class="fl-cloud-field"><span>${isWhatsapp?'الاسم الذي يضغط عليه الزائر':'اسم الخانة'}</span><input data-business-label type="text" maxlength="80" value="${esc(field.label)}" placeholder="${isWhatsapp?'مثال: تواصل مع مدير المبيعات':'مثال: السجل التجاري'}"></label>
-        <label class="fl-cloud-field"><span>${isWhatsapp?'رقم واتساب':'القيمة'}</span><input data-business-value type="${isWhatsapp?'tel':'text'}" maxlength="300" value="${esc(displayValue)}" placeholder="${isWhatsapp?'مثال: 0501234567 أو +966501234567':'اكتب القيمة التي ستظهر للزائر'}" dir="${isWhatsapp?'ltr':'auto'}"></label>
+        <label class="fl-cloud-field"><span>${isWhatsapp?'الاسم بالعربية':'اسم الخانة بالعربية'}</span><input data-business-label type="text" maxlength="80" value="${esc(field.label)}" placeholder="${isWhatsapp?'مثال: مندوب الجملة':'مثال: السجل التجاري'}" dir="rtl"></label>
+        <label class="fl-cloud-field"><span>${isWhatsapp?'الاسم بالإنجليزية (اختياري)':'اسم الخانة بالإنجليزية (اختياري)'}</span><input data-business-label-en type="text" maxlength="80" value="${esc(field.label_en)}" placeholder="${isWhatsapp?'Wholesale Representative':'Commercial registration'}" dir="ltr"></label>
+        <label class="fl-cloud-field"><span>${isWhatsapp?'رقم واتساب — للغتين':'القيمة بالعربية'}</span><input data-business-value type="${isWhatsapp?'tel':'text'}" maxlength="300" value="${esc(displayValue)}" placeholder="${isWhatsapp?'مثال: 0501234567 أو +966501234567':'اكتب القيمة التي ستظهر للزائر'}" dir="${isWhatsapp?'ltr':'auto'}"></label>
+        ${isWhatsapp?'':`<label class="fl-cloud-field"><span>القيمة بالإنجليزية (اختياري)</span><input data-business-value-en type="text" maxlength="300" value="${esc(field.value_en)}" placeholder="English value" dir="auto"></label>`}
       </div>
       <div class="fl-business-editor-controls">
         <label class="fl-cloud-check fl-business-visible"><input data-business-visible type="checkbox" ${field.is_visible?'checked':''}> ظاهر للزوار</label>
@@ -78,7 +82,7 @@
     const esc=core.esc;
     return `<form id="flBusinessSettingsForm" class="fl-cloud-card fl-business-settings-card">
       <div class="fl-credentials-card-head"><div><span class="fl-account-badge owner">بيانات المنشأة</span><h3>بطاقة بيانات الشركة أسفل الموقع</h3></div></div>
-      <p>أضف أي عدد من الخانات التي تحتاجها، واكتب اسم كل خانة وقيمتها ورتبها وأخفِ ما لا تريد إظهاره. لم تعد الخانات ثابتة بالسجل والضريبة والتواصل فقط.</p>
+      <p>أضف الخانات التي تحتاجها بالعربية والإنجليزية، ورتبها وأخفِ ما لا تريد إظهاره. حقول الإنجليزية اختيارية؛ الخانات القديمة محفوظة كما هي حتى تدخل ترجمتها.</p>
       ${error?`<div class="fl-cloud-note bad" role="alert">${esc(error)}</div>`:''}
       <fieldset ${loaded?'':'disabled'}>
         <label class="fl-permission-row fl-business-master-toggle">
@@ -113,9 +117,11 @@
       publicFields=[...list.querySelectorAll('[data-business-row]')].map((row,index)=>normalizeField({
         id:row.dataset.fieldId,
         label:row.querySelector('[data-business-label]')?.value||'',
+        label_en:row.querySelector('[data-business-label-en]')?.value||'',
         value:row.dataset.businessKind==='whatsapp'
           ? 'whatsapp:'+(row.querySelector('[data-business-value]')?.value||'')
           : (row.querySelector('[data-business-value]')?.value||''),
+        value_en:row.dataset.businessKind==='whatsapp'?'':(row.querySelector('[data-business-value-en]')?.value||''),
         is_visible:Boolean(row.querySelector('[data-business-visible]')?.checked),
         sort_order:index
       },index));
@@ -163,7 +169,8 @@
         const retentionDays=Number(document.getElementById('flBusiness_retention_days').value);
         if(!Number.isInteger(retentionDays)||retentionDays<1||retentionDays>36500)throw new Error('مدة الاحتفاظ يجب أن تكون عدد أيام صحيحًا بين 1 و36500.');
         for(const [index,field] of publicFields.entries()){
-          field.label=field.label.trim();field.value=field.value.trim();field.sort_order=index;
+          field.label=field.label.trim();field.label_en=field.label_en.trim();
+          field.value=field.value.trim();field.value_en=field.value_en.trim();field.sort_order=index;
           if(!field.label)throw new Error(`اكتب اسم الخانة رقم ${index+1} أو احذفها.`);
           if(!field.value)throw new Error(`اكتب قيمة الخانة «${field.label}» أو احذفها.`);
           if(field.value.startsWith('whatsapp:')){
@@ -171,7 +178,7 @@
             if(!digits)throw new Error(`اكتب رقم واتساب صحيحًا للخانة «${field.label}» (9 إلى 15 رقمًا، ويمكن إدخال 05 أو +966).`);
             field.value='whatsapp:'+digits;
           }
-          if(field.label.length>80||field.value.length>300)throw new Error('إحدى الخانات تتجاوز الطول المسموح.');
+          if(field.label.length>80||field.label_en.length>80||field.value.length>300||field.value_en.length>300)throw new Error('إحدى الخانات تتجاوز الطول المسموح.');
         }
 
         const settingsPayload={
@@ -190,7 +197,7 @@
           if(result.error)throw result.error;
         }
         if(publicFields.length){
-          result=await db.from('business_public_fields').upsert(publicFields.map(field=>({id:field.id,label:field.label,value:field.value,is_visible:field.is_visible,sort_order:field.sort_order})),{onConflict:'id'});
+          result=await db.from('business_public_fields').upsert(publicFields.map(field=>({id:field.id,label:field.label,label_en:field.label_en,value:field.value,value_en:field.value_en,is_visible:field.is_visible,sort_order:field.sort_order})),{onConflict:'id'});
           if(result.error)throw result.error;
         }
 
