@@ -1043,7 +1043,7 @@ assert.doesNotThrow(() => noAnalyticsWindow.flTrack('js_error', { message: 'Type
 
 // v116: authoritative bilingual product/category fields, preserving Arabic originals.
 const bilingualSql=read('supabase/UPGRADE_EXISTING_V116.sql');
-for(const field of ['name_en','description_en','caption_en','specifications_en'])assert.match(companyBilingualMigration,new RegExp(field));
+for(const field of ['name_en','description_en','caption_en','specifications_en'])assert.match(bilingualSql,new RegExp(field));
 assert.match(index,/flLanguageSwitch/);
 assert.match(admin,/flCatNameEn/);
 assert.match(admin,/flCatDescEn/);
