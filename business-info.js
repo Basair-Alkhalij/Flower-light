@@ -15,7 +15,14 @@
     if(Array.isArray(data?.fields)){
       return data.fields
         .filter(field=>field && String(field.label||'').trim() && String(field.value||'').trim())
-        .map((field,index)=>({id:String(field.id||`field-${index}`),label:String(field.label).trim(),value:String(field.value).trim(),sort_order:Number(field.sort_order)||index}));
+        .map((field,index)=>({
+          id:String(field.id||`field-${index}`),
+          label:String(field.label).trim(),
+          label_en:String(field.label_en||'').trim(),
+          value:String(field.value).trim(),
+          value_en:String(field.value_en||'').trim(),
+          sort_order:Number(field.sort_order)||index
+        }));
     }
     return legacyFields.flatMap(([key,label])=>data?.[key]==null||String(data[key]).trim()===''?[]:[{id:key,label,value:String(data[key]).trim()}]);
   }
@@ -27,14 +34,23 @@
     const digits=String(value).slice('whatsapp:'.length);
     return /^\d{9,15}$/.test(digits)?'https://wa.me/'+digits:'';
   }
+  // User-supplied names and company values need explicit English translations.
+  // Existing rows without an English entry keep their original data.
+  const displayLabel=field=>english()
+    ? (field.label_en||translateLabel(field.label))
+    : field.label;
+  const displayValue=field=>english()
+    ? (field.value_en||field.value)
+    : field.value;
+
   function whatsappAnchor(field){
     const a=document.createElement('a');
     a.className='fl-business-whatsapp-link';
     a.href=whatsappHref(field.value);
     a.target='_blank';a.rel='noopener noreferrer';
-    a.setAttribute('aria-label',(english()?'Contact via WhatsApp: ':'تواصل عبر واتساب: ')+field.label);
+    a.setAttribute('aria-label',(english()?'Contact via WhatsApp: ':'تواصل عبر واتساب: ')+displayLabel(field));
     const symbol=document.createElement('span');symbol.setAttribute('aria-hidden','true');symbol.className='fl-business-whatsapp-icon';symbol.textContent='↗';
-    const name=document.createElement('span');name.textContent=field.label;name.dir='auto';
+    const name=document.createElement('span');name.textContent=displayLabel(field);name.dir='auto';
     a.append(symbol,name);
     return a;
   }
@@ -54,8 +70,8 @@
       const whatsappFields=fields.filter(field=>whatsappHref(field.value));
       fields.filter(field=>!whatsappHref(field.value)).forEach(field=>{
         const item=document.createElement('span');item.className='fl-business-info-item';item.dataset.businessField=field.id;
-        const label=document.createElement('span');label.className='fl-business-info-label';label.textContent=`${translateLabel(field.label)}:`;
-        const value=document.createElement('strong');value.className='fl-business-info-value';value.textContent=field.value;value.dir='auto';
+        const label=document.createElement('span');label.className='fl-business-info-label';label.textContent=`${displayLabel(field)}:`;
+        const value=document.createElement('strong');value.className='fl-business-info-value';value.textContent=displayValue(field);value.dir='auto';
         item.append(label,value);inline.append(item);
       });
       if(inline.childElementCount)container.append(inline);
@@ -81,12 +97,12 @@
     const grid=document.createElement('div');grid.className='fl-business-info-grid';
     fields.forEach((field,index)=>{
       const item=document.createElement('div');item.className='fl-business-info-item'+(index===0?' is-primary':'');item.dataset.businessField=field.id;
-      const label=document.createElement('span');label.className='fl-business-info-label';label.textContent=translateLabel(field.label);
+      const label=document.createElement('span');label.className='fl-business-info-label';label.textContent=displayLabel(field);
       if(whatsappHref(field.value)){
         const link=whatsappAnchor(field);link.dataset.businessField=field.id;
         item.append(label,link);
       }else{
-        const value=document.createElement('strong');value.className='fl-business-info-value';value.textContent=field.value;value.dir='auto';
+        const value=document.createElement('strong');value.className='fl-business-info-value';value.textContent=displayValue(field);value.dir='auto';
         item.append(label,value);
       }
       grid.append(item);
