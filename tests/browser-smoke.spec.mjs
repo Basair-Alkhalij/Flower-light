@@ -867,6 +867,27 @@ test('business privacy renders dynamic fields and honors all hiding',async({page
   await expect(page.locator('body')).not.toContainText('311199840200003');
 });
 
+test('company footer shows configurable WhatsApp names as safe clickable links',async({page})=>{
+  let data={fields:[
+    {id:'company',label:'الاسم التجاري',value:'شركة بصائر الخليج',sort_order:0},
+    {id:'wa',label:'مندوب الجملة',value:'whatsapp:966501234567',sort_order:1}
+  ]};
+  await page.route('**/rest/v1/rpc/get_public_business_privacy',route=>route.fulfill({contentType:'application/json',body:JSON.stringify(data)}));
+  await page.goto(base);
+  const link=page.locator('#flBusinessInfo [data-business-field="wa"]');
+  await expect(link).toBeVisible();
+  await expect(link).toContainText('مندوب الجملة');
+  await expect(link).toHaveAttribute('href','https://wa.me/966501234567');
+  await expect(link).toHaveAttribute('rel','noopener noreferrer');
+  await expect(page.locator('#flBusinessInfo')).not.toContainText('966501234567');
+  await expect(page.locator('#flBusinessInfo [data-business-field="company"]')).toContainText('شركة بصائر الخليج');
+  // The owner can turn visibility off; no stale link is rendered on refresh.
+  data={fields:[{id:'company',label:'الاسم التجاري',value:'شركة بصائر الخليج',sort_order:0}]};
+  await page.reload();
+  await expect(page.locator('#flBusinessInfo [data-business-field="wa"]')).toHaveCount(0);
+  await expect(page.locator('#flBusinessInfo [data-business-field="company"]')).toBeVisible();
+});
+
 test('owner can add rename reorder hide and delete flexible business fields',async({page})=>{
   await installSupabaseMock(page);await page.goto(base);
   await page.evaluate(()=>{
@@ -900,13 +921,22 @@ test('owner can add rename reorder hide and delete flexible business fields',asy
   await page.locator('[data-business-row]').nth(2).locator('[data-business-value]').fill('0500000000');
   await page.locator('[data-business-row]').nth(1).locator('[data-business-action="delete"]').click();
   await expect(page.locator('[data-business-row]')).toHaveCount(2);
+  await page.locator('#flBusinessAddWhatsApp').click();
+  await expect(page.locator('[data-business-row]')).toHaveCount(3);
+  const whatsappRow=page.locator('[data-business-row]').nth(2);
+  await whatsappRow.locator('[data-business-label]').fill('مندوب الجملة');
+  await whatsappRow.locator('[data-business-value]').fill('not-a-number');
+  await page.locator('#flBusinessSave').click();
+  expect(await page.evaluate(()=>window.__businessFieldsSaved)).toBeNull();
+  await whatsappRow.locator('[data-business-value]').fill('0501234567');
   await page.locator('#flBusiness_retention_days').fill('90');
   await page.locator('#flBusinessSave').click();
   await expect.poll(()=>page.evaluate(()=>window.__businessSaved?.retention_days)).toBe(90);
   const saved=await page.evaluate(()=>({settings:window.__businessSaved,fields:window.__businessFieldsSaved,deleted:window.__businessDeleted}));
   expect(saved.settings.show_all).toBe(true);
-  expect(saved.fields.map(x=>x.label)).toEqual(['الاسم الرسمي','خدمة العملاء']);
-  expect(saved.fields.map(x=>x.sort_order)).toEqual([0,1]);
+  expect(saved.fields.map(x=>x.label)).toEqual(['الاسم الرسمي','خدمة العملاء','مندوب الجملة']);
+  expect(saved.fields.map(x=>x.sort_order)).toEqual([0,1,2]);
+  expect(saved.fields[2].value).toBe('whatsapp:966501234567');
   expect(saved.deleted).toEqual(['22222222-2222-4222-8222-222222222222']);
   await page.locator('.fl-business-master-toggle').click();
   await expect(page.locator('#flBusinessShowAll')).not.toBeChecked();
