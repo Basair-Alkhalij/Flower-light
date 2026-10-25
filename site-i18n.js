@@ -339,7 +339,7 @@
     }
     scan(document.body);
     if(language==='en' && document.title.includes('بصائر الخليج')) document.title=titleEn;
-    if(language==='ar' && document.title===titleEn) document.title='بصائر الخليج | مستودع منتجات فلور لايت';
+    if(language==='ar' && document.title===titleEn) document.title='بصائر الخليج | منتجات فلور لايت';
     window.dispatchEvent(new CustomEvent('flowerlight:language-change',{detail:{language}}));
   }
 

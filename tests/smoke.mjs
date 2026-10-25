@@ -120,6 +120,14 @@ assert.match(companyBilingualMigration,/revoke all on function public\.get_publi
 assert.doesNotMatch(companyBilingualMigration,/\b(?:drop table|truncate|delete from|update public\.business_public_fields)\b/i);
 assert.match(css,/\.fl-business-whatsapp-link\{/);
 assert.match(index, /share-image\.jpg/);
+const shareTitle = 'بصائر الخليج | منتجات فلور لايت';
+const shareDescription = 'بصائر الخليج — منتجات فلور لايت للإنارة والكهرباء.';
+const shareMeta = Object.fromEntries([...index.matchAll(/<meta (?:property|name)="(og:title|og:description|twitter:title|twitter:description)" content="([^"]+)"/g)].map(m=>[m[1],m[2]]));
+assert.deepEqual(shareMeta, {'og:title':shareTitle,'og:description':shareDescription,'twitter:title':shareTitle,'twitter:description':shareDescription});
+assert.match(index, /<title>بصائر الخليج \| منتجات فلور لايت<\/title>/);
+assert.match(index, /"description": "بصائر الخليج — منتجات فلور لايت للإنارة والكهرباء\."/);
+assert.equal(JSON.parse(read('manifest.webmanifest')).description,shareDescription);
+assert.doesNotMatch([index,read('manifest.webmanifest'),read('privacy.html'),read('site-i18n.js')].join('\n'),/مستودع|والكتالوجات/);
 assert.match(index, /<meta id="robotsMeta" name="robots" content="index,follow,max-image-preview:large"/);
 assert.match(siteBootstrap, /'1': 'لوحة المدير \| بصائر الخليج'/);
 assert.match(siteBootstrap, /'2': 'لوحة الأدمن \| بصائر الخليج'/);
@@ -133,7 +141,7 @@ assert.ok(seoScript.includes('noindex,nofollow'), 'admin SEO bootstrap was not f
 const evaluateSeo = search => {
   let robots = 'index,follow,max-image-preview:large';
   const document = {
-    title: 'بصائر الخليج | مستودع منتجات فلور لايت',
+    title: 'بصائر الخليج | منتجات فلور لايت',
     getElementById: id => id === 'robotsMeta'
       ? { setAttribute: (name, value) => { if (name === 'content') robots = value; } }
       : null,
@@ -142,7 +150,7 @@ const evaluateSeo = search => {
   return { title: document.title, robots };
 };
 assert.deepEqual(evaluateSeo(''), {
-  title: 'بصائر الخليج | مستودع منتجات فلور لايت',
+  title: 'بصائر الخليج | منتجات فلور لايت',
   robots: 'index,follow,max-image-preview:large',
 });
 assert.deepEqual(evaluateSeo('?admin=1'), {
