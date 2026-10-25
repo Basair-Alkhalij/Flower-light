@@ -11,7 +11,7 @@ const localStorage={
 const document={
   readyState:'loading',
   documentElement:{lang:'ar',dir:'rtl',dataset:{}},
-  title:'بصائر الخليج | مستودع منتجات فلور لايت',
+  title:'بصائر الخليج | منتجات فلور لايت',
   addEventListener(){},
   getElementById(){return null;},
   body:null
