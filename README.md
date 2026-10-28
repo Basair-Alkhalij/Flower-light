@@ -12,6 +12,7 @@
 | سجل التغييرات | `CHANGELOG.md` |
 | تفاصيل الإصدارات القديمة | `docs/RELEASE_NOTES_AR.md` |
 | تقرير الأمان | `docs/PRODUCTION_SECURITY_REVIEW_V118.md` |
+| تثبيت التطبيق الآمن (PWA) | `docs/PWA_INSTALL_SAFE_AR.md` |
 
 ## تشغيل محلي
 
