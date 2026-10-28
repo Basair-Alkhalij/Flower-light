@@ -15,12 +15,22 @@
   const ua = navigator.userAgent || '';
   const isIOS = /iPad|iPhone|iPod/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
   const isIOSSafari = isIOS && /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|OPT\//i.test(ua);
+  const isAndroid = /Android/i.test(ua);
+  const isAndroidWebView = /;\s*wv\)/i.test(ua) || (/Version\/4\.0/i.test(ua) && /Chrome\//i.test(ua));
+  // On Android, Chrome with Google Mobile Services and Samsung Internet on
+  // Samsung devices can install WebAPKs. Other browsers commonly create a
+  // browser-badged shortcut even when they emit beforeinstallprompt.
+  // Browser detection is conservative, not proof that a WebAPK will be minted.
+  const isAndroidChrome = isAndroid && /Chrome\/\d+/i.test(ua) && !isAndroidWebView &&
+    !/(?:EdgA|EdgiOS|OPR|Opera|SamsungBrowser|MiuiBrowser|HuaweiBrowser|UCBrowser|YaBrowser|Vivaldi|DuckDuckGo|FxiOS|Firefox|FBAN|FBAV|Instagram)\//i.test(ua);
+  const isSamsungBrowserOnSamsung = isAndroid && /SamsungBrowser\/\d+/i.test(ua) &&
+    /(?:\bSAMSUNG\b|\bSM-[A-Z0-9]+\b)/i.test(ua);
+  const isLikelyWebApkBrowser = !isAndroid || isAndroidChrome || isSamsungBrowserOnSamsung;
 
-  // v99: any browser that emits the real `beforeinstallprompt` event (Chrome,
-  // Edge, Samsung Internet, Opera on Android and desktop) gets the native
-  // install flow. iOS has no such event, so it gets a short Share -> Add to
-  // Home Screen guide instead (iOS home-screen apps never carry a browser badge).
-  // No "Add to Home screen" shortcut fallback is offered on Android.
+  // Offer the in-page install action only when the browser supplies a real
+  // installation event and Android is likely to produce an app, not a shortcut.
+  // iOS uses a separate Share -> Add to Home Screen guide. We never provide
+  // an Android shortcut fallback, and we never download an APK from this UI.
 
   let installOptionEnabled = window.FLOWER_LIGHT_SITE_SETTINGS?.pwa_install_enabled === true;
   let deferredPrompt = null;
@@ -138,7 +148,7 @@
   // The notice is revealed only if the Owner enabled it in site settings AND
   // either the browser emitted a real install prompt or the device is an iPhone/iPad.
   window.addEventListener('beforeinstallprompt', (event) => {
-    if (isStandalone()) return;
+    if (isStandalone() || !isLikelyWebApkBrowser) return;
     event.preventDefault();
     deferredPrompt = event;
     scheduleReminder();
