@@ -5,8 +5,8 @@ window.FLOWER_LIGHT_SUPABASE = {
   url: 'https://quwqffoomwujqhcxhjnx.supabase.co',
   anonKey: 'sb_publishable_qMpOoYpst_F1eVMIfFOF_A_wfIViNss',
   storageBucket: 'product-images',
-  // Set this to your Cloudflare Turnstile site key after deploying submit-customer-lead.
-  // Leave blank until the server-side setup is complete; the site will keep the legacy direct insert path.
+  // Public Cloudflare Turnstile site key. The secret belongs only in Supabase.
+  // If Turnstile is unavailable, customer submissions fail closed; there is no direct database insert fallback.
   turnstileSiteKey: '0x4AAAAAAFQBEMBlCMKy0NKI',
   leadSubmissionFunction: 'submit-customer-lead'
 };
