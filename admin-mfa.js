@@ -42,6 +42,7 @@
     if(!current.factors.length)return true; // Voluntary enrollment; no silent lockout of existing accounts.
     if(current.level==='aal2')return true;
     if(current.next!=='aal2')throw new Error('لم يتمكن الخادم من طلب تحقق بخطوتين.');
+    const displayLabels=await readAccountLabels(db.auth).catch(()=>({}));
     return new Promise(resolve=>{
       let settled=false;
       const finish=ok=>{if(settled)return;settled=true;resolve(ok);};
@@ -50,7 +51,7 @@
       for(const [index,factor] of current.factors.entries()){
         const option=document.createElement('option');
         option.value=factor.id;
-        option.textContent=factor.friendly_name || 'تطبيق المصادقة '+(index+1);
+        option.textContent=normalizeName(displayLabels[factor.id])||factor.friendly_name||'تطبيق المصادقة '+(index+1);
         select.appendChild(option);
       }
       get('flMfaOtp')?.focus();
@@ -80,44 +81,146 @@
     });
   }
 
+  // Names stored in user_metadata are presentation-only aliases, not authorization.
+  // Supabase Auth does not expose a client-side rename operation for verified factors.
+  const aliasKey='flower_light_mfa_labels';
+  const normalizeName=value=>String(value||'').trim();
+  const acceptableName=value=>{
+    const name=normalizeName(value);
+    return name.length>=2 && name.length<=48 && !/[\u0000-\u001f\u007f]/.test(name);
+  };
+  async function readAccountLabels(auth) {
+    if(typeof auth?.getUser!=='function')return {};
+    const {data,error}=await auth.getUser();
+    if(error)throw error;
+    const labels=data?.user?.user_metadata?.[aliasKey];
+    return labels && typeof labels==='object' && !Array.isArray(labels) ? {...labels} : {};
+  }
+  async function saveAccountLabel(auth,factorId,label) {
+    if(typeof auth?.updateUser!=='function'||typeof auth?.getUser!=='function')throw new Error('خدمة تعديل اسم الجهاز غير متاحة.');
+    const existing=await readAccountLabels(auth);
+    if(label)existing[factorId]=label;
+    else delete existing[factorId];
+    await resultOf(auth.updateUser({data:{[aliasKey]:existing}}));
+  }
   function renderSettings(db,host,role) {
     if(!host)return;
-    host.innerHTML='<section class="fl-cloud-card fl-mfa-card"><h3>تطبيق المصادقة (MFA)</h3><p>يمكنك ربط حسابك بتطبيق مثل Google Authenticator أو Microsoft Authenticator. عند ربطه سيُطلب رمز بعد كلمة المرور.</p><p class="fl-cloud-note">مهم: بريد الاستعادة لا يتجاوز MFA، ولا يدعم Supabase رموز استرداد منفصلة. سجّل جهازًا احتياطيًا قبل الاعتماد على MFA.</p><p id="flMfaStatus" role="status" aria-live="polite">جاري التحقق...</p><div id="flMfaFactors"></div><button id="flMfaEnroll" class="fl-cloud-btn primary" type="button" hidden>إضافة تطبيق مصادقة</button><section id="flMfaSetup" hidden><h4>ربط تطبيق مصادقة</h4><p>امسح الرمز في تطبيق المصادقة أو أدخل المفتاح يدويًا. لا تشارك المفتاح مع أحد.</p><img id="flMfaQr" alt="رمز QR الخاص بإعداد تطبيق المصادقة" style="max-width:180px;max-height:180px" hidden><p>المفتاح اليدوي: <code id="flMfaSecret" dir="ltr"></code></p><form id="flMfaSetupForm"><div class="fl-cloud-field"><label for="flMfaSetupOtp">رمز التحقق من التطبيق</label><input id="flMfaSetupOtp" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" minlength="6" dir="ltr" required></div><button class="fl-cloud-btn primary" id="flMfaSetupVerify" type="submit">تأكيد الربط</button><button class="fl-cloud-btn secondary" id="flMfaSetupCancel" type="button">إلغاء الربط</button></form></section></section>';
+    host.innerHTML='<section class="fl-cloud-card fl-mfa-card"><h3>التحقق بخطوتين (MFA)</h3><p>يمكنك ربط تطبيق المصادقة باسم تختاره، أو إلغاء الربط عندما تريد. الإلغاء الكامل يجعل تسجيل الدخول بكلمة المرور فقط، ويقلل حماية الحساب.</p><p class="fl-cloud-note">بريد الاستعادة لا يتجاوز MFA، ولا يوفر Supabase رموز استرداد مستقلة. يُفضّل إضافة جهاز احتياطي.</p><p id="flMfaStatus" role="status" aria-live="polite">جاري التحقق...</p><div id="flMfaFactors"></div><div class="fl-cloud-field"><label for="flMfaNewName">اسم جهاز المصادقة الجديد</label><input id="flMfaNewName" maxlength="48" autocomplete="off" placeholder="مثال: هاتفي الأساسي" type="text"><small>اختر اسمًا من 2 إلى 48 حرفًا، مختلفًا عن أسماء الأجهزة المرتبطة.</small></div><button id="flMfaEnroll" class="fl-cloud-btn primary" type="button" hidden>إضافة تطبيق مصادقة</button><section id="flMfaSetup" hidden><h4>ربط تطبيق مصادقة</h4><p>امسح الرمز في تطبيق المصادقة أو أدخل المفتاح يدويًا. لا تشارك المفتاح مع أحد.</p><img id="flMfaQr" alt="رمز QR الخاص بإعداد تطبيق المصادقة" style="max-width:180px;max-height:180px" hidden><p>المفتاح اليدوي: <code id="flMfaSecret" dir="ltr"></code></p><form id="flMfaSetupForm"><div class="fl-cloud-field"><label for="flMfaSetupOtp">رمز التحقق من التطبيق</label><input id="flMfaSetupOtp" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" minlength="6" dir="ltr" required></div><button class="fl-cloud-btn primary" id="flMfaSetupVerify" type="submit">تأكيد الربط</button><button class="fl-cloud-btn secondary" id="flMfaSetupCancel" type="button">إلغاء الربط قبل التفعيل</button></form></section></section>';
     const status=get('flMfaStatus'), factorList=get('flMfaFactors'), enrollBtn=get('flMfaEnroll');
-    const setup=get('flMfaSetup'),qr=get('flMfaQr'),secret=get('flMfaSecret');
+    const setup=get('flMfaSetup'),qr=get('flMfaQr'),secret=get('flMfaSecret'),nameInput=get('flMfaNewName');
     const mfa=requireApi(db);
-    let pending=null,verified=[],unfinished=[];
+    let pending=null,verified=[],unfinished=[],labels={};
     function clearSetup(){
       pending=null;setup.hidden=true;qr.hidden=true;qr.removeAttribute('src');
       secret.textContent='';get('flMfaSetupOtp').value='';
+    }
+    function labelledFactor(factor,index){
+      return normalizeName(labels[factor.id])||normalizeName(factor.friendly_name)||'تطبيق '+(index+1);
     }
     async function reload(){
       const info=await state(mfa);
       verified=info.factors;
       unfinished=info.unfinished;
+      try{labels=await readAccountLabels(db.auth);}
+      catch(_){labels={};}
       factorList.replaceChildren();
       status.textContent=unfinished.length
-        ? 'هناك محاولة ربط لم تُكتمل. ألغِها من الأسفل قبل إنشاء رمز QR جديد.'
+        ? 'توجد محاولة ربط غير مكتملة؛ ألغِها قبل ربط جهاز آخر.'
         : verified.length
-          ? 'لديك '+verified.length+' تطبيق مصادقة موثّق. مستوى الجلسة الحالي: '+info.level+'.'
-          : 'لم يتم ربط تطبيق مصادقة بهذا الحساب بعد.';
+          ? 'التحقق بخطوتين مفعّل ('+verified.length+' جهاز). مستوى الجلسة: '+info.level+'.'
+          : 'التحقق بخطوتين غير مفعّل لهذا الحساب.';
       verified.forEach((factor,index)=>{
         const row=document.createElement('div');
-        row.className='fl-mfa-factor-row';
-        const label=document.createElement('span');
-        label.textContent=factor.friendly_name || 'تطبيق '+(index+1);
-        row.appendChild(label);
-        if(verified.length>1 && info.level==='aal2'){
-          const remove=document.createElement('button');
-          remove.type='button';remove.className='fl-cloud-btn secondary';
-          remove.textContent='إزالة الجهاز';
-          remove.addEventListener('click',async()=>{
-            if(!window.confirm('هل تأكدت من توفر جهاز مصادقة احتياطي آخر؟'))return;
-            remove.disabled=true;
-            try{await resultOf(mfa.unenroll({factorId:factor.id}));await reload();}
-            catch(_){status.textContent='تعذر إزالة الجهاز. أعد التحقق وسجّل الدخول من جديد إذا لزم الأمر.';remove.disabled=false;}
+        row.className='fl-mfa-factor-row fl-mfa-manage-row';
+        const name=document.createElement('div');
+        name.className='fl-mfa-factor-name';
+        name.textContent=labelledFactor(factor,index);
+        row.appendChild(name);
+
+        const editForm=document.createElement('form');
+        editForm.className='fl-mfa-edit-form';
+        const editLabel=document.createElement('label');
+        editLabel.textContent='الاسم الذي يظهر لك في لوحة الإدارة';
+        const editInput=document.createElement('input');
+        editInput.type='text';editInput.maxLength=48;editInput.required=true;
+        editInput.value=labelledFactor(factor,index);
+        editLabel.appendChild(editInput);
+        const save=document.createElement('button');
+        save.type='submit';save.className='fl-cloud-btn secondary';save.textContent='حفظ الاسم';
+        editForm.append(editLabel,save);
+        editForm.addEventListener('submit',async event=>{
+          event.preventDefault();
+          const chosen=normalizeName(editInput.value);
+          if(!acceptableName(chosen)){status.textContent='أدخل اسمًا من 2 إلى 48 حرفًا.';return;}
+          save.disabled=true;
+          try{
+            await saveAccountLabel(db.auth,factor.id,chosen);
+            labels[factor.id]=chosen;
+            name.textContent=chosen;
+            status.textContent='تم حفظ الاسم الظاهر لهذا الجهاز في حسابك.';
+          }catch(_){status.textContent='تعذر حفظ الاسم. تحقق من جلسة الدخول وحاول مجددًا.';}
+          finally{save.disabled=false;}
+        });
+        row.appendChild(editForm);
+
+        if(info.level==='aal2'){
+          const details=document.createElement('details');
+          details.className='fl-mfa-remove-section';
+          const summary=document.createElement('summary');
+          summary.textContent=verified.length===1?'إلغاء التحقق بخطوتين':'إلغاء ربط هذا الجهاز';
+          details.appendChild(summary);
+          const warning=document.createElement('p');
+          warning.textContent=verified.length===1
+            ? 'تحذير: هذا آخر جهاز مفعّل. عند إلغائه ستتمكن من تسجيل الدخول بكلمة المرور فقط. أدخل رمز الجهاز الحالي لتأكيد الإلغاء.'
+            : 'لن يؤثر هذا على أجهزة المصادقة الأخرى. أدخل رمز هذا الجهاز لتأكيد الإلغاء.';
+          details.appendChild(warning);
+          const form=document.createElement('form');
+          form.className='fl-mfa-remove-form';
+          const codeLabel=document.createElement('label');
+          codeLabel.textContent='رمز المصادقة الحالي (6 أرقام)';
+          const codeInput=document.createElement('input');
+          codeInput.type='text';codeInput.inputMode='numeric';
+          codeInput.autocomplete='one-time-code';codeInput.maxLength=6;
+          codeInput.required=true;codeInput.pattern='[0-9]{6}';codeInput.dir='ltr';
+          codeLabel.appendChild(codeInput);
+          const confirm=document.createElement('button');
+          confirm.type='submit';confirm.className='fl-cloud-btn secondary';
+          confirm.textContent=verified.length===1?'تأكيد إلغاء التحقق بخطوتين':'تأكيد إلغاء ربط الجهاز';
+          form.append(codeLabel,confirm);
+          form.addEventListener('submit',async event=>{
+            event.preventDefault();
+            const code=normalizeName(codeInput.value);
+            if(!validCode(code)){status.textContent='أدخل رمز المصادقة الصحيح من ستة أرقام.';return;}
+            const last=verified.length===1;
+            if(!window.confirm(last
+              ? 'هل تريد إيقاف التحقق بخطوتين لهذا الحساب؟ ستنخفض الحماية وسيصبح الدخول بكلمة المرور فقط.'
+              : 'هل تريد إزالة هذا الجهاز من وسائل المصادقة؟'))return;
+            confirm.disabled=true;
+            try{
+              const fresh=await state(mfa);
+              if(fresh.level!=='aal2'||!fresh.factors.some(item=>item.id===factor.id))
+                throw new Error('AAL2 session required');
+              await resultOf(mfa.challengeAndVerify({factorId:factor.id,code}));
+              await resultOf(mfa.unenroll({factorId:factor.id}));
+              // When the last factor goes away, remove stale AAL2 claims promptly.
+              if(last && typeof db.auth.refreshSession==='function'){
+                try{await db.auth.refreshSession();}catch(_){}
+              }
+              await reload();
+              status.textContent=last
+                ? 'تم إلغاء التحقق بخطوتين لهذا الحساب. يمكنك تفعيله مجددًا وقتما تريد.'
+                : 'تم إلغاء ربط الجهاز، وبقيت أجهزة المصادقة الأخرى مفعّلة.';
+            }catch(_){
+              status.textContent='تعذر إلغاء الربط. تأكد من رمز الجهاز الحالي ومن حالة جلسة التحقق.';
+              confirm.disabled=false;
+            }
           });
-          row.appendChild(remove);
+          details.appendChild(form);
+          row.appendChild(details);
+        }else{
+          const note=document.createElement('small');
+          note.textContent='يلزم إكمال التحقق بخطوتين قبل إزالة جهاز مفعّل.';
+          row.appendChild(note);
         }
         factorList.appendChild(row);
       });
@@ -131,28 +234,32 @@
         cancel.type='button';cancel.className='fl-cloud-btn secondary';
         cancel.textContent='إلغاء محاولة الربط';
         cancel.addEventListener('click',async()=>{
-          if(!window.confirm('هل تريد إلغاء محاولة ربط تطبيق المصادقة غير المكتملة؟ لن تتأثر أجهزة المصادقة المفعّلة.'))return;
+          if(!window.confirm('إلغاء محاولة الربط غير المكتملة؟ لن تتأثر أجهزة المصادقة المفعّلة.'))return;
           cancel.disabled=true;
           try{
-            // Only an unverified factor in the current signed-in user's list.
             await resultOf(mfa.unenroll({factorId:factor.id}));
             await reload();
           }catch(_){
-            status.textContent='تعذر إلغاء المحاولة غير المكتملة. أعد تسجيل الدخول وحاول مجددًا.';
+            status.textContent='تعذر إلغاء المحاولة غير المكتملة.';
             cancel.disabled=false;
           }
         });
         row.appendChild(cancel);factorList.appendChild(row);
       });
       enrollBtn.hidden=verified.length+unfinished.length>=10 || unfinished.length>0;
-      enrollBtn.textContent=verified.length?'إضافة جهاز احتياطي':'تفعيل التحقق بخطوتين';
+      nameInput.disabled=verified.length+unfinished.length>=10 || unfinished.length>0;
+      enrollBtn.textContent=verified.length?'ربط جهاز مصادقة إضافي':'تفعيل التحقق بخطوتين';
     }
     enrollBtn.addEventListener('click',async()=>{
+      const chosen=normalizeName(nameInput.value);
+      if(!acceptableName(chosen)){status.textContent='اكتب اسم الجهاز أولًا (من 2 إلى 48 حرفًا).';nameInput.focus();return;}
+      // A name conflict should be corrected by the user, not hidden with random suffixes.
+      if([...verified,...unfinished].some(f=>normalizeName(f.friendly_name).toLowerCase()===chosen.toLowerCase())){
+        status.textContent='اسم الجهاز مستخدم بالفعل. اختر اسمًا مختلفًا.';nameInput.focus();return;
+      }
       enrollBtn.disabled=true;status.textContent='جاري إنشاء رمز الربط...';
       try{
-        // Supabase requires unique friendly names even across unfinished enrollments.
-        const uniqueName='Flower Light - '+(role==='owner'?'Owner':'Admin')+' - '+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);
-        const data=await resultOf(mfa.enroll({factorType:'totp',friendlyName:uniqueName}));
+        const data=await resultOf(mfa.enroll({factorType:'totp',friendlyName:chosen}));
         if(!data?.id || !data?.totp?.secret)throw new Error('Missing TOTP enrollment');
         pending=data.id;
         setup.hidden=false;
@@ -172,8 +279,9 @@
       const btn=get('flMfaSetupVerify');btn.disabled=true;
       try{
         await resultOf(mfa.challengeAndVerify({factorId:pending,code}));
-        clearSetup();await reload();
-        status.textContent='تم تفعيل MFA لهذا الحساب. أضف جهازًا ثانيًا احتياطيًا.';
+        clearSetup();nameInput.value='';
+        await reload();
+        status.textContent='تم تفعيل تطبيق المصادقة بهذا الاسم. يُفضّل إضافة جهاز احتياطي.';
       }catch(_){status.textContent='تعذر تأكيد الرمز؛ تحقق من الرمز والوقت ثم أعد المحاولة.';}
       finally{btn.disabled=false;}
     });
