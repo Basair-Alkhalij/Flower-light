@@ -1459,6 +1459,10 @@ test('security: missing Turnstile site key must never fall back to direct custom
   // Turnstile fail-closed logic under test runs.
   await page.waitForTimeout(1100);
   await page.locator('#flLeadForm').evaluate(form=>{
+    // Keep the security-gate test independent of public-sync's asynchronous
+    // phone input normalization and mock catalog refresh timing.
+    form.querySelector('#flLeadName').value='Secure customer';
+    form.querySelector('#flLeadMobile').value='0501234567';
     form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
   });
   await expect(page.locator('#flLeadError')).toContainText('التحقق الأمني غير مهيأ');
