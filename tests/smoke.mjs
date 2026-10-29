@@ -506,8 +506,8 @@ assert.match(app,/image\.decoding = 'async'/);
   const srcAt=createCard.indexOf('image.src = item.image_thumb || item.image;',imgAt);
   assert.ok(imgAt>=0&&loadingAt>imgAt&&priorityAt>loadingAt&&srcAt>priorityAt,
     'Apply lazy loading and low fetch priority before starting the thumbnail request');
-  assert.match(index,/<img class="watermark"[^>]*loading="lazy"[^>]*fetchpriority="low"/,
-    'Decorative watermark must defer to the company logo');
+  assert.match(index,/<img class="watermark"[^>]*src="company-watermark\\.svg\\?v=__FL_VERSION__"[^>]*loading="eager"[^>]*fetchpriority="low"/,
+    'Small watermark should be discovered during HTML parsing but remain lower priority than the company logo');
   assert.match(index,/<img class="brand-logo"[^>]*fetchpriority="high"/,
     'Visible company branding should have high image priority');
 
