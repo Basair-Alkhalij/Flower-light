@@ -47,10 +47,11 @@
       const finish=ok=>{if(settled)return;settled=true;resolve(ok);};
       body.innerHTML='<div class="fl-cloud-wrap"><div class="fl-cloud-login" role="region" aria-label="التحقق بخطوتين"><h2>التحقق بخطوتين</h2><p>أدخل رمز تطبيق المصادقة الخاص بحسابك للمتابعة.</p><form id="flMfaChallengeForm"><div class="fl-cloud-field"><label for="flMfaFactor">تطبيق المصادقة</label><select id="flMfaFactor"></select></div><div class="fl-cloud-field"><label for="flMfaOtp">الرمز المكوّن من 6 أرقام</label><input id="flMfaOtp" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" dir="ltr" required></div><p id="flMfaChallengeError" role="alert" aria-live="polite"></p><button class="fl-cloud-btn primary" id="flMfaVerify" type="submit">التحقق والمتابعة</button><button class="fl-cloud-btn secondary" id="flMfaCancel" type="button">تسجيل الخروج</button></form></div></div>';
       const select=get('flMfaFactor');
+      const displayLabels=await readAccountLabels(db.auth).catch(()=>({}));
       for(const [index,factor] of current.factors.entries()){
         const option=document.createElement('option');
         option.value=factor.id;
-        option.textContent=factor.friendly_name || 'تطبيق المصادقة '+(index+1);
+        option.textContent=normalizeName(displayLabels[factor.id])||factor.friendly_name||'تطبيق المصادقة '+(index+1);
         select.appendChild(option);
       }
       get('flMfaOtp')?.focus();
