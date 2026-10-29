@@ -1680,13 +1680,14 @@ test('admin can enroll TOTP without persisting its setup secret',async({page})=>
     window.FL_ADMIN_MFA.renderSettings({auth:{mfa}},host,'subadmin');
   });
   await expect(page.locator('#flMfaEnroll')).toBeVisible();
+  await page.locator('#flMfaNewName').fill('هاتف الأدمن الرئيسي');
   await page.locator('#flMfaEnroll').click();
   await expect(page.locator('#flMfaSecret')).toContainText('TEST-SETUP-ONLY-KEY');
   await page.locator('#flMfaSetupOtp').fill('123456');
   await page.locator('#flMfaSetupVerify').click();
-  await expect(page.locator('#flMfaStatus')).toContainText('تم تفعيل MFA');
+  await expect(page.locator('#flMfaStatus')).toContainText('تم تفعيل تطبيق المصادقة');
   await expect(page.locator('#flMfaSecret')).toBeEmpty();
-  await expect(page.locator('#flMfaEnroll')).toHaveText('إضافة جهاز احتياطي');
+  await expect(page.locator('#flMfaEnroll')).toHaveText('ربط جهاز مصادقة إضافي');
   expect(await page.evaluate(()=>Object.values(localStorage).some(value=>String(value).includes('TEST-SETUP-ONLY-KEY')))).toBe(false);
 });
 
@@ -1729,10 +1730,71 @@ test('admin MFA repairs unfinished enrollment without deleting verified factors'
   await expect(page.locator('#flMfaEnroll')).toBeVisible();
   expect(await page.evaluate(()=>window.__flMfaCancelled)).toEqual(['old-pending']);
   await expect(page.getByText('تطبيق 1')).toBeVisible();
+  await page.locator('#flMfaNewName').fill('جهاز احتياطي');
   await page.locator('#flMfaEnroll').click();
   await expect(page.locator('#flMfaSecret')).toContainText('TEST-NEW-SECRET');
   const names=await page.evaluate(()=>window.__flMfaNames);
   expect(names).toHaveLength(1);
-  expect(names[0]).toMatch(/^Flower Light - Owner - /);
-  expect(names[0]).not.toBe('Flower Light - Owner');
+  expect(names[0]).toBe('جهاز احتياطي');
+});
+
+
+test('admin can edit existing MFA name and safely unlink final verified device',async({page})=>{
+  await installSupabaseMock(page);
+  await page.goto(new URL('?admin=1',base).href,{waitUntil:'load'});
+  await page.waitForFunction(()=>Boolean(window.FL_ADMIN_MFA?.renderSettings));
+  await page.evaluate(()=>{
+    window.__flMfaExisting=true;
+    window.__flMfaMetadata={};
+    window.__flMfaRemoveCalls=[];
+    window.__flMfaRefreshCount=0;
+    const mfa={
+      listFactors:async()=>({data:{totp:window.__flMfaExisting
+        ? [{id:'verified-factor',factor_type:'totp',status:'verified',friendly_name:'Flower Light - Owner - oldcode'}]
+        : [],all:[]},error:null}),
+      getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel:window.__flMfaExisting?'aal2':'aal1',nextLevel:window.__flMfaExisting?'aal2':'aal1'},error:null}),
+      challengeAndVerify:async({factorId,code})=>factorId==='verified-factor'&&code==='123456'
+        ? {data:{},error:null} : {data:null,error:new Error('Invalid authenticator code')},
+      unenroll:async({factorId})=>{
+        window.__flMfaRemoveCalls.push(factorId);
+        window.__flMfaExisting=false;
+        return {data:{},error:null};
+      },
+      enroll:async()=>({data:null,error:new Error('No test enrollment')})
+    };
+    const auth={
+      mfa,
+      getUser:async()=>({data:{user:{user_metadata:window.__flMfaMetadata}},error:null}),
+      updateUser:async({data})=>{
+        window.__flMfaMetadata={...window.__flMfaMetadata,...data};
+        return {data:{user:{user_metadata:window.__flMfaMetadata}},error:null};
+      },
+      refreshSession:async()=>{
+        window.__flMfaRefreshCount++;
+        return {data:{session:{}},error:null};
+      }
+    };
+    const host=document.createElement('div');host.id='flMfaEditableTest';
+    document.getElementById('flCloudAdminBody').appendChild(host);
+    window.FL_ADMIN_MFA.renderSettings({auth},host,'owner');
+  });
+  await expect(page.locator('.fl-mfa-factor-name')).toHaveText('Flower Light - Owner - oldcode');
+  await page.locator('.fl-mfa-edit-form input').fill('جوالي الرئيسي');
+  await page.locator('.fl-mfa-edit-form button').click();
+  await expect(page.locator('.fl-mfa-factor-name')).toHaveText('جوالي الرئيسي');
+  expect(await page.evaluate(()=>window.__flMfaMetadata.flower_light_mfa_labels['verified-factor'])).toBe('جوالي الرئيسي');
+
+  await page.locator('.fl-mfa-remove-section summary').click();
+  await page.locator('.fl-mfa-remove-form input').fill('000000');
+  page.once('dialog',dialog=>dialog.accept());
+  await page.locator('.fl-mfa-remove-form button').click();
+  await expect(page.locator('#flMfaStatus')).toContainText('تعذر إلغاء الربط');
+  expect(await page.evaluate(()=>window.__flMfaRemoveCalls)).toEqual([]);
+  await page.locator('.fl-mfa-remove-form input').fill('123456');
+  page.once('dialog',dialog=>dialog.accept());
+  await page.locator('.fl-mfa-remove-form button').click();
+  await expect(page.locator('#flMfaStatus')).toContainText('تم إلغاء التحقق بخطوتين');
+  await expect(page.locator('#flMfaEnroll')).toHaveText('تفعيل التحقق بخطوتين');
+  expect(await page.evaluate(()=>window.__flMfaRemoveCalls)).toEqual(['verified-factor']);
+  expect(await page.evaluate(()=>window.__flMfaRefreshCount)).toBe(1);
 });
