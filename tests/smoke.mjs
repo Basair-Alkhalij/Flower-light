@@ -11,6 +11,7 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const index = read('index.html');
 const app = read('app.js');
 const catalogPdfViewer = read('catalog-pdf-viewer.js');
+const catalogPdfRenderer = read('catalog-pdf-renderer.js');
 const admin = read('admin.js');
 const adminMedia = read('admin-media.js');
 const adminProducts = read('admin-products.js');
@@ -163,7 +164,7 @@ assert.deepEqual(evaluateSeo('?admin=2'), {
 });
 assert.match(adminDatasheet, /createAdminDatasheetExport/);
 assert.match(adminDatasheet, /if\(failedImages\)throw new Error/);
-assert.ok(app.includes("if (/^data:image\\//i.test"),'uploaded image data URLs must decode directly without fetch');
+assert.ok(catalogPdfRenderer.includes("if (/^data:image\\//i.test"),'uploaded image data URLs must decode directly without fetch');
 
 assert.match(adminDatasheet, /flDatasheetDesignerForm[\s\S]*createAdminDatasheetExport/);
 assert.doesNotMatch(admin, /createAdminDatasheetPdf/);
@@ -298,8 +299,8 @@ assert.match(adminWithSettings, /design_footer_number/);
 assert.match(adminWithSettings, /design_footer_label/);
 assert.match(sync, /design_footer_number/);
 assert.match(sync, /design_footer_label/);
-assert.match(app, /function catalogDesignFooterNumber\(\)/);
-assert.match(app, /رقم التواصل/);
+assert.match(catalogPdfRenderer, /function catalogDesignFooterNumber\(\)/);
+assert.match(catalogPdfRenderer, /رقم التواصل/);
 assert.doesNotMatch(app, /زوروا موقعنا الإلكتروني/);
 assert.match(read('SUPABASE_SETUP.sql'), /design_footer_number text not null default ''/);
 assert.match(read('SUPABASE_SETUP.sql'), /STAGE88_DESIGN_FOOTER_LABEL_OK/);
@@ -309,9 +310,9 @@ assert.match(adminWithSettings, /flMasterBarcodeSettingsForm/);
 assert.match(adminWithSettings, /uploadMasterBarcodeFile/);
 assert.match(adminWithSettings, /master_barcode_path/);
 assert.match(sync, /master_barcode_path/);
-assert.match(app, /function masterBarcodeUrl\(\)/);
-assert.match(app, /async function drawMasterBarcode/);
-assert.match(app, /barcodeDrawn/);
+assert.match(catalogPdfRenderer, /function masterBarcodeUrl\(\)/);
+assert.match(catalogPdfRenderer, /async function drawMasterBarcode/);
+assert.match(catalogPdfRenderer, /barcodeDrawn/);
 assert.match(read('SUPABASE_SETUP.sql'), /master_barcode_path text not null default ''/);
 assert.match(read('SUPABASE_SETUP.sql'), /site-settings/);
 assert.match(read('SUPABASE_SETUP.sql'), /STAGE88_MASTER_BARCODE_OK/);
@@ -348,7 +349,7 @@ for(const raw of refs){
   if(!clean || clean.startsWith('/')) continue;
   assert.ok(fs.existsSync(path.join(root,clean)),`missing local asset: ${clean}`);
 }
-for(const asset of ['analytics.js','catalog-pdf-viewer.js','app.js','site-bootstrap.js','site-loader.js','admin.js','admin-datasheet.js','admin-media.js','admin-products.js','admin-product-form.js','admin-import.js','public-sync.js','style.css' ,'company-logo.png','favicon-32.png','favicon-192.png','apple-touch-icon.png','favicon.ico','share-image.jpg']){
+for(const asset of ['analytics.js','catalog-pdf-viewer.js','catalog-pdf-renderer.js','app.js','site-bootstrap.js','site-loader.js','admin.js','admin-datasheet.js','admin-media.js','admin-products.js','admin-product-form.js','admin-import.js','public-sync.js','style.css' ,'company-logo.png','favicon-32.png','favicon-192.png','apple-touch-icon.png','favicon.ico','share-image.jpg']){
   assert.ok(fs.existsSync(path.join(root,asset)),`required release asset missing: ${asset}`);
 }
 
@@ -358,7 +359,7 @@ assert.equal(fs.existsSync(path.join(root,'share-image-v78.jpg')),false);
 const releaseNames=fs.readdirSync(root);
 assert.equal(releaseNames.some(name=>/^README_STAGE/i.test(name)),false);
 assert.equal(releaseNames.some(name=>/^FINAL_SQL_STAGE/i.test(name)),false);
-const textBundle=[index,app,adminProductBundle,sync,css,read('README.md'),read('SUPABASE_SETUP.sql')].join('\n');
+const textBundle=[index,app,catalogPdfRenderer,adminProductBundle,sync,css,read('README.md'),read('SUPABASE_SETUP.sql')].join('\n');
 assert.match(index, /https:\/\/basair-alkhalij\.github\.io\/Flower-light\//);
 assert.match(read('manifest.webmanifest'), /"start_url": "\.\/"/);
 assert.ok(fs.existsSync(path.join(root,'robots.txt')));
