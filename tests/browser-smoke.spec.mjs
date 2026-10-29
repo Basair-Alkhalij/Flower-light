@@ -32,7 +32,14 @@ window.supabase={createClient(){
       getSession:async()=>({data:{session:null},error:null}),
       onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),
       signOut:async()=>({error:null}),signInWithPassword:async()=>({data:{session:null},error:null}),
-      resetPasswordForEmail:async()=>({error:null}),signInWithOtp:async()=>({error:null}),updateUser:async()=>({error:null})
+      resetPasswordForEmail:async()=>({error:null}),signInWithOtp:async()=>({error:null}),updateUser:async()=>({error:null}),
+      mfa:{
+        listFactors:async()=>({data:{totp:[],all:[]},error:null}),
+        getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel:'aal1',nextLevel:'aal1'},error:null}),
+        challengeAndVerify:async()=>({data:{},error:null}),
+        enroll:async()=>({data:{id:'test-id',totp:{qr_code:'',secret:'TEST'}},error:null}),
+        unenroll:async()=>({data:{},error:null})
+      }
     },
     from:makeQuery,
     rpc:async()=>({data:null,error:null}),
