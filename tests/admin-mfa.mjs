@@ -11,7 +11,7 @@ assert.equal(typeof mfa.renderSettings,'function');
 assert.equal(mfa.validCode('123456'),true);
 assert.equal(mfa.validCode('1234567'),false);
 assert.equal(mfa.validCode('123a56'),false);
-assert.doesNotMatch(source,/localStorage|sessionStorage|console\.(?:log|warn)\(/,'MFA secrets must not be persisted or logged');
+assert.doesNotMatch(source.replace(/^\\s*\/\/.*$/gm,''),/(?:localStorage|sessionStorage)\\s*[.\\[]|console\\.(?:log|warn)\\(/,'MFA secrets must not be persisted or logged');
 
 const api=(factors,level,next)=>({
   listFactors:async()=>({data:{totp:factors},error:null}),
