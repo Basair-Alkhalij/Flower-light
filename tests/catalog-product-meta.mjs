@@ -37,6 +37,6 @@ assert.equal(m.formatProductSpecValue({key:'dimensions',label:'المقاس',val
 assert.equal(m.formatProductSpecValue({key:'ip_rating',label:'درجة الحماية',value:'IP65'},'ar'),'IP65');
 assert.equal(m.formatProductSpecValue({key:'color',label:'اللون',value:'ذهبي'},'ar'),'ذهبي');
 assert.equal(m.formatProductSpecValue({key:'wattage',label:'القدرة',value:'',unit:'W'},'ar'),'');
-assert.match(fs.readFileSync(new URL('../app.js',import.meta.url),'utf8'),/return formatProductSpecValue\(spec,window\.FL_I18N/,'product cards, WhatsApp and data sheets must use common display formatting');
+assert.match(fs.readFileSync(new URL('../catalog-specifications.js',import.meta.url),'utf8'),/return formatProductSpecValue\(spec,window\.FL_I18N/,'product cards, WhatsApp and data sheets must use common display formatting');
 
 console.log('CATALOG_PRODUCT_META_OK');
