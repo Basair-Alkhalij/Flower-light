@@ -1643,7 +1643,7 @@ test('admin MFA requests a verified TOTP before loading the admin page',async({p
       },
       enroll:async()=>({data:null,error:null}),unenroll:async()=>({data:null,error:null})
     };
-    const host=document.createElement('div');host.id='flMfaTestHost';document.body.appendChild(host);
+    const host=document.createElement('div');host.id='flMfaTestHost';document.getElementById('flCloudAdminBody').appendChild(host);
     window.FL_ADMIN_MFA.requireStepUp({auth:{mfa}},host).then(value=>window.__flMfaResult=value);
   });
   await expect(page.locator('#flMfaChallengeForm')).toBeVisible();
@@ -1672,7 +1672,7 @@ test('admin can enroll TOTP without persisting its setup secret',async({page})=>
       enroll:async()=>({data:{id:'test-factor',totp:{secret:'TEST-SETUP-ONLY-KEY',qr_code:''}},error:null}),
       unenroll:async()=>({data:{},error:null})
     };
-    const host=document.createElement('div');host.id='flMfaTestSettings';document.body.appendChild(host);
+    const host=document.createElement('div');host.id='flMfaTestSettings';document.getElementById('flCloudAdminBody').appendChild(host);
     window.FL_ADMIN_MFA.renderSettings({auth:{mfa}},host,'subadmin');
   });
   await expect(page.locator('#flMfaEnroll')).toBeVisible();
