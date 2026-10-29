@@ -1482,7 +1482,16 @@
       if(!email){notify('اكتب البريد الأساسي للاستعادة');return;}
       save.disabled=true;save.textContent='جاري الحفظ...';
       try{
-        const {error:verifyError}=await db.auth.signInWithPassword({email:currentAdminEmail,password:currentPassword});
+        // Verify the owner's password using an isolated, memory-only auth client.
+        // Signing in on the main client here would downgrade an MFA (aal2) session
+        // back to aal1 immediately before the protected Edge Function call.
+        const verifyClient=window.supabase?.createClient?.(
+          window.FLOWER_LIGHT_SUPABASE.url,
+          window.FLOWER_LIGHT_SUPABASE.anonKey,
+          {auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}
+        );
+        if(!verifyClient)throw new Error('تعذر بدء التحقق من كلمة المرور.');
+        const {error:verifyError}=await verifyClient.auth.signInWithPassword({email:currentAdminEmail,password:currentPassword});
         if(verifyError)throw verifyError;
         const {data,error}=await db.functions.invoke('manage-admin-account',{body:{action:'save_recovery_email',email}});
         if(error||data?.error)throw Object.assign(error||new Error(data.error),{functionData:data});
