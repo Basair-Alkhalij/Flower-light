@@ -18,6 +18,13 @@
   /* Public profile layout stays stable during asynchronous cloud hydration. */
 
   #publicCard.fl-profile-pending .hero { min-height: 500px; }
+  /* Reserve the actual grouped contact rows while Supabase hydrates the profile.
+     Prevent the bank accordion/footer from jumping after the async profile fetch.
+     The reservation disappears with fl-profile-pending on both success and error. */
+  #publicCard.fl-profile-pending #contactInfoList {
+    min-height: 387px;
+    visibility: hidden;
+  }
   #publicCard.fl-profile-pending #saveContact[hidden] { display: flex !important; visibility: hidden; }
   #publicCard.fl-profile-pending #quickActions[hidden] { display: grid !important; visibility: hidden; min-height: 70px; }
   .fl-master-barcode-editor{grid-template-columns:1fr}
