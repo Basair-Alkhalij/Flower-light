@@ -56,7 +56,12 @@ for(const ref of [
   `admin-mfa.js?v=${VERSION_TOKEN}`, `admin-navigation.js?v=${VERSION_TOKEN}`, `admin-overview.js?v=${VERSION_TOKEN}`, `admin-product-specs.js?v=${VERSION_TOKEN}`, `admin-datasheet.js?v=${VERSION_TOKEN}`,`admin-search-filters.js?v=${VERSION_TOKEN}`,`admin-media.js?v=${VERSION_TOKEN}`,`admin-products.js?v=${VERSION_TOKEN}`,`admin-product-form.js?v=${VERSION_TOKEN}`,`admin-import.js?v=${VERSION_TOKEN}`
 ]){
   const haystack=ref.startsWith('admin-')?loader:index;
-  if(!haystack.includes(ref)){console.error(`Missing release reference: ${ref}`);process.exit(1);}
+  // Admin assets are now declared as filename entries in an ordered loader
+  // manifest. Keep verifying the filename and the shared versioned suffix.
+  const declared=haystack.includes(ref) || (ref.startsWith('admin-')
+    && haystack.includes(`'${ref.split('?')[0]}'`)
+    && loader.includes("script.src=path+'?v=__FL_VERSION__'"));
+  if(!declared){console.error(`Missing release reference: ${ref}`);process.exit(1);}
 }
 for(const file of ['index.html','privacy.html','manifest.webmanifest','site-loader.js','sw.js']){
   const source=fs.readFileSync(path.join(root,file),'utf8');
