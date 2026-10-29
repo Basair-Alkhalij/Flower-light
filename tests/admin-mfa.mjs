@@ -35,5 +35,5 @@ assert.equal(await mfa.requireStepUp({auth:{mfa:api([{id:'factor1',status:'verif
 await assert.rejects(()=>mfa.requireStepUp({auth:{}},null),/التحقق بخطوتين/);
 await assert.rejects(()=>mfa.requireStepUp({auth:{mfa:api([{id:'factor1',status:'verified',factor_type:'totp'}],'aal1','aal1')}},null),/الخادم/);
 assert.match(fs.readFileSync(new URL('../admin.js',import.meta.url),'utf8'),/FL_ADMIN_MFA\.requireStepUp/);
-assert.match(fs.readFileSync(new URL('../site-loader.js',import.meta.url),'utf8'),/admin-mfa\.js\?v=__FL_VERSION__/);
+assert.match(fs.readFileSync(new URL('../site-loader.js',import.meta.url),'utf8'),/'admin-mfa\\.js'/);
 console.log('ADMIN_MFA_UNIT_OK');
