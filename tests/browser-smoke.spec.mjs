@@ -55,7 +55,10 @@ async function installSupabaseMock(page){
 }
 
 async function injectCatalogFixtures(page){
-  await page.waitForFunction(()=>typeof window.flRenderProducts==='function');
+  // Cloud catalog hydration is async; install deterministic fixtures only after its
+  // initial request finishes so it cannot overwrite the mock products mid-test.
+  await page.waitForFunction(()=>typeof window.flRenderProducts==='function' && Boolean(window.flPublicCatalogReady));
+  await page.evaluate(()=>window.flPublicCatalogReady.catch(()=>false));
   await page.evaluate(()=>{
     localStorage.setItem('flower_light_customer_access_v1','1');
     window.FLOWER_LIGHT_SITE_SETTINGS={require_customer_lead:false};
