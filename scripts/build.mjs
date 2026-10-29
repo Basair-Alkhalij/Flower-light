@@ -117,9 +117,12 @@ if (!process.argv.includes('--check')) {
       const response=await fetch(supabaseVendorUrl,{redirect:'follow'});
       if(!response.ok) throw new Error(`HTTP ${response.status}`);
       supabaseVendor=Buffer.from(await response.arrayBuffer());
-      if(supabaseVendor.length<100_000) throw new Error('downloaded file is unexpectedly small');
     }
-    console.log('SUPABASE_VENDOR_SHA256_FOR_PIN',crypto.createHash('sha256').update(supabaseVendor).digest('hex'));
+    if(supabaseVendor.length<100_000) throw new Error('Supabase vendor file is unexpectedly small');
+    const pinnedSupabaseSha256='7e94b62086deecef8c0ba3b38f514e2a1944ff6c81d92fb3ff967828c406c38f';
+    const supabaseSha256=crypto.createHash('sha256').update(supabaseVendor).digest('hex');
+    if(supabaseSha256!==pinnedSupabaseSha256) throw new Error('Pinned Supabase SHA-256 mismatch');
+    console.log('SUPABASE_VENDOR_SHA256',supabaseSha256);
     fs.writeFileSync(path.join(out,'supabase-vendor.js'),supabaseVendor);
     sizes['supabase-vendor.js']={source:supabaseVendor.length,minified:supabaseVendor.length,gzip:zlib.gzipSync(supabaseVendor,{level:9}).length};
   }catch(error){
