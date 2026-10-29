@@ -13,6 +13,11 @@ assert.match(member,/id="flAdminViewSelect"/);
 assert.match(member,/id="flAdminNavSearch"/);
 assert.match(member,/class="fl-cloud-nav-group"/);
 assert.match(member,/class="fl-cloud-nav-heading"/);
+assert.match(member,/class="fl-cloud-nav-chevron"/);
+assert.match(member,/<svg[^>]*viewBox="0 0 16 16"/);
+assert.match(member,/<path d="m4 6 4 4 4-4"/);
+assert.doesNotMatch(member,/<small[^>]*aria-label="\d+ أقسام"/);
+assert.doesNotMatch(member,/<summary[^>]*>[^<]*\d+<\/summary>/);
 assert.match(member,/class="fl-admin-mobile-home"/);
 assert.match(member,/data-cloud-view="overview"/);
 assert.match(member,/<details[^>]*data-nav-group="المنتجات والكتالوج"[^>]*open/);
@@ -66,4 +71,10 @@ const collapsed=nav.render({view:'leads',allowed:new Set(['overview','products',
 assert.match(collapsed,/<details[^>]*data-nav-group="المنتجات والكتالوج"[^>]*open/);
 assert.match(collapsed,/<details[^>]*data-nav-group="المتابعة والتواصل"[^>]*open/);
 assert.doesNotMatch(collapsed,/<details[^>]*data-nav-group="الموقع والمنشأة"[^>]*open/);
+
+const adminCss=fs.readFileSync(new URL('../styles/admin.css',import.meta.url),'utf8');
+assert.match(adminCss,/\.fl-cloud-nav-chevron path\s*\{/);
+assert.match(adminCss,/\.fl-cloud-nav-group\[open\]>\.fl-cloud-nav-heading \.fl-cloud-nav-chevron\s*\{/);
+assert.doesNotMatch(adminCss,/\.fl-cloud-nav-heading::after\s*\{/);
+
 console.log('ADMIN_NAVIGATION_MODULE_OK');
