@@ -76,6 +76,7 @@ assert.equal(typeof context.window.FL_ADMIN_IMPORT?.downloadExcelTemplate,'funct
 const adminSource=read('admin.js');
 const specSource=read('admin-product-specs.js');
 const appSource=read('app.js');
+const catalogSpecsSource=read('catalog-specifications.js');
 const formSource=read('admin-product-form.js');
 const listSource=read('admin-products.js');
 const importSource=read('admin-import.js');
@@ -96,8 +97,9 @@ assert.match(adminSource,/data-flex-spec-type/);
 assert.match(formSource,/data-flex-spec-type/);
 assert.match(formSource,/syncSpecRow/);
 assert.match(importSource,/normalizeKnownSpecValue/);
-assert.match(appSource,/canonicalProductSpecKey/);
-assert.match(appSource,/PRODUCT_SPEC_ALIAS_LOOKUP/);
+assert.match(catalogSpecsSource,/canonicalProductSpecKey/);
+assert.match(appSource,/window\.FL_CATALOG_SPECIFICATIONS/);
+assert.match(catalogSpecsSource,/PRODUCT_SPEC_ALIAS_LOOKUP/);
 
 // Workbook round-trip: all technical-spec columns + Arabic/English values are real import fields.
 core.categories[0]={...core.categories[0],name_en:'Chandeliers',description:'إنارة سقفية',description_en:'Ceiling lighting',sort_order:11,is_visible:true};
