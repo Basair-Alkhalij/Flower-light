@@ -13,6 +13,7 @@
 | تفاصيل الإصدارات القديمة | `docs/RELEASE_NOTES_AR.md` |
 | تقرير الأمان | `docs/PRODUCTION_SECURITY_REVIEW_V118.md` |
 | المرحلة الأولى من خطة الأمان 2026-10-29 | `docs/SECURITY_PHASE1_2026-10-29.md` |
+| تفعيل MFA الاختياري لحسابات الإدارة | `docs/MFA_ROLLOUT_2026-10-29_AR.md` |
 | تثبيت التطبيق الآمن (PWA) | `docs/PWA_INSTALL_SAFE_AR.md` |
 
 ## تشغيل محلي
