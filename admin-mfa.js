@@ -7,6 +7,15 @@
   const validCode = value => /^[0-9]{6}$/.test(String(value || '').trim());
   const validFactor = factor => factor && factor.factor_type === 'totp' && factor.status === 'verified' && typeof factor.id === 'string';
   const verifiedFactors = data => (Array.isArray(data?.totp) ? data.totp : (Array.isArray(data?.all) ? data.all : [])).filter(validFactor);
+  const unfinishedFactors = data => (Array.isArray(data?.all) ? data.all : [])
+    .filter(factor=>factor?.factor_type==='totp' && factor?.status==='unverified' && typeof factor?.id==='string');
+  function enrollmentErrorMessage(error) {
+    if(error?.code==='mfa_factor_name_conflict')return 'يوجد جهاز مسجل بالاسم نفسه. ألغِ محاولة الربط غير المكتملة ثم أعد المحاولة.';
+    if(error?.code==='mfa_totp_enroll_not_enabled')return 'تسجيل تطبيق المصادقة TOTP معطّل في Supabase Authentication → Multi-Factor Authentication.';
+    if(error?.code==='too_many_enrolled_mfa_factors')return 'وصل الحساب إلى الحد الأقصى من أجهزة المصادقة.';
+    if(error?.code==='insufficient_aal')return 'تحتاج إلى التحقق باستخدام جهاز مصادقة مسجّل أولًا.';
+    return 'تعذر إنشاء عامل المصادقة. تحقق من اتصالك وإعدادات MFA، ثم أعد المحاولة.';
+  }
   function requireApi(db) {
     const mfa=db?.auth?.mfa;
     if (!mfa || !['listFactors','getAuthenticatorAssuranceLevel','challengeAndVerify','enroll','unenroll'].every(name=>typeof mfa[name]==='function')) {
@@ -25,7 +34,7 @@
       resultOf(mfa.getAuthenticatorAssuranceLevel())
     ]);
     if(!assurance?.currentLevel)throw new Error('تعذر تحديد مستوى حماية جلسة الإدارة.');
-    return {factors:verifiedFactors(factors),level:assurance.currentLevel,next:assurance.nextLevel};
+    return {factors:verifiedFactors(factors),unfinished:unfinishedFactors(factors),level:assurance.currentLevel,next:assurance.nextLevel};
   }
   async function requireStepUp(db,body,onCancel) {
     const mfa=requireApi(db);
@@ -77,7 +86,7 @@
     const status=get('flMfaStatus'), factorList=get('flMfaFactors'), enrollBtn=get('flMfaEnroll');
     const setup=get('flMfaSetup'),qr=get('flMfaQr'),secret=get('flMfaSecret');
     const mfa=requireApi(db);
-    let pending=null,verified=[];
+    let pending=null,verified=[],unfinished=[];
     function clearSetup(){
       pending=null;setup.hidden=true;qr.hidden=true;qr.removeAttribute('src');
       secret.textContent='';get('flMfaSetupOtp').value='';
@@ -85,10 +94,13 @@
     async function reload(){
       const info=await state(mfa);
       verified=info.factors;
+      unfinished=info.unfinished;
       factorList.replaceChildren();
-      status.textContent=verified.length
-        ? 'لديك '+verified.length+' تطبيق مصادقة موثّق. مستوى الجلسة الحالي: '+info.level+'.'
-        : 'لم يتم ربط تطبيق مصادقة بهذا الحساب بعد.';
+      status.textContent=unfinished.length
+        ? 'هناك محاولة ربط لم تُكتمل. ألغِها من الأسفل قبل إنشاء رمز QR جديد.'
+        : verified.length
+          ? 'لديك '+verified.length+' تطبيق مصادقة موثّق. مستوى الجلسة الحالي: '+info.level+'.'
+          : 'لم يتم ربط تطبيق مصادقة بهذا الحساب بعد.';
       verified.forEach((factor,index)=>{
         const row=document.createElement('div');
         row.className='fl-mfa-factor-row';
@@ -109,13 +121,38 @@
         }
         factorList.appendChild(row);
       });
-      enrollBtn.hidden=verified.length>=10;
+      unfinished.forEach(factor=>{
+        const row=document.createElement('div');
+        row.className='fl-mfa-factor-row';
+        const label=document.createElement('span');
+        label.textContent='ربط غير مكتمل: '+(factor.friendly_name||'تطبيق المصادقة');
+        row.appendChild(label);
+        const cancel=document.createElement('button');
+        cancel.type='button';cancel.className='fl-cloud-btn secondary';
+        cancel.textContent='إلغاء محاولة الربط';
+        cancel.addEventListener('click',async()=>{
+          if(!window.confirm('هل تريد إلغاء محاولة ربط تطبيق المصادقة غير المكتملة؟ لن تتأثر أجهزة المصادقة المفعّلة.'))return;
+          cancel.disabled=true;
+          try{
+            // Only an unverified factor in the current signed-in user's list.
+            await resultOf(mfa.unenroll({factorId:factor.id}));
+            await reload();
+          }catch(_){
+            status.textContent='تعذر إلغاء المحاولة غير المكتملة. أعد تسجيل الدخول وحاول مجددًا.';
+            cancel.disabled=false;
+          }
+        });
+        row.appendChild(cancel);factorList.appendChild(row);
+      });
+      enrollBtn.hidden=verified.length+unfinished.length>=10 || unfinished.length>0;
       enrollBtn.textContent=verified.length?'إضافة جهاز احتياطي':'تفعيل التحقق بخطوتين';
     }
     enrollBtn.addEventListener('click',async()=>{
       enrollBtn.disabled=true;status.textContent='جاري إنشاء رمز الربط...';
       try{
-        const data=await resultOf(mfa.enroll({factorType:'totp',friendlyName:'Flower Light - '+(role==='owner'?'Owner':'Admin')}));
+        // Supabase requires unique friendly names even across unfinished enrollments.
+        const uniqueName='Flower Light - '+(role==='owner'?'Owner':'Admin')+' - '+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);
+        const data=await resultOf(mfa.enroll({factorType:'totp',friendlyName:uniqueName}));
         if(!data?.id || !data?.totp?.secret)throw new Error('Missing TOTP enrollment');
         pending=data.id;
         setup.hidden=false;
@@ -125,7 +162,7 @@
           qr.src=uri;qr.hidden=false;
         }
         status.textContent='أدخل الرمز الحالي للتأكيد. احتفظ بجهاز احتياطي.';
-      }catch(_){status.textContent='تعذر إنشاء عامل المصادقة. تحقق من إعدادات MFA في Supabase.';}
+      }catch(error){status.textContent=enrollmentErrorMessage(error);}
       finally{enrollBtn.disabled=false;}
     });
     get('flMfaSetupForm').addEventListener('submit',async event=>{
