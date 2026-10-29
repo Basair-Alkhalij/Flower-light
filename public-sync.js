@@ -759,6 +759,7 @@
   // can wait for it without issuing a second overlapping Supabase query.
   let initialCatalogLoad=Promise.resolve(false);
   if (db) { publicSiteSettingsPromise=loadPublicSiteSettings(); loadPublicProfile(); loadPublicSiteCatalog(); initialCatalogLoad=loadCloudProducts(); }
+  window.flPublicSiteSettingsReady=publicSiteSettingsPromise;
   window.flPublicCatalogReady=initialCatalogLoad;
 
   // Customer lead gate: visitors enter their details once before opening products.
