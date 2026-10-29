@@ -73,6 +73,14 @@ transition:.16s ease}
   .fl-admin-mobile-nav-label{display:block;font-size:12px;font-weight:800;margin:0 0 6px;color:#4c596f}
   .fl-admin-mobile-nav{display:block;width:100%;min-height:46px;max-width:100%;border:1px solid #e3e8f0;border-radius:12px;background:#fff;color:#263248;padding:0 12px;font:inherit;font-weight:700}
   .fl-admin-mobile-nav:focus-visible{outline:3px solid #ffbf54;outline-offset:2px}
+  .fl-admin-nav-wrap{background:#fff;border:1px solid #e3e8f0;border-radius:15px;padding:10px;box-shadow:0 5px 18px rgba(28,39,60,.04)}
+  .fl-admin-mobile-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:end;direction:rtl}
+  .fl-admin-mobile-select{min-width:0}
+  .fl-admin-mobile-home{display:block;min-height:46px;padding:0 14px;background:#fff6e8;border:1px solid #f4d5a7;border-radius:12px;color:#905500;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+  .fl-admin-mobile-home[disabled]{opacity:.5;cursor:default}
+  .fl-admin-mobile-home:focus-visible{outline:3px solid #ffbf54;outline-offset:2px}
+  .fl-admin-nav-search{display:none}
+
 }
 
 /* v122: grouped, searchable desktop navigation and compact mobile section picker. */
@@ -99,15 +107,6 @@ transition:.16s ease}
 .fl-admin-nav-search input:focus-visible{outline:3px solid rgba(255,159,10,.35);outline-offset:1px}
 .fl-admin-nav-empty{margin:12px 5px;padding:8px;font-size:12px;color:#667085;text-align:center}
 .fl-admin-mobile-controls,.fl-admin-mobile-home{display:none}
-@media (max-width:760px){
-  .fl-admin-nav-wrap{background:#fff;border:1px solid #e3e8f0;border-radius:15px;padding:10px;box-shadow:0 5px 18px rgba(28,39,60,.04)}
-  .fl-admin-mobile-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:end;direction:rtl}
-  .fl-admin-mobile-select{min-width:0}
-  .fl-admin-mobile-home{display:block;min-height:46px;padding:0 14px;background:#fff6e8;border:1px solid #f4d5a7;border-radius:12px;color:#905500;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
-  .fl-admin-mobile-home[disabled]{opacity:.5;cursor:default}
-  .fl-admin-mobile-home:focus-visible{outline:3px solid #ffbf54;outline-offset:2px}
-  .fl-admin-nav-search{display:none}
-}
 
 /* MFA setup is kept in the private admin layout; QR/secret never persist. */
 .fl-mfa-card{display:grid;gap:14px;max-width:760px}
