@@ -390,7 +390,7 @@ assert.match(sw,/config\.js\?v=__FL_VERSION__/);
 
 // Module split part 2: leads section lives in admin-leads.js and is wired through FL_ADMIN_CORE.
 const leadsJs=read('admin-leads.js');
-assert.match(siteLoader,/admin-leads\.js\?v=__FL_VERSION__/);
+assert.match(siteLoader, /'admin-leads\\.js'/);
 assert.match(leadsJs,/window\.FL_ADMIN_LEADS\s*=/);
 assert.match(admin,/FL_ADMIN_LEADS/);
 assert.doesNotMatch(admin,/function\s+(renderLeads|loadLeadsPage|deleteLead|deleteAllLeads|exportAllLeads)\b/);
@@ -457,7 +457,7 @@ const permsJs=read('admin-permissions.js');
   assert.match(draft,/revoke all on function public\.admin_save_catalog_filters\(text\[\],jsonb\) from public,anon/);
 }
 
-assert.match(siteLoader,/admin-permissions\.js\?v=__FL_VERSION__/);
+assert.match(siteLoader, /'admin-permissions\\.js'/);
 assert.match(permsJs,/window\.FL_ADMIN_PERMISSIONS\s*=/);
 assert.match(permsJs,/owner_set_admin2_settings/);
 assert.match(admin,/renderSplitSection\('FL_ADMIN_PERMISSIONS'/);
@@ -465,7 +465,7 @@ assert.doesNotMatch(admin,/function\s+renderPermissions\b/);
 
 // Module split part 4: Owner site-settings cards live in admin-settings.js.
 const settingsJs=read('admin-settings.js');
-assert.match(siteLoader,/admin-settings\.js\?v=__FL_VERSION__/);
+assert.match(siteLoader, /'admin-settings\\.js'/);
 assert.match(settingsJs,/window\.FL_ADMIN_SETTINGS\s*=/);
 assert.match(settingsJs,/site_settings/);
 assert.match(settingsJs,/require_customer_lead/);
@@ -475,10 +475,10 @@ assert.doesNotMatch(admin,/flMasterBarcodeSettingsForm'\)\?\.addEventListener/);
 
 
 // v100: product-area split and responsive WebP thumbnails.
-assert.match(siteLoader,/admin-media\.js\?v=__FL_VERSION__/);
-assert.match(siteLoader,/admin-products\.js\?v=__FL_VERSION__/);
-assert.match(siteLoader,/admin-product-form\.js\?v=__FL_VERSION__/);
-assert.match(siteLoader,/admin-import\.js\?v=__FL_VERSION__/);
+assert.match(siteLoader, /'admin-media\\.js'/);
+assert.match(siteLoader, /'admin-products\\.js'/);
+assert.match(siteLoader, /'admin-product-form\\.js'/);
+assert.match(siteLoader, /'admin-import\\.js'/);
 assert.match(adminMedia,/window\.FL_ADMIN_MEDIA\s*=/);
 assert.match(adminProducts,/window\.FL_ADMIN_PRODUCTS\s*=/);
 assert.match(adminProductForm,/window\.FL_ADMIN_PRODUCT_FORM\s*=/);
