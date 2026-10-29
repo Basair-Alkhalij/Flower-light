@@ -33,7 +33,7 @@
     const settingsKeys=keys=>settingsList.filter(([key])=>keys.includes(key));
     const catalogSettings=shortcutRows(settingsKeys(['search-filters','template-settings']),'إعدادات المنتجات');
     const companySettings=shortcutRows(settingsKeys(['site-settings','business-settings','bank-settings']),'إدارة إعدادات الموقع');
-    const securityShortcuts=(allowed.has('security')?ownerShortcutButton('security','التحقق بخطوتين','الأجهزة الموثّقة وحماية تسجيل الدخول'):'')
+    const securityShortcuts=((isPrimaryAdmin||allowed.has('security'))?ownerShortcutButton('security','التحقق بخطوتين','الأجهزة الموثّقة وحماية تسجيل الدخول'):'')
       +(isPrimaryAdmin?ownerShortcutButton('credentials','بيانات تسجيل الدخول','حسابات المدير والأدمن والاستعادة')
         +ownerShortcutButton('permissions','صلاحيات الأدمن','تحديد ما يستطيع الأدمن الوصول إليه'):'');
     const section=(title,description,shortcuts)=>shortcuts
