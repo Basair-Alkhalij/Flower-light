@@ -18,7 +18,8 @@ assert.ok(!member.includes('data-cloud-view="'+denied+'"'),'Permission leak '+de
 assert.ok(!member.includes('<option value="'+denied+'"'),'Mobile permission leak '+denied);
 }
 const owner=nav.render({view:'search-filters',allowed:new Set(['overview',...content.map(x=>x[0]),...ownerSettings.map(x=>x[0]),'permissions','credentials']),adminViewItems:content,ownerSettingsViewItems:ownerSettings,isPrimaryAdmin:true});
-assert.match(owner,/الحسابات والصلاحيات/);
+assert.match(owner,/الحساب والأمان/);
+assert.match(owner,/data-cloud-view="security"/);
 assert.match(owner,/الفلاتر وقوالب المنتجات/);
 assert.match(owner,/الموقع والمنشأة/);
 assert.ok(!owner.includes('data-cloud-view="search-filters"') === false);
