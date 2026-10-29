@@ -11,6 +11,10 @@ assert.equal(typeof mfa.renderSettings,'function');
 assert.equal(mfa.validCode('123456'),true);
 assert.equal(mfa.validCode('1234567'),false);
 assert.equal(mfa.validCode('123a56'),false);
+assert.match(source,/mfa_factor_name_conflict/);
+assert.match(source,/factor\?\.status==='unverified'/);
+assert.match(source,/Math\.random\(\)\.toString\(36\)/);
+assert.match(source,/إلغاء محاولة الربط/);
 assert.doesNotMatch(source.replace(/^\s*\/\/.*$/gm,''),/\b(?:localStorage|sessionStorage)\s*\.|console\.(?:log|warn)\s*\(/,'MFA secrets must not be persisted or logged');
 
 const api=(factors,level,next)=>({
