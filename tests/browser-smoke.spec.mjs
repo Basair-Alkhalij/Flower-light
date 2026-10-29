@@ -1578,6 +1578,48 @@ test('admin navigation: mobile section chooser respects permissions and replaces
 });
 
 
+test('admin desktop group search and mobile home navigation keep permissions intact',async({page})=>{
+  await installSupabaseMock(page);
+  await page.setViewportSize({width:1280,height:800});
+  await page.goto(new URL('?admin=1',base).href,{waitUntil:'load'});
+  await page.waitForFunction(()=>Boolean(window.FL_ADMIN_CORE?.layout && window.FL_ADMIN_NAV?.render));
+  await page.evaluate(()=>window.FL_ADMIN_CORE.layout('<h2>تجربة التنقل</h2>'));
+  const admin=page.locator('#flCloudAdminBody');
+  await expect(admin.locator('#flAdminNavSearch')).toBeVisible();
+  const catalog=admin.locator('.fl-cloud-nav-group[data-nav-group="المنتجات والكتالوج"]');
+  await expect(catalog).not.toHaveAttribute('open','');
+  await catalog.locator('summary').click();
+  await expect(catalog).toHaveAttribute('open','');
+  await page.evaluate(()=>window.FL_ADMIN_CORE.layout('<h2>القسم الثاني</h2>'));
+  await expect(admin.locator('.fl-cloud-nav-group[data-nav-group="المنتجات والكتالوج"]')).toHaveAttribute('open','');
+  await admin.locator('#flAdminNavSearch').fill('فلاتر');
+  await expect(admin.locator('[data-cloud-view="search-filters"]').first()).toBeVisible();
+  await expect(admin.locator('.fl-cloud-nav-group[data-nav-group="المنتجات والكتالوج"]')).toBeHidden();
+  await admin.locator('#flAdminNavSearch').fill('قسم غير موجود');
+  await expect(admin.locator('#flAdminNavEmpty')).toBeVisible();
+  await admin.locator('#flAdminNavSearch').fill('');
+  await expect(admin.locator('#flAdminNavEmpty')).toBeHidden();
+  await expect(admin.locator('.fl-cloud-nav-group[data-nav-group="المنتجات والكتالوج"]')).toBeVisible();
+  await page.setViewportSize({width:390,height:844});
+  await expect(admin.locator('#flAdminViewSelect')).toBeVisible();
+  await expect(admin.locator('.fl-admin-mobile-home')).toBeVisible();
+  await expect(admin.locator('.fl-admin-nav-search')).toBeHidden();
+  await expect(admin.locator('.fl-cloud-nav')).toBeHidden();
+  const safe=await page.evaluate(()=>{
+    const html=window.FL_ADMIN_NAV.render({
+      view:'leads',
+      allowed:new Set(['overview','leads','security']),
+      adminViewItems:[['products','المنتجات'],['leads','جهات اتصال العملاء'],['contacts','وسائل التواصل']],
+      ownerSettingsViewItems:[['site-settings','إعدادات الموقع']],
+      isPrimaryAdmin:false
+    });
+    const div=document.createElement('div');div.innerHTML=html;
+    return [...div.querySelectorAll('#flAdminViewSelect option')].map(x=>x.value);
+  });
+  expect(safe).toEqual(['overview','leads','security']);
+});
+
+
 test('mobile catalog defers offscreen card painting without hiding products',async({page})=>{
   await installSupabaseMock(page);
   await page.setViewportSize({width:390,height:844});
