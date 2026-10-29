@@ -87,3 +87,19 @@ transition:.16s ease}
 #flMfaSecret{display:inline-block;direction:ltr;unicode-bidi:isolate;overflow-wrap:anywhere;max-width:100%;user-select:text}
 #flMfaSetupForm,#flMfaChallengeForm{display:grid;gap:12px}
 #flMfaChallengeError:not(:empty){color:#b42318}
+
+/* Per-account TOTP device management: compact, accessible on desktop and mobile. */
+.fl-mfa-manage-row{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;align-items:stretch}
+.fl-mfa-factor-name{font-weight:700;overflow-wrap:anywhere}
+.fl-mfa-edit-form{display:flex;flex-wrap:wrap;align-items:end;gap:10px}
+.fl-mfa-edit-form label{display:flex;flex-direction:column;gap:6px;flex:1 1 220px;min-width:0}
+.fl-mfa-edit-form input,.fl-mfa-remove-form input,#flMfaNewName{min-width:0;width:100%;max-width:100%;box-sizing:border-box;border:1px solid var(--border,#d7dce5);border-radius:10px;padding:10px 12px;color:inherit;background:var(--input-bg,#fff);font:inherit}
+.fl-mfa-edit-form button{flex:0 0 auto}
+.fl-mfa-remove-section{margin-top:4px;padding:10px 12px;border:1px solid var(--border,#d7dce5);border-radius:10px}
+.fl-mfa-remove-section summary{cursor:pointer;font-weight:700}
+.fl-mfa-remove-section p{line-height:1.7;margin:10px 0}
+.fl-mfa-remove-form{display:grid;gap:10px}
+.fl-mfa-remove-form label{display:grid;gap:6px}
+.fl-mfa-remove-form input{max-width:220px;direction:ltr;text-align:center;letter-spacing:.14em}
+.fl-mfa-remove-form button{justify-self:start}
+@media (max-width:600px){.fl-mfa-edit-form{flex-direction:column;align-items:stretch}.fl-mfa-edit-form label,.fl-mfa-edit-form button{width:100%;flex:auto}.fl-mfa-remove-form button{width:100%}}
