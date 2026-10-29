@@ -944,8 +944,8 @@
   let recoveryContext=null;
   let recoveryPortalRendered=false;
   const allowedAdminViews = () => new Set(isPrimaryAdmin
-    ? ['overview',...validPermissionKeys,...ownerSettingsViewItems.map(([key])=>key),'credentials','permissions']
-    : ['overview',...currentAdminPermissions]);
+    ? ['overview',...validPermissionKeys,...ownerSettingsViewItems.map(([key])=>key),'security','credentials','permissions']
+    : ['overview','security',...currentAdminPermissions]);
   const normalizeAdminView = candidate => allowedAdminViews().has(candidate) ? candidate : 'overview';
   let toastTimer;
   const notify = msg => { toast.textContent=msg; toast.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>toast.classList.remove('show'),2600); };
@@ -1131,6 +1131,8 @@
       try{
         const {error}=await db.auth.signInWithPassword({email,password});
         if(error)throw error;
+        const secondFactorOk=await window.FL_ADMIN_MFA.requireStepUp(db,body,async()=>{await db.auth.signOut();renderLogin();});
+        if(!secondFactorOk)return;
         await loadCurrentAdminAccess();
         await refresh();
         renderApp();
@@ -1422,6 +1424,7 @@
     else if(view==='business-settings' && allowedAdminViews().has('business-settings')) renderOwnerSettingsPage('business');
     else if(view==='bank-settings' && allowedAdminViews().has('bank-settings')) renderOwnerSettingsPage('banks');
     else if(view==='template-settings' && allowedAdminViews().has('template-settings')) renderOwnerSettingsPage('template');
+    else if(view==='security') renderSecurity();
     else if(view==='credentials' && isPrimaryAdmin) renderCredentials();
     else if(view==='permissions' && isPrimaryAdmin) renderSplitSection('FL_ADMIN_PERMISSIONS','renderPermissions');
     else renderOverview();
@@ -1592,6 +1595,12 @@
         save.disabled=false;save.textContent='حفظ بيانات الحساب';
       }
     });
+  }
+
+  function renderSecurity(){
+    layout('<div class="fl-cloud-head"><div><h2>التحقق بخطوتين</h2><p>إدارة تطبيق المصادقة وأجهزة التحقق لهذا الحساب.</p></div></div><div id="flAdminMfaSettings"></div>');
+    try{window.FL_ADMIN_MFA.renderSettings(db,document.getElementById('flAdminMfaSettings'),currentAdminRole);}
+    catch(_){document.getElementById('flAdminMfaSettings').textContent='تعذر تحميل التحقق بخطوتين. حدّث الصفحة وحاول مجددًا.';}
   }
 
   function renderCredentials(){
@@ -2045,6 +2054,8 @@
     if(!session){renderLogin();return;}
     if(recoveryPortalRequested){await renderPrimaryRecoveryPortal();return;}
     try{
+      const secondFactorOk=await window.FL_ADMIN_MFA.requireStepUp(db,body,async()=>{await db.auth.signOut();renderLogin();});
+      if(!secondFactorOk)return;
       await loadCurrentAdminAccess();
       await refresh();renderApp();
     }catch(err){
