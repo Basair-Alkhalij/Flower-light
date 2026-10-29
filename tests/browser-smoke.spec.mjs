@@ -1689,3 +1689,49 @@ test('admin can enroll TOTP without persisting its setup secret',async({page})=>
   await expect(page.locator('#flMfaEnroll')).toHaveText('إضافة جهاز احتياطي');
   expect(await page.evaluate(()=>Object.values(localStorage).some(value=>String(value).includes('TEST-SETUP-ONLY-KEY')))).toBe(false);
 });
+
+
+test('admin MFA repairs unfinished enrollment without deleting verified factors',async({page})=>{
+  await installSupabaseMock(page);
+  await page.goto(new URL('?admin=1',base).href,{waitUntil:'load'});
+  await page.waitForFunction(()=>Boolean(window.FL_ADMIN_MFA?.renderSettings));
+  await page.evaluate(()=>{
+    window.__flMfaUnfinished=true;
+    window.__flMfaVerified=false;
+    window.__flMfaCancelled=[];
+    window.__flMfaNames=[];
+    const mfa={
+      listFactors:async()=>({data:{
+        all:window.__flMfaUnfinished?[{id:'old-pending',factor_type:'totp',status:'unverified',friendly_name:'Flower Light - Owner'}]:[],
+        totp:window.__flMfaVerified?[{id:'verified-keep',factor_type:'totp',status:'verified'}]:[]
+      },error:null}),
+      getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel:'aal1',nextLevel:'aal1'},error:null}),
+      enroll:async({friendlyName})=>{
+        window.__flMfaNames.push(friendlyName);
+        return {data:{id:'new-pending',totp:{secret:'TEST-NEW-SECRET',qr_code:''}},error:null};
+      },
+      unenroll:async({factorId})=>{
+        window.__flMfaCancelled.push(factorId);
+        if(factorId==='old-pending')window.__flMfaUnfinished=false;
+        return {data:{},error:null};
+      },
+      challengeAndVerify:async()=>({data:null,error:new Error('not needed')})
+    };
+    const host=document.createElement('div');host.id='flMfaPendingTest';
+    document.getElementById('flCloudAdminBody').appendChild(host);
+    window.FL_ADMIN_MFA.renderSettings({auth:{mfa}},host,'owner');
+  });
+  await expect(page.getByText('ربط غير مكتمل: Flower Light - Owner')).toBeVisible();
+  await expect(page.getByRole('button',{name:'إلغاء محاولة الربط'})).toBeVisible();
+  await expect(page.locator('#flMfaEnroll')).toBeHidden();
+  page.once('dialog',dialog=>dialog.accept());
+  await page.getByRole('button',{name:'إلغاء محاولة الربط'}).click();
+  await expect(page.locator('#flMfaEnroll')).toBeVisible();
+  expect(await page.evaluate(()=>window.__flMfaCancelled)).toEqual(['old-pending']);
+  await page.locator('#flMfaEnroll').click();
+  await expect(page.locator('#flMfaSecret')).toContainText('TEST-NEW-SECRET');
+  const names=await page.evaluate(()=>window.__flMfaNames);
+  expect(names).toHaveLength(1);
+  expect(names[0]).toMatch(/^Flower Light - Owner - /);
+  expect(names[0]).not.toBe('Flower Light - Owner');
+});
