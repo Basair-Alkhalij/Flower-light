@@ -22,7 +22,7 @@
     const known=new Set([...catalogSettings,...companySettings]);
     const other=settings.filter(([key])=>!known.has(key));
     if(other.length)result.push(['إعدادات إضافية',other]);
-    result.push(['الحساب والأمان',isPrimaryAdmin
+    if(isPrimaryAdmin || permit.has('security'))result.push(['الحساب والأمان',isPrimaryAdmin
       ? [['security','التحقق بخطوتين'],['credentials','بيانات تسجيل الدخول'],['permissions','صلاحيات الأدمن']]
       : [['security','التحقق بخطوتين']]]);
     return result.filter(([,items])=>items.length);
