@@ -13,7 +13,12 @@ assert.equal(mfa.validCode('1234567'),false);
 assert.equal(mfa.validCode('123a56'),false);
 assert.match(source,/mfa_factor_name_conflict/);
 assert.match(source,/factor\?\.status==='unverified'/);
-assert.match(source,/Math\.random\(\)\.toString\(36\)/);
+assert.match(source,/friendlyName:chosen/);
+assert.match(source,/flMfaNewName/);
+assert.match(source,/auth\.updateUser\(\{data:\{\[aliasKey\]:existing\}\}\)/);
+assert.match(source,/mfa\.challengeAndVerify\(\{factorId:factor\.id,code\}\)/);
+assert.match(source,/mfa\.unenroll\(\{factorId:factor\.id\}\)/);
+assert.match(source,/إلغاء التحقق بخطوتين/);
 assert.match(source,/إلغاء محاولة الربط/);
 assert.doesNotMatch(source.replace(/^\s*\/\/.*$/gm,''),/\b(?:localStorage|sessionStorage)\s*\.|console\.(?:log|warn)\s*\(/,'MFA secrets must not be persisted or logged');
 
