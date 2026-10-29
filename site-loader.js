@@ -5,6 +5,11 @@
   // On the assistant URL, remove the Owner panel button before the admin bundle runs.
   if (adminPanel === '2') document.getElementById('flCloudPrimaryAdmin')?.remove();
   if(isAdminPage){
+    // MFA module must load before admin.js so enrollment and step-up can gate login.
+    const mfaScript=document.createElement('script');
+    mfaScript.src='admin-mfa.js?v=__FL_VERSION__';
+    mfaScript.async=false;
+    document.body.appendChild(mfaScript);
     // Register standalone admin views before the main controller initializes.
     const navScript=document.createElement('script');
     navScript.src='admin-navigation.js?v=__FL_VERSION__';

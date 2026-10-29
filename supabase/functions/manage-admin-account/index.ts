@@ -97,6 +97,27 @@ async function getUserEmail(client: AdminClient, userId: string | undefined) {
   return normalizeEmail(data.user?.email)
 }
 
+/**
+ * Use the validated caller JWT, never the service-role identity, for the final
+ * owner check. is_site_owner() enforces the opted-in MFA factor/AAL2 requirement
+ * as well as the existing owner role. Failure must NOT fall back to a service
+ * role query; this function manages other users' credentials.
+ */
+async function hasOwnerMfaSession(supabaseUrl: string, serviceRoleKey: string, token: string) {
+  const url = new URL('/rest/v1/rpc/is_site_owner', supabaseUrl)
+  const result = await fetch(url, {
+    method: 'POST',
+    headers: {
+      apikey: serviceRoleKey,
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: '{}',
+  })
+  if (!result.ok) throw new Error('تعذر التحقق من مستوى حماية جلسة المدير.')
+  return (await result.json()) === true
+}
+
 Deno.serve(async (request) => {
   const requestOrigin = request.headers.get('origin')
   if (requestOrigin && !allowedOrigins.has(requestOrigin)) {
@@ -161,7 +182,7 @@ Deno.serve(async (request) => {
       throw recoveryError
     }
 
-    const isOwner = Boolean(ownerAccess)
+    const isOwner = Boolean(ownerAccess) && await hasOwnerMfaSession(supabaseUrl, serviceRoleKey, token)
     const isRecoveryUser = Boolean(recoverySettings?.recovery_user_id === caller.id)
 
     if (action === 'get_recovery_settings') {

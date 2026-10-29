@@ -74,3 +74,16 @@ transition:.16s ease}
   .fl-admin-mobile-nav{display:block;width:100%;min-height:46px;max-width:100%;border:1px solid #e3e8f0;border-radius:12px;background:#fff;color:#263248;padding:0 12px;font:inherit;font-weight:700}
   .fl-admin-mobile-nav:focus-visible{outline:3px solid #ffbf54;outline-offset:2px}
 }
+
+/* MFA setup is kept in the private admin layout; QR/secret never persist. */
+.fl-mfa-card{display:grid;gap:14px;max-width:760px}
+.fl-mfa-card h3,.fl-mfa-card h4{margin:0}
+.fl-mfa-card>p{margin:0;line-height:1.7}
+.fl-mfa-factor-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid var(--fl-border,rgba(128,128,128,.24));border-radius:12px;margin:8px 0;flex-wrap:wrap}
+#flMfaSetup{padding:16px;border:1px solid var(--fl-border,rgba(128,128,128,.24));border-radius:14px}
+#flMfaSetup>p{line-height:1.7}
+#flMfaQr{background:#fff;padding:8px;border-radius:12px;object-fit:contain;display:block;margin:8px auto}
+#flMfaQr[hidden],#flMfaSetup[hidden],#flMfaEnroll[hidden]{display:none}
+#flMfaSecret{display:inline-block;direction:ltr;unicode-bidi:isolate;overflow-wrap:anywhere;max-width:100%;user-select:text}
+#flMfaSetupForm,#flMfaChallengeForm{display:grid;gap:12px}
+#flMfaChallengeError:not(:empty){color:#b42318}
