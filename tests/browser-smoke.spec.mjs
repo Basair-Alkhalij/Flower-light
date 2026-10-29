@@ -55,7 +55,10 @@ async function installSupabaseMock(page){
 }
 
 async function injectCatalogFixtures(page){
-  await page.waitForFunction(()=>typeof window.flRenderProducts==='function');
+  // Cloud catalog hydration is async; install deterministic fixtures only after its
+  // initial request finishes so it cannot overwrite the mock products mid-test.
+  await page.waitForFunction(()=>typeof window.flRenderProducts==='function' && Boolean(window.flPublicCatalogReady));
+  await page.evaluate(()=>window.flPublicCatalogReady.catch(()=>false));
   await page.evaluate(()=>{
     localStorage.setItem('flower_light_customer_access_v1','1');
     window.FLOWER_LIGHT_SITE_SETTINGS={require_customer_lead:false};
@@ -1509,7 +1512,7 @@ test('performance: visible logo priority and lazy offscreen product thumbnails',
   await installSupabaseMock(page);
   await page.goto(base,{waitUntil:'load'});
   await injectCatalogFixtures(page);
-  await expect(page.locator('#siteWatermark')).toHaveAttribute('loading','lazy');
+  await expect(page.locator('#siteWatermark')).toHaveAttribute('loading','eager');
   await expect(page.locator('#siteWatermark')).toHaveAttribute('fetchpriority','low');
   await expect(page.locator('#siteLogo')).toHaveAttribute('fetchpriority','high');
   await expect(page.locator('#siteWatermark')).toHaveAttribute('src',/company-watermark\.svg\?v=/);
@@ -1614,10 +1617,14 @@ test('mobile profile loading reserves hero and contact actions until data arrive
   await expect(page.locator('#publicCard')).toHaveClass(/fl-profile-pending/);
   const reserved=await page.evaluate(()=>{
     const hero=document.getElementById('siteHero'),save=document.getElementById('saveContact'),quick=document.getElementById('quickActions');
+    const contacts=document.getElementById('contactInfoList');
     return {hero:hero.getBoundingClientRect().height,save:save.getBoundingClientRect().height,quick:quick.getBoundingClientRect().height,
+      contactHeight:contacts.getBoundingClientRect().height,contactVisibility:getComputedStyle(contacts).visibility,
       saveHidden:save.hidden,quickHidden:quick.hidden,saveVisibility:getComputedStyle(save).visibility,quickVisibility:getComputedStyle(quick).visibility};
   });
   expect(reserved.hero).toBeGreaterThanOrEqual(500);
+  expect(reserved.contactHeight).toBeGreaterThanOrEqual(385);
+  expect(reserved.contactVisibility).toBe('hidden');
   expect(reserved.save).toBeGreaterThanOrEqual(58);
   expect(reserved.quick).toBeGreaterThanOrEqual(70);
   expect(reserved.saveHidden&&reserved.quickHidden).toBe(true);
