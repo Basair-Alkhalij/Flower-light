@@ -108,9 +108,7 @@ transition:.16s ease}
   transform:rotate(180deg);color:#a65b00
 }
 .fl-cloud-nav-heading:hover .fl-cloud-nav-chevron{color:#a65b00}
-@media (prefers-reduced-motion:reduce){
-  .fl-cloud-nav-chevron{transition:none}
-}
+
 .fl-cloud-nav-heading:hover{background:#f7f9fc}
 .fl-cloud-nav-heading:focus-visible{outline:3px solid rgba(255,159,10,.45);outline-offset:1px}
 .fl-cloud-nav-items{display:grid;gap:2px;padding:2px 0 6px}
