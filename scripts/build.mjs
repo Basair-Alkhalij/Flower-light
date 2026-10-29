@@ -119,6 +119,7 @@ if (!process.argv.includes('--check')) {
       supabaseVendor=Buffer.from(await response.arrayBuffer());
       if(supabaseVendor.length<100_000) throw new Error('downloaded file is unexpectedly small');
     }
+    console.log('SUPABASE_VENDOR_SHA256_FOR_PIN',crypto.createHash('sha256').update(supabaseVendor).digest('hex'));
     fs.writeFileSync(path.join(out,'supabase-vendor.js'),supabaseVendor);
     sizes['supabase-vendor.js']={source:supabaseVendor.length,minified:supabaseVendor.length,gzip:zlib.gzipSync(supabaseVendor,{level:9}).length};
   }catch(error){
