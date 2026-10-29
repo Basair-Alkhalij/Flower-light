@@ -675,7 +675,8 @@ test('master barcode appears in the shared datasheet template only when configur
 test('design footer label and number replace website URL and hide when empty',async({page})=>{
   await installSupabaseMock(page);
   await page.goto(base,{waitUntil:'domcontentloaded'});
-  await page.waitForFunction(()=>window.flDatasheetPdf?.createPage);
+  await page.waitForFunction(()=>window.flDatasheetPdf?.createPage && window.flPublicSiteSettingsReady);
+  await page.evaluate(()=>window.flPublicSiteSettingsReady.catch(()=>false));
   const result=await page.evaluate(async()=>{
     const productImage=`data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600"><rect width="600" height="600" fill="#eeeeee"/></svg>')}`;
     const item={name:'منتج اختبار',model:'FOOT-1',caption:'',image:productImage,image_path:'',gallery:[{image:productImage,image_path:''}],specifications:[]};
