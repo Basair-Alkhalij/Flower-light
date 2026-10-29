@@ -59,6 +59,12 @@ async function injectCatalogFixtures(page){
   // initial request finishes so it cannot overwrite the mock products mid-test.
   await page.waitForFunction(()=>typeof window.flRenderProducts==='function' && Boolean(window.flPublicCatalogReady));
   await page.evaluate(()=>window.flPublicCatalogReady.catch(()=>false));
+  // Prevent the original async Supabase profile response from replacing test
+  // contact fixtures after injection (especially on the reload/WhatsApp path).
+  await page.waitForFunction(()=>{
+    const card=document.getElementById('publicCard');
+    return Boolean(card && !card.classList.contains('fl-profile-pending'));
+  });
   await page.evaluate(()=>{
     localStorage.setItem('flower_light_customer_access_v1','1');
     window.FLOWER_LIGHT_SITE_SETTINGS={require_customer_lead:false};
