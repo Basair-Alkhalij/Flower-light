@@ -77,8 +77,10 @@ const [admin,searchFilters,media,products,form,importJs]=adminTexts;
 assert.ok(app.length>1000);
 assert.match(pwa,/beforeinstallprompt/);
 assert.match(loader,/URLSearchParams\(location\.search\)/);
-assert.match(loader,/admin\.js\?v=/);
-assert.match(loader,/public-sync\.js\?v=/);
+// The ordered runtime loader declares names once and appends a version
+// to each URL when creating scripts; minification no longer inlines ?v on names.
+assert.ok(loader.includes('admin.js') && loader.includes('public-sync.js'));
+assert.match(loader,/\?v=[0-9a-z-]+/);
 assert.match(quoteList,/fl_quote_list_v1/);
 assert.match(quoteList,/quote_list_send/);
 assert.match(quoteList,/quote_list_enabled/);
