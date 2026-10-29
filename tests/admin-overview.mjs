@@ -18,7 +18,22 @@ assert.match(owner,/data-overview-view="search-filters"/);
 assert.match(owner,/data-overview-view="permissions"/);
 assert.match(owner,/إجمالي المنتجات/);
 assert.match(owner,/المنتجات الظاهرة/);
+assert.match(owner,/المنتجات والكتالوج/);
+assert.match(owner,/المتابعة والتواصل/);
+assert.match(owner,/الفلاتر وقوالب المنتجات/);
+assert.match(owner,/الموقع والمنشأة/);
+assert.match(owner,/الحساب والأمان/);
+assert.match(owner,/data-overview-view="security"/);
+
 const delegated=render({...shared,allowed:new Set(['overview','contacts','site-settings']),isPrimaryAdmin:false});
 assert.match(delegated,/data-overview-view="site-settings"/);
 assert.doesNotMatch(delegated,/data-overview-view="permissions"/);
+assert.match(delegated,/data-overview-view="site-settings"/);
+assert.doesNotMatch(delegated,/data-overview-view="credentials"/);
+const subadminWithMfa=render({...shared,allowed:new Set(['overview','contacts','security']),isPrimaryAdmin:false});
+assert.match(subadminWithMfa,/data-overview-view="security"/);
+assert.doesNotMatch(subadminWithMfa,/data-overview-view="credentials"/);
+assert.doesNotMatch(subadminWithMfa,/data-overview-view="permissions"/);
+assert.doesNotMatch(subadminWithMfa,/data-overview-view="products"/);
+
 console.log('ADMIN_OVERVIEW_MODULE_OK');

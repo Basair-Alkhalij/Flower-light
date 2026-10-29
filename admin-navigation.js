@@ -29,13 +29,23 @@
   }
   function render(options){
     const groupsData=groups(options);
-    const groupHtml=groupsData.map(([label,items])=>
-      `<div class="fl-cloud-nav-group"><span class="fl-cloud-nav-label">${esc(label)}</span>${items.map(([key,name])=>
-        `<button type="button" data-cloud-view="${esc(key)}" class="${options.view===key?'active':''}" ${options.view===key?'aria-current="page"':''}>${esc(name)}</button>`).join('')}</div>`).join('');
-    const selected=groupsData.flatMap(([,items])=>items).find(([key])=>key===options.view);
+    const expanded=new Set(options.expandedGroups||[]);
+    const groupHtml=groupsData.map(([label,items])=>{
+      const active=items.some(([key])=>key===options.view);
+      const open=active||expanded.has(label);
+      return `<details class="fl-cloud-nav-group" data-nav-group="${esc(label)}" ${open?'open':''}>
+        <summary class="fl-cloud-nav-heading"><span>${esc(label)}</span><small aria-label="${items.length} أقسام">${items.length}</small></summary>
+        <div class="fl-cloud-nav-items">${items.map(([key,name])=>
+          `<button type="button" data-cloud-view="${esc(key)}" class="${options.view===key?'active':''}" ${options.view===key?'aria-current="page"':''}>${esc(name)}</button>`).join('')}</div>
+      </details>`;
+    }).join('');
     const mobileOptions=groupsData.map(([label,items])=>
       `<optgroup label="${esc(label)}">${items.map(([key,name])=>`<option value="${esc(key)}" ${key===options.view?'selected':''}>${esc(name)}</option>`).join('')}</optgroup>`).join('');
-    return `<div class="fl-admin-nav-wrap"><label class="fl-admin-mobile-nav-label" for="flAdminViewSelect">انتقل إلى قسم</label><select id="flAdminViewSelect" class="fl-admin-mobile-nav" aria-label="انتقل إلى قسم">${mobileOptions}</select><nav class="fl-cloud-nav" aria-label="أقسام الإدارة">${groupHtml}</nav></div>`;
+    return `<div class="fl-admin-nav-wrap">
+      <div class="fl-admin-mobile-controls"><div class="fl-admin-mobile-select"><label class="fl-admin-mobile-nav-label" for="flAdminViewSelect">انتقل إلى قسم</label><select id="flAdminViewSelect" class="fl-admin-mobile-nav" aria-label="انتقل إلى قسم">${mobileOptions}</select></div><button type="button" class="fl-admin-mobile-home" data-cloud-view="overview" ${options.view==='overview'?'disabled':''}>الرئيسية</button></div>
+      <div class="fl-admin-nav-search"><label for="flAdminNavSearch">البحث في الأقسام</label><input id="flAdminNavSearch" type="search" autocomplete="off" placeholder="ابحث عن قسم..." aria-controls="flAdminSidebarNav"></div>
+      <nav class="fl-cloud-nav" id="flAdminSidebarNav" aria-label="أقسام الإدارة">${groupHtml}<p class="fl-admin-nav-empty" id="flAdminNavEmpty" hidden>لا يوجد قسم مطابق للبحث.</p></nav>
+    </div>`;
   }
   window.FL_ADMIN_NAV=Object.freeze({render,groups});
 })();

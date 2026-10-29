@@ -16,13 +16,36 @@
     if(allowed.has('contacts'))statCards.push([contacts.length,'وسائل التواصل']);
     if(allowed.has('leads'))statCards.push([window.FL_ADMIN_LEADS?.totalForStats()||0,'جهات اتصال العملاء']);
     const statsHtml=statCards.length?`<div class="fl-cloud-stats">${statCards.map(([value,label])=>`<div class="fl-cloud-stat"><strong>${value}</strong><span>${label}</span></div>`).join('')}</div>`:'';
-    const contentShortcuts=adminViewItems.filter(([key])=>allowed.has(key)).map(([key,label])=>ownerShortcutButton(key,label,'فتح القسم وإدارته')).join('');
-    const settingShortcuts=[['search-filters','فلاتر البحث','اختر الفلاتر وأضف فلاتر خاصة بك'],['site-settings','إعدادات الموقع','دخول العملاء وتثبيت التطبيق'],['business-settings','بيانات الشركة','خانات مرنة لبيانات المنشأة وإعدادات الخصوصية'],['bank-settings','الحسابات البنكية','إدارة حسابات التحويل ونسخ IBAN'],['template-settings','قالب المنتجات','الباركود ورقم التذييل']].filter(([key])=>allowed.has(key)).map(([key,label,desc])=>ownerShortcutButton(key,label,desc)).join('');
-    const ownerShortcuts=settingShortcuts+(isPrimaryAdmin?ownerShortcutButton('credentials','بيانات تسجيل الدخول','حسابات المدير والأدمن والاستعادة')+ownerShortcutButton('permissions','صلاحيات الأدمن','تحديد ما يستطيع الأدمن الوصول إليه'):'');
-    return `<div class="fl-cloud-head"><div><h2>${isPrimaryAdmin?'الرئيسية':'لوحة الأدمن'}</h2><p>${isPrimaryAdmin?'ملخص سريع للموقع. كل نوع من الإعدادات أصبح في صفحته الخاصة لتبقى اللوحة مرتبة وواضحة.':'الأقسام المتاحة لحسابك حسب الصلاحيات المحددة.'}</p></div></div>
+    // Keep every shortcut behind the same permission set as the main navigation.
+    // The overview is an index of tasks, not a second authorization layer.
+    const content=(adminViewItems||[]).filter(([key])=>allowed.has(key));
+    const byKeys=keys=>keys.map(key=>content.find(item=>item[0]===key)).filter(Boolean);
+    const shortcutRows=(rows,description)=>rows.map(([key,label])=>ownerShortcutButton(key,label,description)).join('');
+    const catalogShortcuts=shortcutRows(byKeys(['sections','products','datasheet']),'إدارة القسم');
+    const followupShortcuts=shortcutRows(byKeys(['leads','contacts','profile','analytics']),'فتح القسم');
+    const settingsList=[
+      ['search-filters','فلاتر البحث','اختر فلاتر البحث وترتيبها'],
+      ['template-settings','قالب المنتجات','الباركود ورقم التذييل'],
+      ['site-settings','إعدادات الموقع','دخول العملاء وتثبيت التطبيق'],
+      ['business-settings','بيانات الشركة','البيانات التجارية والخصوصية'],
+      ['bank-settings','الحسابات البنكية','حسابات التحويل وأزرار نسخ IBAN']
+    ].filter(([key])=>allowed.has(key));
+    const settingsKeys=keys=>settingsList.filter(([key])=>keys.includes(key));
+    const catalogSettings=shortcutRows(settingsKeys(['search-filters','template-settings']),'إعدادات المنتجات');
+    const companySettings=shortcutRows(settingsKeys(['site-settings','business-settings','bank-settings']),'إدارة إعدادات الموقع');
+    const securityShortcuts=((isPrimaryAdmin||allowed.has('security'))?ownerShortcutButton('security','التحقق بخطوتين','الأجهزة الموثّقة وحماية تسجيل الدخول'):'')
+      +(isPrimaryAdmin?ownerShortcutButton('credentials','بيانات تسجيل الدخول','حسابات المدير والأدمن والاستعادة')
+        +ownerShortcutButton('permissions','صلاحيات الأدمن','تحديد ما يستطيع الأدمن الوصول إليه'):'');
+    const section=(title,description,shortcuts)=>shortcuts
+      ? `<section class="fl-overview-section"><div class="fl-overview-section-head"><h3>${title}</h3><p>${description}</p></div><div class="fl-overview-shortcuts">${shortcuts}</div></section>`
+      : '';
+    return `<div class="fl-cloud-head"><div><h2>${isPrimaryAdmin?'الرئيسية':'لوحة الأدمن'}</h2><p>${isPrimaryAdmin?'اختر القسم المطلوب من المجموعات التالية.':'تظهر لك الأقسام المسموح بها فقط حسب صلاحيات حسابك.'}</p></div></div>
       ${statsHtml}
-      ${contentShortcuts?`<section class="fl-overview-section"><div class="fl-overview-section-head"><h3>إدارة المحتوى</h3><p>الأقسام التشغيلية للموقع.</p></div><div class="fl-overview-shortcuts">${contentShortcuts}</div></section>`:''}
-      ${ownerShortcuts?`<section class="fl-overview-section"><div class="fl-overview-section-head"><h3>الإعدادات والحسابات</h3><p>تظهر إعدادات هذا الحساب حسب الصلاحيات المحددة، وتبقى الحسابات والصلاحيات للمالك فقط.</p></div><div class="fl-overview-shortcuts">${ownerShortcuts}</div></section>`:''}
+      ${section('المنتجات والكتالوج','الأقسام والمنتجات وتصميم الداتا شيت.',catalogShortcuts)}
+      ${section('المتابعة والتواصل','بيانات العملاء والتواصل وإحصائيات الزيارات.',followupShortcuts)}
+      ${section('الفلاتر وقوالب المنتجات','تخصيص تجربة البحث وقالب المنتجات.',catalogSettings)}
+      ${section('الموقع والمنشأة','بيانات الشركة والحسابات البنكية وإعدادات الموقع.',companySettings)}
+      ${section('الحساب والأمان','إدارة عوامل المصادقة وحسابات وصلاحيات الإدارة.',securityShortcuts)}
       <div class="fl-cloud-note ok">الحساب الحالي: <b dir="ltr">${esc(currentAdminEmail)}</b> · ${isPrimaryAdmin?'المدير':'الأدمن'}</div>`;  }
 
 window.FL_ADMIN_OVERVIEW=Object.freeze({render});
