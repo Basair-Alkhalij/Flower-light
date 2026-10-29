@@ -279,20 +279,24 @@
   
 
 
-<script src="config.js?v=__FL_VERSION__"></script>
-<script src="analytics.js?v=__FL_VERSION__"></script>
-<script src="catalog-pdf-viewer.js?v=__FL_VERSION__"></script>
-<script src="quote-list.js?v=__FL_VERSION__"></script>
-<script src="catalog-gallery.js?v=__FL_VERSION__"></script>
-<script src="catalog-product-meta.js?v=__FL_VERSION__"></script>
-<script src="catalog-pricing.js?v=__FL_VERSION__"></script>
-<script src="app.js?v=__FL_VERSION__"></script>
-<script src="pwa-install.js?v=__FL_VERSION__"></script>
+<script src="config.js?v=__FL_VERSION__" defer></script>
+<!-- Fetch visitor-only company and bank information as soon as config is ready.
+     Deferred execution preserves HTML parsing, and remains ordered after config. -->
+<script src="business-info.js?v=__FL_VERSION__" defer></script>
+<script src="bank-info.js?v=__FL_VERSION__" defer></script>
+<script src="analytics.js?v=__FL_VERSION__" defer></script>
+<script src="catalog-pdf-viewer.js?v=__FL_VERSION__" defer></script>
+<script src="quote-list.js?v=__FL_VERSION__" defer></script>
+<script src="catalog-gallery.js?v=__FL_VERSION__" defer></script>
+<script src="catalog-product-meta.js?v=__FL_VERSION__" defer></script>
+<script src="catalog-pricing.js?v=__FL_VERSION__" defer></script>
+<script src="app.js?v=__FL_VERSION__" defer></script>
+<script src="pwa-install.js?v=__FL_VERSION__" defer></script>
 
 
 <!-- ===== Site Cloud Sync + Admin · Customer Leads V3 ===== -->
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
 
 
 <div class="fl-lead-gate" id="flLeadGate" aria-hidden="true">
@@ -344,9 +348,8 @@
 <div class="fl-cloud-overlay" id="flCloudModal" aria-hidden="true"><div class="fl-cloud-dialog"><div class="fl-cloud-dialog-head"><h3 id="flCloudModalTitle">تعديل</h3><button class="fl-cloud-close" id="flCloudModalClose" type="button" aria-label="إغلاق">×</button></div><div id="flCloudModalBody"></div></div></div>
 <div class="fl-cloud-toast" id="flCloudToast" role="status" aria-live="polite"></div>
 
-<script src="site-loader.js?v=__FL_VERSION__"></script>
+<script src="site-loader.js?v=__FL_VERSION__" defer></script>
 
-<script src="business-info.js?v=__FL_VERSION__"></script>
-<script src="bank-info.js?v=__FL_VERSION__"></script>
+
 </body>
 </html>
