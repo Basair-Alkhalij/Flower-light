@@ -573,7 +573,8 @@ assert.match(index, /Content-Security-Policy/);
 assert.match(index, /__FL_JSONLD_CSP_HASH__/);
 assert.match(index, /site-bootstrap\.js\?v=__FL_VERSION__/);
 assert.match(index, /site-loader\.js\?v=__FL_VERSION__/);
-assert.match(siteLoader, /admin-import\.js\?v=__FL_VERSION__/);
+assert.match(siteLoader, /'admin-import\.js'/);
+assert.match(siteLoader, /script\.src=path\+'\?v=__FL_VERSION__'/);
 assert.match(read('admin-import.js'), /xlsx-0\.20\.3/);
 
 // Behavioral matching regression: evaluate the real import resolver in isolation.
