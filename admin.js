@@ -912,7 +912,7 @@
   primaryAdminBtn?.classList.toggle('active',isPrimaryAdmin);
   assistantAdminBtn?.classList.toggle('active',!isPrimaryAdmin);
   shell.classList.add('open'); shell.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden';
-  let view='overview'; let categories=[]; let products=[]; let productImages=[]; let siteCatalogs=[]; let profile={}; let contacts=[]; let selectedCategory=''; let selectedProductNode=''; let cloudNavScrollLeft=0;
+  let view='overview'; let categories=[]; let products=[]; let productImages=[]; let siteCatalogs=[]; let profile={}; let contacts=[]; let selectedCategory=''; let selectedProductNode=''; let cloudNavScrollLeft=0; let cloudNavExpandedGroups=new Set();
   let passwordRecoveryMode=/(?:^|[#&?])type=recovery(?:&|$)/i.test(`${location.search}${location.hash}`);
   const adminViewItems = [
     ['analytics','الإحصائيات'],
@@ -1283,19 +1283,50 @@
       allowed:allowedAdminViews(),
       adminViewItems,
       ownerSettingsViewItems,
-      isPrimaryAdmin
+      isPrimaryAdmin,
+      expandedGroups:cloudNavExpandedGroups
     });
   }
 
   function layout(content,topTools=''){
     const previousNav=body.querySelector('.fl-cloud-nav');
-    if(previousNav) cloudNavScrollLeft=previousNav.scrollLeft;
+    if(previousNav){
+      cloudNavScrollLeft=previousNav.scrollLeft;
+      // The sidebar is rebuilt on navigation, but collapsed/expanded groups
+      // should not jump back to their defaults between admin sections.
+      previousNav.querySelectorAll('.fl-cloud-nav-group').forEach(group=>{
+        if(group.open)cloudNavExpandedGroups.add(group.dataset.navGroup);
+        else cloudNavExpandedGroups.delete(group.dataset.navGroup);
+      });
+    }
     body.innerHTML=`<div class="fl-cloud-wrap">${topTools?`<div class="fl-cloud-top-tools">${topTools}</div>`:''}<div class="fl-cloud-grid">${navHtml()}<main class="fl-cloud-main">${content}</main></div></div>`;
     const currentNav=body.querySelector('.fl-cloud-nav');
     if(currentNav){
       currentNav.scrollLeft=cloudNavScrollLeft;
       currentNav.addEventListener('scroll',()=>{cloudNavScrollLeft=currentNav.scrollLeft;},{passive:true});
       requestAnimationFrame(()=>{currentNav.scrollLeft=cloudNavScrollLeft;});
+    }
+    const navSearch=body.querySelector('#flAdminNavSearch');
+    if(navSearch){
+      const nav=body.querySelector('#flAdminSidebarNav');
+      const groups=[...nav.querySelectorAll('.fl-cloud-nav-group')];
+      const empty=body.querySelector('#flAdminNavEmpty');
+      let openBeforeSearch=null;
+      navSearch.addEventListener('input',()=>{
+        const query=navSearch.value.trim().toLocaleLowerCase();
+        if(query && !openBeforeSearch)openBeforeSearch=new Set(groups.filter(group=>group.open).map(group=>group.dataset.navGroup));
+        let found=0;
+        groups.forEach(group=>{
+          const buttons=[...group.querySelectorAll('[data-cloud-view]')];
+          const matched=buttons.filter(button=>button.textContent.toLocaleLowerCase().includes(query));
+          buttons.forEach(button=>{button.hidden=Boolean(query)&&!matched.includes(button);});
+          group.hidden=Boolean(query)&&matched.length===0;
+          if(query && matched.length){group.open=true;found+=matched.length;}
+          else if(!query && openBeforeSearch)group.open=openBeforeSearch.has(group.dataset.navGroup);
+        });
+        empty.hidden=!query||found>0;
+        if(!query)openBeforeSearch=null;
+      });
     }
     body.querySelector('#flAdminViewSelect')?.addEventListener('change',event=>{
       view=normalizeAdminView(event.target.value);
