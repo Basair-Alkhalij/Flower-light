@@ -96,9 +96,21 @@ transition:.16s ease}
 }
 .fl-cloud-nav-heading::-webkit-details-marker{display:none}
 .fl-cloud-nav-heading>span{min-width:0;flex:1}
-.fl-cloud-nav-heading small{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:8px;background:#f1f4f8;color:#667085;font-size:11px;font-weight:800}
-.fl-cloud-nav-heading::after{content:"⌄";font-size:17px;color:#8b96a8;transition:transform .15s}
-.fl-cloud-nav-group[open]>.fl-cloud-nav-heading::after{transform:rotate(180deg)}
+.fl-cloud-nav-chevron{
+  display:block;flex:0 0 16px;width:16px;height:16px;
+  color:#788598;transition:transform .18s ease,color .18s ease
+}
+.fl-cloud-nav-chevron path{
+  fill:none;stroke:currentColor;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round
+}
+.fl-cloud-nav-group[open]>.fl-cloud-nav-heading .fl-cloud-nav-chevron{
+  transform:rotate(180deg);color:#a65b00
+}
+.fl-cloud-nav-heading:hover .fl-cloud-nav-chevron{color:#a65b00}
+@media (prefers-reduced-motion:reduce){
+  .fl-cloud-nav-chevron{transition:none}
+}
 .fl-cloud-nav-heading:hover{background:#f7f9fc}
 .fl-cloud-nav-heading:focus-visible{outline:3px solid rgba(255,159,10,.45);outline-offset:1px}
 .fl-cloud-nav-items{display:grid;gap:2px;padding:2px 0 6px}
