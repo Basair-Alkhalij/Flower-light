@@ -1697,7 +1697,7 @@ test('admin MFA repairs unfinished enrollment without deleting verified factors'
   await page.waitForFunction(()=>Boolean(window.FL_ADMIN_MFA?.renderSettings));
   await page.evaluate(()=>{
     window.__flMfaUnfinished=true;
-    window.__flMfaVerified=false;
+    window.__flMfaVerified=true;
     window.__flMfaCancelled=[];
     window.__flMfaNames=[];
     const mfa={
@@ -1705,7 +1705,7 @@ test('admin MFA repairs unfinished enrollment without deleting verified factors'
         all:window.__flMfaUnfinished?[{id:'old-pending',factor_type:'totp',status:'unverified',friendly_name:'Flower Light - Owner'}]:[],
         totp:window.__flMfaVerified?[{id:'verified-keep',factor_type:'totp',status:'verified'}]:[]
       },error:null}),
-      getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel:'aal1',nextLevel:'aal1'},error:null}),
+      getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel:'aal2',nextLevel:'aal2'},error:null}),
       enroll:async({friendlyName})=>{
         window.__flMfaNames.push(friendlyName);
         return {data:{id:'new-pending',totp:{secret:'TEST-NEW-SECRET',qr_code:''}},error:null};
@@ -1728,6 +1728,7 @@ test('admin MFA repairs unfinished enrollment without deleting verified factors'
   await page.getByRole('button',{name:'إلغاء محاولة الربط'}).click();
   await expect(page.locator('#flMfaEnroll')).toBeVisible();
   expect(await page.evaluate(()=>window.__flMfaCancelled)).toEqual(['old-pending']);
+  await expect(page.getByText('تطبيق 1')).toBeVisible();
   await page.locator('#flMfaEnroll').click();
   await expect(page.locator('#flMfaSecret')).toContainText('TEST-NEW-SECRET');
   const names=await page.evaluate(()=>window.__flMfaNames);
