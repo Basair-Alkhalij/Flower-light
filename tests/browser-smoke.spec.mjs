@@ -1624,3 +1624,64 @@ test('mobile profile loading reserves hero and contact actions until data arrive
   await expect(page.locator('#quickActions')).toBeVisible();
   await expect(page.locator('#siteHero')).toBeVisible();
 });
+
+
+test('admin MFA requests a verified TOTP before loading the admin page',async({page})=>{
+  await installSupabaseMock(page);
+  await page.goto(new URL('?admin=1',base).href,{waitUntil:'load'});
+  await page.waitForFunction(()=>Boolean(window.FL_ADMIN_MFA?.requireStepUp));
+  await page.evaluate(()=>{
+    window.__flMfaLevel='aal1';
+    window.__flMfaResult=null;
+    const mfa={
+      listFactors:async()=>({data:{totp:[{id:'factor-1',status:'verified',factor_type:'totp',friendly_name:'هاتف المدير'}]},error:null}),
+      getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel:window.__flMfaLevel,nextLevel:'aal2'},error:null}),
+      challengeAndVerify:async({factorId,code})=>{
+        if(factorId!=='factor-1'||code!=='123456')return {data:null,error:new Error('Invalid code')};
+        window.__flMfaLevel='aal2';
+        return {data:{},error:null};
+      },
+      enroll:async()=>({data:null,error:null}),unenroll:async()=>({data:null,error:null})
+    };
+    const host=document.createElement('div');host.id='flMfaTestHost';document.body.appendChild(host);
+    window.FL_ADMIN_MFA.requireStepUp({auth:{mfa}},host).then(value=>window.__flMfaResult=value);
+  });
+  await expect(page.locator('#flMfaChallengeForm')).toBeVisible();
+  await page.locator('#flMfaOtp').fill('000000');
+  await page.locator('#flMfaVerify').click();
+  await expect(page.locator('#flMfaChallengeError')).toContainText('رمز غير صحيح');
+  await page.locator('#flMfaOtp').fill('123456');
+  await page.locator('#flMfaVerify').click();
+  await expect.poll(()=>page.evaluate(()=>window.__flMfaResult)).toBe(true);
+});
+
+test('admin can enroll TOTP without persisting its setup secret',async({page})=>{
+  await installSupabaseMock(page);
+  await page.goto(new URL('?admin=2',base).href,{waitUntil:'load'});
+  await page.waitForFunction(()=>Boolean(window.FL_ADMIN_MFA?.renderSettings));
+  await page.evaluate(()=>{
+    window.__flMfaEnrolled=false;
+    window.__flMfaLevel='aal1';
+    const mfa={
+      listFactors:async()=>({data:{totp:window.__flMfaEnrolled?[{id:'test-factor',status:'verified',factor_type:'totp',friendly_name:'Flower Light - Admin'}]:[]},error:null}),
+      getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel:window.__flMfaLevel,nextLevel:window.__flMfaEnrolled?'aal2':'aal1'},error:null}),
+      challengeAndVerify:async({factorId,code})=>{
+        if(factorId!=='test-factor'||code!=='123456')return {data:null,error:new Error('Invalid code')};
+        window.__flMfaEnrolled=true;window.__flMfaLevel='aal2';return {data:{},error:null};
+      },
+      enroll:async()=>({data:{id:'test-factor',totp:{secret:'TEST-SETUP-ONLY-KEY',qr_code:''}},error:null}),
+      unenroll:async()=>({data:{},error:null})
+    };
+    const host=document.createElement('div');host.id='flMfaTestSettings';document.body.appendChild(host);
+    window.FL_ADMIN_MFA.renderSettings({auth:{mfa}},host,'subadmin');
+  });
+  await expect(page.locator('#flMfaEnroll')).toBeVisible();
+  await page.locator('#flMfaEnroll').click();
+  await expect(page.locator('#flMfaSecret')).toContainText('TEST-SETUP-ONLY-KEY');
+  await page.locator('#flMfaSetupOtp').fill('123456');
+  await page.locator('#flMfaSetupVerify').click();
+  await expect(page.locator('#flMfaStatus')).toContainText('تم تفعيل MFA');
+  await expect(page.locator('#flMfaSecret')).toBeEmpty();
+  await expect(page.locator('#flMfaEnroll')).toHaveText('إضافة جهاز احتياطي');
+  expect(await page.evaluate(()=>Object.values(localStorage).some(value=>String(value).includes('TEST-SETUP-ONLY-KEY')))).toBe(false);
+});
