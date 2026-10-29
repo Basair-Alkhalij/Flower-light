@@ -1587,9 +1587,14 @@ test('admin desktop group search and mobile home navigation keep permissions int
   const admin=page.locator('#flCloudAdminBody');
   await expect(admin.locator('#flAdminNavSearch')).toBeVisible();
   const catalog=admin.locator('.fl-cloud-nav-group[data-nav-group="المنتجات والكتالوج"]');
+  await expect(catalog.locator('summary .fl-cloud-nav-chevron')).toBeVisible();
+  await expect(catalog.locator('summary small')).toHaveCount(0);
+  await expect(admin.locator('.fl-cloud-nav-heading small')).toHaveCount(0);
+  const before=await catalog.locator('.fl-cloud-nav-chevron').evaluate(node=>getComputedStyle(node).transform);
   await expect(catalog).not.toHaveAttribute('open','');
   await catalog.locator('summary').click();
   await expect(catalog).toHaveAttribute('open','');
+  await expect.poll(()=>catalog.locator('.fl-cloud-nav-chevron').evaluate(node=>getComputedStyle(node).transform)).not.toBe(before);
   await page.evaluate(()=>window.FL_ADMIN_CORE.layout('<h2>القسم الثاني</h2>'));
   await expect(admin.locator('.fl-cloud-nav-group[data-nav-group="المنتجات والكتالوج"]')).toHaveAttribute('open','');
   await admin.locator('#flAdminNavSearch').fill('فلاتر');
