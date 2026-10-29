@@ -10,6 +10,14 @@ const ownerSettings=[['search-filters','فلاتر البحث'],['site-settings'
 const member=nav.render({view:'products',allowed:new Set(['overview','products','leads']),adminViewItems:content,ownerSettingsViewItems:ownerSettings,isPrimaryAdmin:false});
 assert.match(member,/aria-current="page"/);
 assert.match(member,/id="flAdminViewSelect"/);
+assert.match(member,/id="flAdminNavSearch"/);
+assert.match(member,/class="fl-cloud-nav-group"/);
+assert.match(member,/class="fl-cloud-nav-heading"/);
+assert.match(member,/class="fl-admin-mobile-home"/);
+assert.match(member,/data-cloud-view="overview"/);
+assert.match(member,/<details[^>]*data-nav-group="المنتجات والكتالوج"[^>]*open/);
+assert.doesNotMatch(member,/<details[^>]*data-nav-group="الموقع والمنشأة"[^>]*open/);
+
 assert.match(member,/المنتجات والكتالوج/);
 assert.ok(member.includes('data-cloud-view="products"'));
 assert.ok(member.includes('data-cloud-view="leads"'));
@@ -51,4 +59,11 @@ for(const selectedKey of navigationKeys){
   assert.deepEqual(Array.from(actual),['overview',selectedKey],'Permission isolation for '+selectedKey);
 }
 
+
+const collapsed=nav.render({view:'leads',allowed:new Set(['overview','products','leads']),
+  adminViewItems:content,ownerSettingsViewItems:ownerSettings,isPrimaryAdmin:false,
+  expandedGroups:['المنتجات والكتالوج']});
+assert.match(collapsed,/<details[^>]*data-nav-group="المنتجات والكتالوج"[^>]*open/);
+assert.match(collapsed,/<details[^>]*data-nav-group="المتابعة والتواصل"[^>]*open/);
+assert.doesNotMatch(collapsed,/<details[^>]*data-nav-group="الموقع والمنشأة"[^>]*open/);
 console.log('ADMIN_NAVIGATION_MODULE_OK');
