@@ -4,106 +4,28 @@
   const isAdminPage = adminPanel === '1' || adminPanel === '2';
   // On the assistant URL, remove the Owner panel button before the admin bundle runs.
   if (adminPanel === '2') document.getElementById('flCloudPrimaryAdmin')?.remove();
-  if(isAdminPage){
-    // MFA module must load before admin.js so enrollment and step-up can gate login.
-    const mfaScript=document.createElement('script');
-    mfaScript.src='admin-mfa.js?v=__FL_VERSION__';
-    mfaScript.async=false;
-    document.body.appendChild(mfaScript);
-    // Register standalone admin views before the main controller initializes.
-    const navScript=document.createElement('script');
-    navScript.src='admin-navigation.js?v=__FL_VERSION__';
-    navScript.async=false;
-    document.body.appendChild(navScript);
-    const overviewScript=document.createElement('script');
-    overviewScript.src='admin-overview.js?v=__FL_VERSION__';
-    overviewScript.async=false;
-    document.body.appendChild(overviewScript);
-    const productSpecsScript=document.createElement('script');
-    productSpecsScript.src='admin-product-specs.js?v=__FL_VERSION__';
-    productSpecsScript.async=false;
-    document.body.appendChild(productSpecsScript);
-  }
-  const script = document.createElement('script');
-  script.src = isAdminPage ? 'admin.js?v=__FL_VERSION__' : 'public-sync.js?v=__FL_VERSION__';
-  script.async = false;
-  document.body.appendChild(script);
-
-  if (isAdminPage) {
-    // Final release module split: must load after admin.js, which sets up
-    // window.FL_ADMIN_CORE that this (and future split-out sections) rely on.
-    const analyticsScript = document.createElement('script');
-    analyticsScript.src = 'admin-analytics.js?v=__FL_VERSION__';
-    analyticsScript.async = false;
-    document.body.appendChild(analyticsScript);
-
-    const datasheetScript = document.createElement('script');
-    datasheetScript.src = 'admin-datasheet.js?v=__FL_VERSION__';
-    datasheetScript.async = false;
-    document.body.appendChild(datasheetScript);
-
-    // Module split part 2: customer leads section (also needs admin.js first).
-    const leadsScript = document.createElement('script');
-    leadsScript.src = 'admin-leads.js?v=__FL_VERSION__';
-    leadsScript.async = false;
-    document.body.appendChild(leadsScript);
-
-    // Module split part 3: admin-permissions screen (Owner only).
-    const permissionsScript = document.createElement('script');
-    permissionsScript.src = 'admin-permissions.js?v=__FL_VERSION__';
-    permissionsScript.async = false;
-    document.body.appendChild(permissionsScript);
-
-    const businessScript = document.createElement('script');
-    businessScript.src = 'admin-business.js?v=__FL_VERSION__';
-    businessScript.async = false;
-    document.body.appendChild(businessScript);
-
-    const banksScript = document.createElement('script');
-    banksScript.src = 'admin-banks.js?v=__FL_VERSION__';
-    banksScript.async = false;
-    document.body.appendChild(banksScript);
-
-    // Module split part 4: Owner site-settings cards (lead gate, barcode, footer number).
-    const settingsScript = document.createElement('script');
-    settingsScript.src = 'admin-settings.js?v=__FL_VERSION__';
-    settingsScript.async = false;
-    document.body.appendChild(settingsScript);
-
-    const searchFiltersScript = document.createElement('script');
-    searchFiltersScript.src = 'admin-search-filters.js?v=__FL_VERSION__';
-    searchFiltersScript.async = false;
-    document.body.appendChild(searchFiltersScript);
-
-
-    // Product-area module split (v100): media, list/order, form, and Excel import/export.
-    const mediaScript = document.createElement('script');
-    mediaScript.src = 'admin-media.js?v=__FL_VERSION__';
-    mediaScript.async = false;
-    document.body.appendChild(mediaScript);
-
-    const productsScript = document.createElement('script');
-    productsScript.src = 'admin-products.js?v=__FL_VERSION__';
-    productsScript.async = false;
-    document.body.appendChild(productsScript);
-
-    const productFormScript = document.createElement('script');
-    productFormScript.src = 'admin-product-form.js?v=__FL_VERSION__';
-    productFormScript.async = false;
-    document.body.appendChild(productFormScript);
-
-    const importScript = document.createElement('script');
-    importScript.src = 'admin-import.js?v=__FL_VERSION__';
-    importScript.async = false;
-    document.body.appendChild(importScript);
-  }
-
-  if (!isAdminPage) {
-    const searchScript = document.createElement('script');
-    searchScript.src = 'catalog-search.js?v=__FL_VERSION__';
-    searchScript.async = false;
-    document.body.appendChild(searchScript);
-  }
+  // Declare the runtime dependencies once. Dynamic scripts remain classic,
+  // ordered scripts (async=false): each module sees the globals of its predecessors.
+  const sharedEntry = isAdminPage ? 'admin.js' : 'public-sync.js';
+  const adminBefore = [
+    'admin-mfa.js', 'admin-navigation.js', 'admin-overview.js',
+    'admin-product-specs.js'
+  ];
+  const adminAfter = [
+    'admin-analytics.js', 'admin-datasheet.js', 'admin-leads.js',
+    'admin-permissions.js', 'admin-business.js', 'admin-banks.js',
+    'admin-settings.js', 'admin-search-filters.js', 'admin-media.js',
+    'admin-products.js', 'admin-product-form.js', 'admin-import.js'
+  ];
+  const scripts = isAdminPage
+    ? [...adminBefore, sharedEntry, ...adminAfter]
+    : [sharedEntry, 'catalog-search.js'];
+  scripts.forEach(path => {
+    const script=document.createElement('script');
+    script.src=path+'?v=__FL_VERSION__';
+    script.async=false;
+    document.body.appendChild(script);
+  });
 
   // Offline/installable support for visitors only — never for the admin panel,
   // so the admin always runs the latest code with nothing cached.
