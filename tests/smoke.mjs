@@ -640,12 +640,14 @@ assert.match(read('admin-import.js'), /xlsx-0\.20\.3/);
 
 // Step 12: preserve owner-managed filter IDs while recognizing legacy specification labels.
 {
-  const from=app.indexOf('  const PRODUCT_SPEC_LABELS =');
-  const to=app.indexOf('\n  function productSpecifications(',from);
-  assert.ok(from>=0&&to>from,'Catalog specification normalization not found');
   const siteSettings={catalog_custom_filters:[{key:'custom_filter_test1',label:'إضاءة جانبية'}]};
-  const ctx={window:{FLOWER_LIGHT_SITE_SETTINGS:siteSettings},PRICING_META_KEY:'__pricing_tiers'};
-  const funcs=vm.runInNewContext(app.slice(from,to)+'\n({canonicalProductSpecKey,normalizeProductSpecifications})',ctx);
+  const ctx={window:{
+    FLOWER_LIGHT_SITE_SETTINGS:siteSettings,
+    FL_CATALOG_PRICING:{PRICING_META_KEY:'__pricing_tiers'},
+    FL_CATALOG_PRODUCT_META:{formatProductSpecValue:spec=>String(spec?.value||'')}
+  }};
+  vm.runInNewContext(read('catalog-specifications.js'),ctx);
+  const funcs=ctx.window.FL_CATALOG_SPECIFICATIONS;
   const normalized=row=>funcs.normalizeProductSpecifications([row])[0];
   assert.equal(normalized({key:'custom_1',label:'اضاءه جانبيه',value:'نعم'}).key,'custom_filter_test1');
   assert.equal(normalized({key:'custom_filter_test1',label:'القدرة',value:'خاص'}).key,'custom_filter_test1',
