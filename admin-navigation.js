@@ -34,7 +34,7 @@
       const active=items.some(([key])=>key===options.view);
       const open=active||expanded.has(label);
       return `<details class="fl-cloud-nav-group" data-nav-group="${esc(label)}" ${open?'open':''}>
-        <summary class="fl-cloud-nav-heading"><span>${esc(label)}</span><small aria-label="${items.length} أقسام">${items.length}</small></summary>
+        <summary class="fl-cloud-nav-heading"><span>${esc(label)}</span><svg class="fl-cloud-nav-chevron" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path d="m4 6 4 4 4-4"/></svg></summary>
         <div class="fl-cloud-nav-items">${items.map(([key,name])=>
           `<button type="button" data-cloud-view="${esc(key)}" class="${options.view===key?'active':''}" ${options.view===key?'aria-current="page"':''}>${esc(name)}</button>`).join('')}</div>
       </details>`;
