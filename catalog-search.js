@@ -63,20 +63,42 @@
     searchWrap?.insertAdjacentElement('afterend',filterWrap);
 
     let filterControls=new Map();
+    // Product cards are replaced on catalog redraw. A WeakMap keeps the search
+    // text/specifications indexed per live card without retaining removed nodes.
+    // Rebuild when owner settings change, because custom spec units can change.
+    let cardIndex=new WeakMap();
+    let normalizedQuery='';
 
     function productPanels(){return Array.from(sheet.querySelectorAll('.extra-section-panel'));}
     function allCards(){return productPanels().flatMap(panel=>Array.from(panel.querySelectorAll('.chandelier-card')));}
     function tabForPanel(panel){return Array.from(tabsHost.querySelectorAll('.extra-section-tab')).find(tab=>tab.dataset.target===panel.id)||null;}
     function sectionName(panel){return tabForPanel(panel)?.querySelector('strong')?.textContent?.trim()||'قسم';}
-    function cardSpecs(card){try{return JSON.parse(card.dataset.filterSpecs||'{}')||{};}catch(_){return{};}}
+    function indexedCard(card){
+      let cached=cardIndex.get(card);
+      if(cached)return cached;
+      const panel=card.closest('.extra-section-panel'),name=panel?sectionName(panel):'';
+      let specs={};
+      try{specs=JSON.parse(card.dataset.filterSpecs||'{}')||{};}catch(_){}
+      cached={
+        text:normalize([card.dataset.productName,card.dataset.productModel,card.textContent,name,panel?.dataset.categorySearch].join(' ')),
+        availability:String(card.dataset.availability||''),
+        specs, values:new Map()
+      };
+      cardIndex.set(card,cached);
+      return cached;
+    }
     function cardValues(card,key){
-      if(key==='availability')return[String(card.dataset.availability||'')].filter(Boolean);
-      const def=filterDefinitions()[key];return valueTokens(cardSpecs(card)[key],def?.unit||'');
+      const indexed=indexedCard(card);
+      if(!indexed.values.has(key)){
+        const def=filterDefinitions()[key];
+        indexed.values.set(key,key==='availability'
+          ?[indexed.availability].filter(Boolean)
+          :valueTokens(indexed.specs[key],def?.unit||''));
+      }
+      return indexed.values.get(key);
     }
     function cardMatchesSearch(card){
-      const panel=card.closest('.extra-section-panel'),name=panel?sectionName(panel):'';
-      const query=normalize(input.value);
-      return !query||normalize([card.dataset.productName,card.dataset.productModel,card.textContent,name,panel?.dataset.categorySearch].join(' ')).includes(query);
+      return !normalizedQuery||indexedCard(card).text.includes(normalizedQuery);
     }
     function cardMatchesFilters(card,exceptKey=''){
       for(const [key,select] of filterControls){
@@ -116,6 +138,8 @@
 
     function buildFilters(){
       const previous=new Map([...filterControls].map(([key,select])=>[key,select.value]));
+      cardIndex=new WeakMap();
+      normalizedQuery=normalize(input.value);
       filterControls=new Map();filterWrap.replaceChildren();
       const defs=filterDefinitions(),keys=selectedFilterKeys(),cards=allCards();
       keys.forEach(key=>{
@@ -154,7 +178,8 @@
     function syncClearButton(){const clear=document.getElementById('catalogFilterClear');if(clear)clear.style.display=filtersActive()?'inline-flex':'none';}
 
     function applyFilter(){
-      const panels=productPanels(),query=normalize(input.value),active=Boolean(query||filtersActive()),hasProducts=panels.length>0;
+      normalizedQuery=normalize(input.value);
+      const panels=productPanels(),active=Boolean(normalizedQuery||filtersActive()),hasProducts=panels.length>0;
       input.disabled=!hasProducts;
       const placeholder=hasProducts?'ابحث في جميع الأقسام (الاسم أو الكود أو المواصفات)…':'لا توجد أقسام منتجات قابلة للبحث';
       input.placeholder=window.FL_I18N?.translate?.(placeholder)||placeholder;
