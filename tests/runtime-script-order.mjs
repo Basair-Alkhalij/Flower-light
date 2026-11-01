@@ -3,13 +3,13 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 const source=fs.readFileSync(new URL('../site-loader.js',import.meta.url),'utf8');
 const expectedAdmin=[
-  'admin-mfa.js','admin-navigation.js','admin-overview.js','admin-product-specs.js',
+  'contact-utils.js','admin-mfa.js','admin-navigation.js','admin-overview.js','admin-product-specs.js',
   'admin.js','admin-analytics.js','admin-datasheet.js','admin-leads.js',
   'admin-permissions.js','admin-business.js','admin-banks.js',
   'admin-settings.js','admin-search-filters.js','admin-media.js',
   'admin-products.js','admin-product-form.js','admin-import.js'
 ];
-const expectedVisitor=['public-sync.js','catalog-search.js'];
+const expectedVisitor=['contact-utils.js','public-sync.js','catalog-search.js'];
 function run(search){
   const appended=[];
   const listeners=[];

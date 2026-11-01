@@ -35,6 +35,7 @@ const SHELL_URLS = [
   './bank-info.js?v=__FL_VERSION__',
   './pwa-install.js?v=__FL_VERSION__',
   './config.js?v=__FL_VERSION__',
+  './contact-utils.js?v=__FL_VERSION__',
   './public-sync.js?v=__FL_VERSION__',
   './supabase-vendor.js?v=__FL_VERSION__',
   './catalog-search.js?v=__FL_VERSION__',
@@ -96,6 +97,7 @@ function isShellRequest(url) {
     path.endsWith('/bank-info.js') ||
     path.endsWith('/pwa-install.js') ||
     path.endsWith('/config.js') ||
+    path.endsWith('/contact-utils.js') ||
     path.endsWith('/public-sync.js') ||
     path.endsWith('/supabase-vendor.js') ||
     // Cache jsPDF only after a PDF is requested; don't download it for every visitor.

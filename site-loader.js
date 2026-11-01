@@ -6,6 +6,8 @@
   if (adminPanel === '2') document.getElementById('flCloudPrimaryAdmin')?.remove();
   // Declare the runtime dependencies once. Dynamic scripts remain classic,
   // ordered scripts (async=false): each module sees the globals of its predecessors.
+  // Contact validation, grouping, and icons are shared by both entrypoints.
+  const sharedBefore = ['contact-utils.js'];
   const sharedEntry = isAdminPage ? 'admin.js' : 'public-sync.js';
   const adminBefore = [
     'admin-mfa.js', 'admin-navigation.js', 'admin-overview.js',
@@ -18,8 +20,8 @@
     'admin-products.js', 'admin-product-form.js', 'admin-import.js'
   ];
   const scripts = isAdminPage
-    ? [...adminBefore, sharedEntry, ...adminAfter]
-    : [sharedEntry, 'catalog-search.js'];
+    ? [...sharedBefore, ...adminBefore, sharedEntry, ...adminAfter]
+    : [...sharedBefore, sharedEntry, 'catalog-search.js'];
   scripts.forEach(path => {
     const script=document.createElement('script');
     script.src=path+'?v=__FL_VERSION__';
