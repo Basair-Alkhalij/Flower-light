@@ -130,46 +130,6 @@
     }).filter(Boolean).slice(0,30);
   }
 
-  function specificationMap(raw){
-    const map=new Map();
-    normalizeSpecifications(raw).forEach(spec=>map.set(spec.key,spec));
-    return map;
-  }
-
-  function specificationEditorValue(spec){
-    if(!spec) return '';
-    return `${String(spec.value||'').trim()}${spec.unit?` ${String(spec.unit).trim()}`:''}`.trim();
-  }
-
-  function productSpecEditorRowHtml(spec=null){
-    return `<div class="fl-flex-spec-row" data-flex-spec-row>
-      <div class="fl-cloud-field"><label>اسم الصفة</label><input data-flex-spec-label value="${esc(spec?.label||'')}" placeholder="مثال: القدرة"></div>
-      <div class="fl-cloud-field"><label>القيمة</label><input data-flex-spec-value value="${esc(specificationEditorValue(spec))}" placeholder="مثال: 30W"></div>
-      <button class="fl-flex-spec-remove" data-flex-spec-remove type="button" aria-label="حذف الصفة">حذف</button>
-    </div>`;
-  }
-
-  function productSpecsFormHtml(prod){
-    const specs=normalizeSpecifications(prod?.specifications);
-    const rows=(specs.length?specs:[null]).map(spec=>productSpecEditorRowHtml(spec)).join('');
-    return `<div class="fl-product-spec-section full"><div class="fl-product-spec-head"><div><strong>المواصفات الفنية</strong><small>اكتب اسم الصفة وقيمتها بنفسك، مثل: القدرة — 30W. أضف فقط المواصفات التي تحتاجها.</small></div><button class="fl-cloud-btn fl-add-spec-btn" id="flAddProductSpec" type="button">+ إضافة صفة</button></div><div id="flFlexibleSpecs" class="fl-flex-spec-list">${rows}</div></div>`;
-  }
-
-  function collectProductSpecifications(){
-    const specs=[];
-    document.querySelectorAll('[data-flex-spec-row]').forEach((row,index)=>{
-      const label=String(row.querySelector('[data-flex-spec-label]')?.value||'').trim();
-      const value=String(row.querySelector('[data-flex-spec-value]')?.value||'').trim();
-      if(!label || !value) return;
-      specs.push({
-        key:`custom_${index+1}`,
-        label,
-        value,
-        unit:'',
-      });
-    });
-    return specs.slice(0,30);
-  }
 
   function productThumbnailPath(path){
     const value=String(path||'');
