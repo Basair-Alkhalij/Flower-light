@@ -190,19 +190,6 @@ window.FLOWER_LIGHT_PRODUCTS = { catalog: [], chandeliers: [], balfon: [], extra
     return button;
   }
 
-  function createProductCatalogPdfLink(item, className='product-catalog-pdf-button') {
-    const url=String(item?.catalog_pdf_url||'').trim();
-    if(!url) return null;
-    const link=document.createElement('a');
-    link.className=className;
-    link.href=url;
-    link.target='_blank';
-    link.rel='noopener noreferrer';
-    link.setAttribute('aria-label',`فتح كتالوج PDF لـ ${productDisplayName(item)}`);
-    link.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h8l4 4v16H6z"></path><path d="M14 2v5h5"></path><path d="M9 13h6M9 17h6"></path></svg><span>تحميل كتالوج PDF</span>`;
-    link.addEventListener('click',()=>trackEvent('catalog_download',analyticsProductParams(item,{label:'uploaded_product_catalog_pdf'})));
-    return link;
-  }
 
   function createProductWhatsAppLink(item, className = 'product-whatsapp-button') {
     const link = document.createElement('a');
