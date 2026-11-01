@@ -130,11 +130,6 @@
     }).filter(Boolean).slice(0,30);
   }
 
-  function specificationMap(raw){
-    const map=new Map();
-    normalizeSpecifications(raw).forEach(spec=>map.set(spec.key,spec));
-    return map;
-  }
 
   function specificationEditorValue(spec){
     if(!spec) return '';
