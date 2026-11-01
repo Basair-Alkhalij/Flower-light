@@ -241,7 +241,7 @@ assert.match(manageAdmin, /https:\/\/basair-alkhalij\.github\.io/);
 assert.match(manageAdmin, /Origin not allowed/);
 assert.doesNotMatch(manageAdmin, /Access-Control-Allow-Origin': '\*'/);
 
-for (const file of ['app.js','quote-list.js','admin.js','admin-media.js','admin-products.js','admin-product-form.js','admin-import.js','public-sync.js','site-bootstrap.js','site-loader.js']) {
+for (const file of ['catalog-links.js','app.js','quote-list.js','admin.js','admin-media.js','admin-products.js','admin-product-form.js','admin-import.js','public-sync.js','site-bootstrap.js','site-loader.js']) {
   execFileSync(process.execPath, ['--check', file], { cwd: root, stdio: 'ignore' });
 }
 for (const file of ['supabase/functions/manage-admin-account/index.ts','supabase/functions/submit-customer-lead/index.ts']) {
@@ -349,7 +349,7 @@ for(const raw of refs){
   if(!clean || clean.startsWith('/')) continue;
   assert.ok(fs.existsSync(path.join(root,clean)),`missing local asset: ${clean}`);
 }
-for(const asset of ['analytics.js','catalog-pdf-viewer.js','catalog-pdf-renderer.js','app.js','site-bootstrap.js','site-loader.js','admin.js','admin-datasheet.js','admin-media.js','admin-products.js','admin-product-form.js','admin-import.js','public-sync.js','style.css' ,'company-logo.png','favicon-32.png','favicon-192.png','apple-touch-icon.png','favicon.ico','share-image.jpg']){
+for(const asset of ['analytics.js','catalog-pdf-viewer.js','catalog-pdf-renderer.js','catalog-links.js','app.js','site-bootstrap.js','site-loader.js','admin.js','admin-datasheet.js','admin-media.js','admin-products.js','admin-product-form.js','admin-import.js','public-sync.js','style.css' ,'company-logo.png','favicon-32.png','favicon-192.png','apple-touch-icon.png','favicon.ico','share-image.jpg']){
   assert.ok(fs.existsSync(path.join(root,asset)),`required release asset missing: ${asset}`);
 }
 
