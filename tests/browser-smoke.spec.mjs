@@ -636,6 +636,52 @@ test('catalog filters combine availability, wattage, CCT and search on mobile',a
   expect(fit.scroll).toBeLessThanOrEqual(fit.client+1);
 });
 
+
+test('catalog search reindexes replaced cards and keeps owner-defined filter order',async({page})=>{
+  await installSupabaseMock(page);
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await injectCatalogFixtures(page);
+  await page.locator('#openProducts').click();
+
+  await expect(page.locator('#catalogFilter_wattage option[value="12W"]')).toHaveCount(1);
+  await expect(page.locator('#catalogFilter_wattage option[value="48W"]')).toHaveCount(0);
+
+  await page.evaluate(()=>{
+    const section=window.FLOWER_LIGHT_PRODUCTS.extraSections[0];
+    const original=section.items[0];
+    section.items.push({
+      ...original,id:'prod-reindexed',name:'كشاف محدث',model:'NEW-48',
+      specifications:[
+        {key:'wattage',label:'القدرة',value:'48',unit:'W'},
+        {key:'cct',label:'حرارة اللون',value:'6500',unit:'K'}
+      ]
+    });
+    window.flRenderProducts(true);
+  });
+  await expect(page.locator('#catalogFilter_wattage option[value="48W"]')).toHaveCount(1);
+  await page.locator('#catalogSearchInput').fill('NEW-48');
+  await expect(page.locator('#catalogSearchCount')).toHaveText('1 نتيجة · 1 قسم');
+  await expect(page.locator('#catalogFilter_wattage option[value="48W"]')).toHaveCount(1);
+  await expect(page.locator('#catalogFilter_wattage option[value="12W"]')).toHaveCount(0);
+
+  await page.evaluate(()=>{
+    const settings={
+      ...(window.FLOWER_LIGHT_SITE_SETTINGS||{}),
+      catalog_filter_keys:['cct','wattage']
+    };
+    window.FLOWER_LIGHT_SITE_SETTINGS=settings;
+    window.dispatchEvent(new CustomEvent('flowerlight:site-settings',{detail:settings}));
+  });
+  await expect(page.locator('#catalogFilter_cct')).toBeVisible();
+  await expect(page.locator('#catalogFilter_wattage')).toBeVisible();
+  const ordered=await page.locator('#catalogFilterWrap select').evaluateAll(selects=>selects.map(node=>node.id));
+  expect(ordered).toEqual(['catalogFilter_cct','catalogFilter_wattage']);
+  await page.locator('#catalogFilter_cct').selectOption('6500K');
+  await expect(page.locator('#catalogSearchCount')).toHaveText('1 نتيجة · 1 قسم');
+  await expect(page.locator('#catalogFilter_wattage option[value="48W"]')).toHaveCount(1);
+  await expect(page.locator('#catalogFilter_wattage option[value="12W"]')).toHaveCount(0);
+});
+
 test('laptop product dialog and lightbox stay inside the viewport',async({page})=>{
   await page.setViewportSize({width:1366,height:768});
   await installSupabaseMock(page);
