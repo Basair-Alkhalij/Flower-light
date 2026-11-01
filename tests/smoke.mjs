@@ -10,6 +10,7 @@ const root = fileURLToPath(new URL('..', import.meta.url));
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const index = read('index.html');
 const app = read('app.js');
+const links = read('catalog-links.js');
 const catalogPdfViewer = read('catalog-pdf-viewer.js');
 const catalogPdfRenderer = read('catalog-pdf-renderer.js');
 const admin = read('admin.js');
@@ -241,7 +242,7 @@ assert.match(manageAdmin, /https:\/\/basair-alkhalij\.github\.io/);
 assert.match(manageAdmin, /Origin not allowed/);
 assert.doesNotMatch(manageAdmin, /Access-Control-Allow-Origin': '\*'/);
 
-for (const file of ['app.js','quote-list.js','admin.js','admin-media.js','admin-products.js','admin-product-form.js','admin-import.js','public-sync.js','site-bootstrap.js','site-loader.js']) {
+for (const file of ['catalog-links.js','app.js','quote-list.js','admin.js','admin-media.js','admin-products.js','admin-product-form.js','admin-import.js','public-sync.js','site-bootstrap.js','site-loader.js']) {
   execFileSync(process.execPath, ['--check', file], { cwd: root, stdio: 'ignore' });
 }
 for (const file of ['supabase/functions/manage-admin-account/index.ts','supabase/functions/submit-customer-lead/index.ts']) {
@@ -258,17 +259,17 @@ for (const file of ['supabase/functions/manage-admin-account/index.ts','supabase
 }
 
 
-assert.match(app, /اسم المنتج:/);
-assert.match(app, /رقم المنتج \/ الكود:/);
-assert.match(app, /الوصف:/);
-assert.match(app, /المواصفات الفنية:/);
+assert.match(links, /اسم المنتج:/);
+assert.match(links, /رقم المنتج \/ الكود:/);
+assert.match(links, /الوصف:/);
+assert.match(links, /المواصفات الفنية:/);
 
 assert.match(adminProductBundle, /flProdWhatsAppShowDescription/);
 assert.match(adminProductBundle, /flProdWhatsAppShowSpecs/);
 assert.match(app, /WHATSAPP_META_SHOW_DESCRIPTION/);
 assert.match(app, /WHATSAPP_META_SHOW_SPECS/);
-assert.match(app, /showDescription && description/);
-assert.match(app, /if \(showSpecs\)/);
+assert.match(links, /showDescription && description/);
+assert.match(links, /if \(showSpecs\)/);
 assert.match(adminProductBundle, /flAddPriceTier/);
 assert.match(adminProductBundle, /جملة الجملة/);
 assert.match(adminProductBundle, /data-price-tier-min/);
@@ -276,7 +277,7 @@ assert.match(adminProductBundle, /data-price-tier-max/);
 assert.match(fs.readFileSync('catalog-pricing.js','utf8'), /سعر جملة الجملة/);
 assert.match(app, /priceTierRangeNote/);
 assert.doesNotMatch(app, /url\.searchParams\.set\('v', '87'\)/);
-assert.match(app, /\['admin','category','product','v'\]\.forEach\(key => url\.searchParams\.delete\(key\)\)/);
+assert.match(links, /\['admin','category','product','v'\]\.forEach\(key => url\.searchParams\.delete\(key\)\)/);
 assert.match(index, /flLeadWebsite/);
 assert.match(sync, /leadSubmitCooldownMs=30000/);
 assert.match(admin, /leadSubmitCooldownMs=30000/);
@@ -349,7 +350,7 @@ for(const raw of refs){
   if(!clean || clean.startsWith('/')) continue;
   assert.ok(fs.existsSync(path.join(root,clean)),`missing local asset: ${clean}`);
 }
-for(const asset of ['analytics.js','catalog-pdf-viewer.js','catalog-pdf-renderer.js','app.js','site-bootstrap.js','site-loader.js','admin.js','admin-datasheet.js','admin-media.js','admin-products.js','admin-product-form.js','admin-import.js','public-sync.js','style.css' ,'company-logo.png','favicon-32.png','favicon-192.png','apple-touch-icon.png','favicon.ico','share-image.jpg']){
+for(const asset of ['analytics.js','catalog-pdf-viewer.js','catalog-pdf-renderer.js','catalog-links.js','app.js','site-bootstrap.js','site-loader.js','admin.js','admin-datasheet.js','admin-media.js','admin-products.js','admin-product-form.js','admin-import.js','public-sync.js','style.css' ,'company-logo.png','favicon-32.png','favicon-192.png','apple-touch-icon.png','favicon.ico','share-image.jpg']){
   assert.ok(fs.existsSync(path.join(root,asset)),`required release asset missing: ${asset}`);
 }
 
@@ -359,7 +360,7 @@ assert.equal(fs.existsSync(path.join(root,'share-image-v78.jpg')),false);
 const releaseNames=fs.readdirSync(root);
 assert.equal(releaseNames.some(name=>/^README_STAGE/i.test(name)),false);
 assert.equal(releaseNames.some(name=>/^FINAL_SQL_STAGE/i.test(name)),false);
-const textBundle=[index,app,catalogPdfRenderer,adminProductBundle,sync,css,read('README.md'),read('SUPABASE_SETUP.sql')].join('\n');
+const textBundle=[index,app,links,catalogPdfRenderer,adminProductBundle,sync,css,read('README.md'),read('SUPABASE_SETUP.sql')].join('\n');
 assert.match(index, /https:\/\/basair-alkhalij\.github\.io\/Flower-light\//);
 assert.match(read('manifest.webmanifest'), /"start_url": "\.\/"/);
 assert.ok(fs.existsSync(path.join(root,'robots.txt')));
@@ -907,8 +908,8 @@ assert.match(staticGenerator,/sitemap\.xml/);
 assert.match(read('scripts/build.mjs'),/generateStaticPages/);
 assert.match(read('scripts/build.mjs'),/FL_SKIP_STATIC_PAGES/);
 assert.ok(sw.includes("/(?:p|c)/") || sw.includes("(?:p|c)"));
-assert.match(app,/new URL\(`p\/\$\{encodeURIComponent\(id\)\}\/`/);
-assert.match(app,/new URL\(`c\/\$\{encodeURIComponent\(key\)\}\/`/);
+assert.match(links,/new URL\(`p\/\$\{encodeURIComponent\(id\)\}\/`/);
+assert.match(links,/new URL\(`c\/\$\{encodeURIComponent\(key\)\}\/`/);
 const pagesWorkflow=read('.github/workflows/pages.yml');
 assert.match(pagesWorkflow,/cron: '0 \*\/6 \* \* \*'/);
 assert.match(pagesWorkflow,/workflow_dispatch:/);

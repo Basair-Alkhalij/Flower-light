@@ -6,7 +6,7 @@ const ordered=[
   'config.js','business-info.js','bank-info.js',
   'analytics.js','catalog-pdf-viewer.js','quote-list.js',
   'catalog-gallery.js','catalog-product-meta.js','catalog-pricing.js',
-  'app.js','pwa-install.js',
+  'catalog-specifications.js','catalog-links.js','app.js','pwa-install.js',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js',
   'site-loader.js'
 ];

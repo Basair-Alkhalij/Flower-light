@@ -28,6 +28,7 @@ const SHELL_URLS = [
   './catalog-product-meta.js?v=__FL_VERSION__',
   './catalog-pricing.js?v=__FL_VERSION__',
   './catalog-specifications.js?v=__FL_VERSION__',
+  './catalog-links.js?v=__FL_VERSION__',
   './app.js?v=__FL_VERSION__',
   './site-bootstrap.js?v=__FL_VERSION__',
   './site-loader.js?v=__FL_VERSION__',
@@ -90,6 +91,7 @@ function isShellRequest(url) {
     path.endsWith('/catalog-product-meta.js') ||
     path.endsWith('/catalog-pricing.js') ||
     path.endsWith('/catalog-specifications.js') ||
+    path.endsWith('/catalog-links.js') ||
     path.endsWith('/app.js') ||
     path.endsWith('/site-bootstrap.js') ||
     path.endsWith('/site-loader.js') ||
