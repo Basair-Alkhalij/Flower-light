@@ -23,7 +23,7 @@ const DEFAULT_SITE_URL='https://basair-alkhalij.github.io/Flower-light/';
 
 const jsFiles=[
   'scripts/generate-static-pages.mjs','scripts/measure-mobile-performance.mjs',
-  'analytics.js','catalog-pdf-viewer.js','catalog-pdf-renderer.js','quote-list.js','catalog-gallery.js','catalog-product-meta.js','catalog-pricing.js','catalog-specifications.js','app.js','public-sync.js','pwa-install.js','catalog-search.js','config.js','site-bootstrap.js','site-loader.js','theme-mode.js','site-i18n.js',
+  'analytics.js','catalog-pdf-viewer.js','catalog-pdf-renderer.js','quote-list.js','catalog-gallery.js','catalog-product-meta.js','catalog-pricing.js','catalog-specifications.js','app.js','contact-utils.js','public-sync.js','pwa-install.js','catalog-search.js','config.js','site-bootstrap.js','site-loader.js','theme-mode.js','site-i18n.js',
   'admin-mfa.js','admin-navigation.js','admin-overview.js','admin-product-specs.js','admin.js','admin-analytics.js','admin-datasheet.js','admin-leads.js','admin-permissions.js','admin-settings.js','admin-search-filters.js','admin-business.js','admin-banks.js',
   'business-info.js','bank-info.js','admin-media.js','admin-products.js','admin-product-form.js','admin-import.js','sw.js'
 ];
