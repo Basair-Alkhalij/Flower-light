@@ -336,7 +336,7 @@
   // Shared functions stay byte-for-byte equivalent across visitor and admin modes.
   const contactUtils=window.FL_CONTACT_UTILS;
   if(!contactUtils)throw new Error('Contact utilities module not loaded');
-  const {contactHref,groupedPublicContacts,contactIcon}=contactUtils;
+  const {contactHref,groupedPublicContacts,contactIcon,normalizeWebsite}=contactUtils;
   const contactChoiceModal=document.getElementById('contactChoiceModal');
   const contactChoiceSubtitle=document.getElementById('contactChoiceSubtitle');
   const contactChoiceCall=document.getElementById('contactChoiceCall');
