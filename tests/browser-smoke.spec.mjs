@@ -326,6 +326,49 @@ test('public quote list follows the owner visibility setting without losing save
 });
 
 
+test('mobile product card has readable editable quantity and aligned action buttons',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await installSupabaseMock(page);
+  await page.goto(base,{waitUntil:'domcontentloaded'});
+  await page.evaluate(()=>localStorage.removeItem('fl_quote_list_v1'));
+  await injectCatalogFixtures(page);
+  await page.locator('#openProducts').click();
+
+  const actions=page.locator('.product-card-actions').first();
+  const quote=actions.locator('.quote-list-product-control');
+  await expect(quote.locator('.quote-list-add-button')).toBeVisible();
+  await quote.locator('.quote-list-add-button').click();
+  const input=quote.locator('.quote-list-qty-value');
+  await expect(input).toBeVisible();
+  const metrics=await actions.evaluate(node=>{
+    const bounds=selector=>node.querySelector(selector).getBoundingClientRect();
+    const action=node.getBoundingClientRect();
+    const qty=bounds('.quote-list-product-control');
+    const whatsapp=bounds('.product-whatsapp-button');
+    const inputNode=node.querySelector('.quote-list-qty-value');
+    const buttons=[...node.querySelectorAll('.quote-list-qty-button')].map(button=>button.getBoundingClientRect());
+    return {
+      fontSize:parseFloat(getComputedStyle(inputNode).fontSize),
+      tapSizes:buttons.map(rect=>({width:rect.width,height:rect.height})),
+      quoteTop:qty.top,whatsappTop:whatsapp.top,
+      quoteRight:qty.right,actionRight:action.right,
+      viewportWidth:document.documentElement.scrollWidth
+    };
+  });
+  expect(metrics.fontSize).toBeGreaterThanOrEqual(16);
+  expect(metrics.tapSizes).toHaveLength(2);
+  for(const size of metrics.tapSizes){
+    expect(size.width).toBeGreaterThanOrEqual(40);
+    expect(size.height).toBeGreaterThanOrEqual(40);
+  }
+  expect(Math.abs(metrics.quoteTop-metrics.whatsappTop)).toBeLessThan(3);
+  expect(metrics.quoteRight).toBeLessThanOrEqual(metrics.actionRight+2);
+  expect(metrics.viewportWidth).toBeLessThanOrEqual(392);
+  await input.fill('25');
+  await input.press('Tab');
+  await expect(input).toHaveValue('25');
+});
+
 test('product availability badge disables quote-list additions when unavailable',async({page})=>{
   await installSupabaseMock(page);
   await page.goto(base,{waitUntil:'domcontentloaded'});
