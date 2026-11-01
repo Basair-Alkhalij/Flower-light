@@ -49,3 +49,34 @@ jobs:
       - run: node --check tests/live-site-smoke.mjs
       - run: npm run build:check
       - run: npm run test:static
+
+
+      # One-off read-only audit of the currently published Pages release.
+      # This branch will be closed without merging into main.
+      - name: Verify deployed site and exact main release
+        if: github.event_name == 'pull_request' && github.head_ref == 'verification/live-production-2026-11-01'
+        env:
+          FL_SITE_URL: https://basair-alkhalij.github.io/Flower-light/
+        run: |
+          node tests/live-site-smoke.mjs
+          node --input-type=module <<'NODE'
+          const expected='1cdf7716282761289cdc104594a200860565b70e'.slice(0,12);
+          const base=new URL(process.env.FL_SITE_URL);
+          base.searchParams.set('_release_audit',String(Date.now()));
+          const response=await fetch(base,{headers:{'Cache-Control':'no-cache'}});
+          if(!response.ok)throw new Error('Live homepage returned '+response.status);
+          const html=await response.text();
+          const match=html.match(/app\.js\?v=(\d+)-([a-f0-9]{12})/i);
+          if(!match)throw new Error('Published homepage lacks a commit-specific app.js version');
+          if(match[2].toLowerCase()!==expected)throw new Error('Published release is '+match[2]+'; expected '+expected);
+          const release=match[1]+'-'+match[2];
+          for(const [file,token] of [['catalog-export.js','FL_CATALOG_EXPORT'],['catalog-search.js','WeakMap'],['app.js','FL_CATALOG_EXPORT']]){
+            const url=new URL(file+'?v='+release,process.env.FL_SITE_URL);
+            const res=await fetch(url,{headers:{'Cache-Control':'no-cache'}});
+            if(!res.ok)throw new Error('Missing live asset '+file+': HTTP '+res.status);
+            const text=await res.text();
+            if(!text.includes(token))throw new Error('Live asset '+file+' does not contain '+token);
+            console.log('LIVE_ASSET_OK',file,text.length);
+          }
+          console.log('FLOWER_LIGHT_EXACT_DEPLOYMENT_CONFIRMED',release,expected);
+          NODE
