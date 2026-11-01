@@ -343,7 +343,7 @@ test('mobile product card has readable editable quantity and aligned action butt
   const metrics=await actions.evaluate(node=>{
     const bounds=selector=>node.querySelector(selector).getBoundingClientRect();
     const action=node.getBoundingClientRect();
-    const qty=bounds('.quote-list-qty-control');
+    const qty=bounds('.quote-list-product-control');
     const whatsapp=bounds('.product-whatsapp-button');
     const inputNode=node.querySelector('.quote-list-qty-value');
     const buttons=[...node.querySelectorAll('.quote-list-qty-button')].map(button=>button.getBoundingClientRect());
