@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -39,7 +39,7 @@ jobs:
   deploy:
     if: github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       pages: write
       id-token: write
