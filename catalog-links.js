@@ -73,9 +73,20 @@
     const url = new URL(window.location.href);
     url.search = '';
     url.hash = '';
-    if (/\/index\.html$/i.test(url.pathname)) url.pathname = url.pathname.replace(/index\.html$/i, '');
-    if (!url.pathname.endsWith('/')) url.pathname = url.pathname.replace(/[^/]*$/, '');
-    return url.href.replace(/\/?$/, '/');
+
+    // Product/category share pages are generated under /p/:id/ and /c/:slug/.
+    // Strip the detail route before creating another share URL, otherwise
+    // a shared page can generate a broken nested URL (/c/id/c/slug/).
+    const detailRoute = url.pathname.match(/^(.*\\/)(?:p|c)\\/[^/]+\\/?$/i);
+    if (detailRoute) {
+      url.pathname = detailRoute[1];
+    } else if (/\\/index\\.html$/i.test(url.pathname)) {
+      url.pathname = url.pathname.replace(/index\\.html$/i, '');
+    } else if (!url.pathname.endsWith('/')) {
+      url.pathname = url.pathname.replace(/[^/]*$/, '');
+    }
+
+    return url.href.replace(/\\/?$/, '/');
   }
 
   function categoryShareUrl(section) {
